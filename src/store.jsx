@@ -304,7 +304,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       goal: d.wGoal ? { letter: d.wGoal.letter, name: d.wGoal.name, pct: d.wGoal.pct, saved: d.wGoal.savedShort, target: d.wGoal.targetShort } : null,
       weekTotal: d.weekTotalFmt, weekDelta: d.weekDeltaText,
       weekBars: d.weekBarsDark.map(b => ({ label: b.label, h: b.h, active: b.color === ACCENT })),
-      txs: d.widgetTxs.map(t => ({ letter: t.letter, title: t.title, amount: t.amountFmt, color: t.color, bg: t.bg })),
+      txs: d.recentTxs.slice(0, 3).map(t => ({ letter: t.letter, title: t.title, amount: t.amountFmt, color: t.color, bg: t.bg })),
     }), 800);
     return () => clearTimeout(t);
   }, [ready, d]);
