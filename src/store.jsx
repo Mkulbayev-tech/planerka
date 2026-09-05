@@ -4,6 +4,7 @@ import { iso } from './lib/dates.js';
 import { derive } from './model.js';
 import { backend } from './backend/index.js';
 import { useNow } from './hooks.js';
+import { tap, success } from './native.js';
 
 const PREFS_KEY = 'planerka.prefs';
 const EMPTY = { txs: [], tasks: [], goals: [], incomes: [] };
@@ -103,6 +104,13 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     const busy = async fn => { update({ busy: true }); try { await fn(); } finally { update({ busy: false }); } };
     return {
       go: screen => update({ screen, sheet: null }),
+      // Аппаратная кнопка «назад»: закрыть шторку, вернуться на главную, иначе выйти
+      back: () => {
+        const st = stateRef.current;
+        if (st.sheet) { update({ sheet: null }); return true; }
+        if (st.screen !== 'home') { update({ screen: 'home' }); return true; }
+        return false;
+      },
       setPeriod: period => update({ period }),
       toggleDark: () => update(st => { const dark = !st.dark; savePrefs({ dark, notif: st.notif }); return { dark }; }),
       toggleNotif: () => update(st => { const notif = !st.notif; savePrefs({ dark: st.dark, notif }); return { notif }; }),
@@ -115,7 +123,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
         if (!t) return;
         const done = !t.done;
         mutate(d => ({ ...d, tasks: d.tasks.map(x => (x.id === id ? { ...x, done } : x)) }), () => backend.update('tasks', id, { done }));
-        if (done) showToast('Готово: ' + t.name);
+        if (done) { tap(); showToast('Готово: ' + t.name); }
       },
       saveTask: (fields, id) => {
         if (id) {
@@ -138,6 +146,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
           d => ({ ...d, goals: d.goals.map(x => (x.id === id ? { ...x, saved: x.saved + add, topups: [...(x.topups || []), { date: todayIso(), amount: add }] } : x)) }),
           () => backend.topUpGoal(id, 10000),
         );
+        success();
         showToast('Пополнено: ' + g.name);
       },
       saveGoal: (fields, id) => {
@@ -182,6 +191,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
         const row = { id: uid(), title: st.note.trim() || CAT_BY_ID[cat].name, cat, amount, method: st.method, date: todayIso(), created_by: st.user ? st.user.id : null };
         mutate(d => ({ ...d, txs: [...d.txs, row] }), () => backend.insert('transactions', row, hid()));
         update({ amount: '', note: '', screen: 'home' });
+        success();
         showToast('Добавлено −' + fmt(amount));
       },
       deleteTx: id => { mutate(d => ({ ...d, txs: d.txs.filter(x => x.id !== id) }), () => backend.remove('transactions', id)); showToast('Трата удалена'); },

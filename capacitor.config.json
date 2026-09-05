@@ -1,0 +1,29 @@
+{
+  "appId": "kz.planerka.app",
+  "appName": "Планёрка",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#F4F3F8",
+    "preferredContentMode": "mobile"
+  },
+  "android": {
+    "backgroundColor": "#F4F3F8"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#5B2ECF",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP",
+      "splashFullScreen": true,
+      "splashImmersive": false
+    },
+    "StatusBar": {
+      "style": "LIGHT"
+    }
+  }
+}

@@ -5,3 +5,8 @@ dist
 .env.local
 .supabase-db-password
 Планировщик расходов.html
+build/
+ios/App/build/
+android/app/build/
+*.ipa
+*.apk

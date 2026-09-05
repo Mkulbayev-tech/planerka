@@ -1,11 +1,12 @@
 // Общий семейный бюджет на Supabase: вход по почте, семья по коду приглашения,
 // строки в таблицах transactions / tasks / goals / incomes и живые обновления через Realtime.
 import { createClient } from '@supabase/supabase-js';
+import { isNative, nativeStorage } from '../native.js';
 
 const TABLES = ['transactions', 'tasks', 'goals', 'incomes'];
 
 export function createSupabaseBackend(url, key) {
-  const sb = createClient(url, key);
+  const sb = createClient(url, key, { auth: { storage: nativeStorage, persistSession: true, autoRefreshToken: true, detectSessionInUrl: !isNative } });
   const toUser = session => (session && session.user ? { id: session.user.id, email: session.user.email || '' } : null);
   const rows = async q => { const { data, error } = await q; if (error) throw error; return data; };
 
@@ -21,7 +22,8 @@ export function createSupabaseBackend(url, key) {
       return () => data.subscription.unsubscribe();
     },
     async signInWithEmail(email) {
-      const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
+      const options = isNative ? {} : { emailRedirectTo: window.location.origin + window.location.pathname };
+      const { error } = await sb.auth.signInWithOtp({ email, options });
       if (error) throw error;
     },
     async verifyCode(email, token) {

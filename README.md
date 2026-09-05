@@ -13,6 +13,30 @@ npm install
 npm run dev
 ```
 
+## Мобильное приложение (iOS и Android)
+
+Веб-код упакован в нативные приложения через Capacitor: папки `ios/` (проект Xcode) и `android/` (проект Gradle).
+Название на экране — «Планёрка», Bundle ID — `kz.planerka.app`. Иконка и сплэш генерируются из `assets/icon.png`
+и `assets/splash.png` командой `npx capacitor-assets generate`.
+
+- **Поставить на свой iPhone** (нужен Mac с Xcode и подключённый телефон):
+
+  ```
+  sh scripts/ios-install.sh "iPhone (Мэлс)"
+  ```
+
+- **Отправить партнёру через TestFlight** (нужен ключ App Store Connect API и запись приложения в App Store Connect):
+
+  ```
+  ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_KEY_PATH=~/AuthKey_….p8 sh scripts/ios-testflight.sh
+  ```
+
+- **Android**: `npx cap open android` в Android Studio или `cd android && ./gradlew assembleRelease`
+  (нужны Java 17 и Android SDK). Готовый APK появится в `android/app/build/outputs/apk/`.
+
+После любых изменений в коде: `npm run build && npx cap sync`, затем пересобрать приложение.
+Вход в приложении — по коду из письма (ссылка из письма открывает сайт, а не приложение).
+
 ## Где живёт приложение
 
 - Сайт: **https://mkulbayev-tech.github.io/planerka/** — публикуется автоматически из ветки `main` через GitHub Actions

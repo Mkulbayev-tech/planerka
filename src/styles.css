@@ -176,3 +176,8 @@ a{color:#7A4AE0}a:hover{color:#5F35C4}
 .empty{font-size:13px;font-weight:600;color:var(--mu);text-align:center;padding:10px 0}
 .pressable{-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 .phone--mobile .note-input{font-size:16px}
+
+/* ---------- нативное приложение ---------- */
+body{overscroll-behavior:none}
+.phone--mobile{overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+.phone--mobile input,.phone--mobile textarea{-webkit-user-select:text;user-select:text}
