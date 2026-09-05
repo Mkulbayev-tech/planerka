@@ -36,7 +36,7 @@ function TaskSheet({ task, onClose }) {
   const save = () => { if (!ok) return; a.saveTask({ name: name.trim(), time, tag, cat, cost: num(cost) }, task && task.id); onClose(); };
   return (
     <Sheet title={task ? 'Задача' : 'Новая задача'} onClose={onClose}>
-      <Field label="Название"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Например, оплатить интернет" autoFocus={!task} /></Field>
+      <Field label="Название"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Например, оплатить интернет" autoFocus={!task} enterKeyHint="done" onKeyDown={e => e.key === 'Enter' && save()} /></Field>
       <div className="row" style={{ gap: 10, alignItems: 'stretch' }}>
         <Field label="Время" style={{ flex: 1 }}><input className="input" type="time" value={time} onChange={e => setTime(e.target.value)} /></Field>
         <Field label="Затраты, ₸" style={{ flex: 1 }}><input className="input" type="number" inputMode="numeric" min="0" step="500" value={cost} onChange={e => setCost(e.target.value)} placeholder="0" /></Field>
@@ -68,7 +68,7 @@ function GoalSheet({ goal, onClose }) {
   };
   return (
     <Sheet title={goal ? 'Цель' : 'Новая цель'} onClose={onClose}>
-      <Field label="Название"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Например, отпуск" autoFocus={!goal} /></Field>
+      <Field label="Название"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Например, отпуск" autoFocus={!goal} enterKeyHint="next" /></Field>
       <Field label="Нужно накопить, ₸"><input className="input" type="number" inputMode="numeric" min="0" step="10000" value={target} onChange={e => setTarget(e.target.value)} placeholder="1 000 000" /></Field>
       <div className="row" style={{ gap: 10, alignItems: 'stretch' }}>
         <Field label="Откладывать в месяц, ₸" style={{ flex: 1 }}><input className="input" type="number" inputMode="numeric" min="0" step="5000" value={per} onChange={e => setPer(e.target.value)} placeholder="0" /></Field>
@@ -90,7 +90,7 @@ function IncomeSheet({ income, onClose }) {
   const save = () => { if (!ok) return; a.saveIncome({ title: title.trim(), amount: num(amount), date, method }, income && income.id); onClose(); };
   return (
     <Sheet title={income ? 'Доход' : 'Новый доход'} onClose={onClose}>
-      <Field label="Откуда"><input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например, подработка" autoFocus={!income} /></Field>
+      <Field label="Откуда"><input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например, подработка" autoFocus={!income} enterKeyHint="next" /></Field>
       <div className="row" style={{ gap: 10, alignItems: 'stretch' }}>
         <Field label="Сумма, ₸" style={{ flex: 1 }}><input className="input" type="number" inputMode="numeric" min="0" step="1000" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" /></Field>
         <Field label="Дата" style={{ flex: 1 }}><input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} /></Field>

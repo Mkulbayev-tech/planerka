@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BudgetProvider, useBudget } from './store.jsx';
-import { isNative, syncStatusBar, hideSplash, onBackButton, exitApp } from './native.js';
+import { isNative, syncStatusBar, hideSplash, onBackButton, exitApp, initKeyboard } from './native.js';
 import { useMediaQuery } from './hooks.js';
 import { IOSDevice } from './ios-frame.jsx';
 import TabBar from './components/TabBar.jsx';
@@ -48,7 +48,7 @@ function Stage() {
 
   useEffect(() => { syncStatusBar(d.dark); }, [d.dark]);
   useEffect(() => { if (s.auth !== 'loading') hideSplash(); }, [s.auth]);
-  useEffect(() => { const t = setTimeout(hideSplash, 4000); return () => clearTimeout(t); }, []);
+  useEffect(() => { const t = setTimeout(hideSplash, 4000); initKeyboard(); return () => clearTimeout(t); }, []);
   useEffect(() => onBackButton(() => { if (!a.back()) exitApp(); }), [a]);
 
   if (!desktop) {

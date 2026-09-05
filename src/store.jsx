@@ -4,7 +4,8 @@ import { iso } from './lib/dates.js';
 import { derive } from './model.js';
 import { backend } from './backend/index.js';
 import { useNow } from './hooks.js';
-import { tap, success, onAppUrlOpen, getLaunchUrl } from './native.js';
+import { tap, success, onAppUrlOpen, getLaunchUrl, enableReminder, disableReminder, shareTextFile, updateWidgets, isNative } from './native.js';
+import { ACCENT } from './data.js';
 
 const PREFS_KEY = 'planerka.prefs';
 const EMPTY = { txs: [], tasks: [], goals: [], incomes: [] };
@@ -120,7 +121,17 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       },
       setPeriod: period => update({ period }),
       toggleDark: () => update(st => { const dark = !st.dark; savePrefs({ dark, notif: st.notif }); return { dark }; }),
-      toggleNotif: () => update(st => { const notif = !st.notif; savePrefs({ dark: st.dark, notif }); return { notif }; }),
+      toggleNotif: async () => {
+        const next = !stateRef.current.notif;
+        if (next) {
+          const ok = await enableReminder();
+          if (!ok) { showToast('Разрешите уведомления в Настройках iPhone'); return; }
+          if (isNative) showToast('Напомним каждый день в 20:00');
+        } else {
+          await disableReminder();
+        }
+        update(st => { savePrefs({ dark: st.dark, notif: next }); return { notif: next }; });
+      },
       openSheet: (kind, payload) => update({ sheet: { kind, ...(payload || {}) } }),
       closeSheet: () => update({ sheet: null }),
 
@@ -226,6 +237,10 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
           ...txs.map(t => [t.date, t.title, (CAT_BY_ID[t.cat] || {}).name || t.cat, t.method === 'cash' ? 'Наличные' : 'Карта', t.amount, who(t.created_by)]),
         ];
         const csv = '\uFEFF' + rows.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+        if (isNative) {
+          shareTextFile('planerka-traty.csv', csv).then(() => showToast('Экспортировано: ' + txs.length + ' операций')).catch(e => { if (!/cancel/i.test(String(e && e.message))) showToast('Не удалось экспортировать'); });
+          return;
+        }
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -276,6 +291,23 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
   }, [update, showToast, mutate, patchSettings, loadHousehold]);
 
   const d = useMemo(() => derive(s, now), [s, now]);
+
+  // Сводка для виджетов iOS (с задержкой, чтобы не дёргать при каждом нажатии)
+  const ready = s.auth === 'in' && !!s.household && !!s.data;
+  useEffect(() => {
+    if (!ready) return undefined;
+    const t = setTimeout(() => updateWidgets({
+      updatedAt: Date.now(),
+      balance: d.balanceFmt, spentPct: Math.min(100, d.spentPct), spent: d.spentFmt, daysLeft: d.daysLeft, perDay: d.perDayLeftFmt,
+      cats: d.widgetCats.map(c => ({ letter: c.letter, name: c.name, spent: c.spentShort, color: c.color, bg: c.bg })),
+      taskRatio: d.taskRatio, taskPct: d.taskPct, tasks: d.widgetTasks.map(t => ({ name: t.name, done: !!t.done })),
+      goal: d.wGoal ? { letter: d.wGoal.letter, name: d.wGoal.name, pct: d.wGoal.pct, saved: d.wGoal.savedShort, target: d.wGoal.targetShort } : null,
+      weekTotal: d.weekTotalFmt, weekDelta: d.weekDeltaText,
+      weekBars: d.weekBarsDark.map(b => ({ label: b.label, h: b.h, active: b.color === ACCENT })),
+      txs: d.widgetTxs.map(t => ({ letter: t.letter, title: t.title, amount: t.amountFmt, color: t.color, bg: t.bg })),
+    }), 800);
+    return () => clearTimeout(t);
+  }, [ready, d]);
   const value = useMemo(() => ({ s, d, a, mode: backend.mode }), [s, d, a]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

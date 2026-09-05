@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00715BE79EDFD81FBA0070AB /* PlanerkaWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 977EE071ED0B385A2D7384C9 /* PlanerkaWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		2D27C971DF005A85BAF580C6 /* MyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B71A60B0E4A0F176F00FC6E /* MyViewController.swift */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
 		4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = 4D22ABE82AF431CB00220026 /* CapApp-SPM */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
@@ -15,11 +17,45 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+		8DF5B6EEEEE66C8266B962D6 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D51AD901ADCD5365B0544F0E /* SwiftUI.framework */; };
+		8EF2AC44DB399B2CB69F781B /* WidgetBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C8B326A5A006C33F5C74F35 /* WidgetBridgePlugin.swift */; };
 		9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9582B6822FE993A50072D4E8 /* SceneDelegate.swift */; };
+		9AF723350D7EA16759D536A0 /* PlanerkaWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = E87134E8C0AB12FBA474F22C /* PlanerkaWidgets.swift */; };
+		AB229914B81513E43A41295B /* WidgetData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F8F792F01E640C04C0988BD /* WidgetData.swift */; };
+		B05897C3534508900B5A64E6 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BE3F946BA303A2BBB3AE9CEB /* Foundation.framework */; };
+		F8914B1575257DD9A94CCE80 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4EEFF9D6EF529A74067D5A9B /* WidgetKit.framework */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		9585D501D336F2FF807CBDDC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 504EC2FC1FED79650016851F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 44D7A81CEDE9FA54ACC7AEB9;
+			remoteInfo = PlanerkaWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8AF8417125960DB5081EEDFA /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				00715BE79EDFD81FBA0070AB /* PlanerkaWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		0F8F792F01E640C04C0988BD /* WidgetData.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetData.swift; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
+		3C8B326A5A006C33F5C74F35 /* WidgetBridgePlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetBridgePlugin.swift; sourceTree = "<group>"; };
+		48FDAFF446CE6C2156AA5C25 /* PlanerkaWidgets.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = PlanerkaWidgets.entitlements; sourceTree = "<group>"; };
+		4EEFF9D6EF529A74067D5A9B /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/WidgetKit.framework; sourceTree = DEVELOPER_DIR; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -30,9 +66,26 @@
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		9582B6822FE993A50072D4E8 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
+		977EE071ED0B385A2D7384C9 /* PlanerkaWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PlanerkaWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		9B71A60B0E4A0F176F00FC6E /* MyViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MyViewController.swift; sourceTree = "<group>"; };
+		BE3F946BA303A2BBB3AE9CEB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		C6B628F9F01B91F10198B045 /* App.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		D51AD901ADCD5365B0544F0E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/SwiftUI.framework; sourceTree = DEVELOPER_DIR; };
+		E39AAA288E47AE3BEF06DFC0 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		E87134E8C0AB12FBA474F22C /* PlanerkaWidgets.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PlanerkaWidgets.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		133207982DF0013A6CDB5D8B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B05897C3534508900B5A64E6 /* Foundation.framework in Frameworks */,
+				F8914B1575257DD9A94CCE80 /* WidgetKit.framework in Frameworks */,
+				8DF5B6EEEEE66C8266B962D6 /* SwiftUI.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		504EC3011FED79650016851F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -50,6 +103,8 @@
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
 				504EC3051FED79650016851F /* Products */,
+				6534A39E781FE962FE238220 /* Frameworks */,
+				9ADAFA57D4FACD7C1A2EA9DA /* PlanerkaWidgets */,
 			);
 			sourceTree = "<group>";
 		};
@@ -57,6 +112,7 @@
 			isa = PBXGroup;
 			children = (
 				504EC3041FED79650016851F /* App.app */,
+				977EE071ED0B385A2D7384C9 /* PlanerkaWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -73,13 +129,63 @@
 				504EC3131FED79650016851F /* Info.plist */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
+				3C8B326A5A006C33F5C74F35 /* WidgetBridgePlugin.swift */,
+				9B71A60B0E4A0F176F00FC6E /* MyViewController.swift */,
+				C6B628F9F01B91F10198B045 /* App.entitlements */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		6534A39E781FE962FE238220 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7278BF921E2ED86374194AED /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7278BF921E2ED86374194AED /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				BE3F946BA303A2BBB3AE9CEB /* Foundation.framework */,
+				4EEFF9D6EF529A74067D5A9B /* WidgetKit.framework */,
+				D51AD901ADCD5365B0544F0E /* SwiftUI.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		9ADAFA57D4FACD7C1A2EA9DA /* PlanerkaWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				E87134E8C0AB12FBA474F22C /* PlanerkaWidgets.swift */,
+				0F8F792F01E640C04C0988BD /* WidgetData.swift */,
+				E39AAA288E47AE3BEF06DFC0 /* Info.plist */,
+				48FDAFF446CE6C2156AA5C25 /* PlanerkaWidgets.entitlements */,
+			);
+			name = PlanerkaWidgets;
+			path = PlanerkaWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		44D7A81CEDE9FA54ACC7AEB9 /* PlanerkaWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C919309F6CEE16F0E8EF3711 /* Build configuration list for PBXNativeTarget "PlanerkaWidgets" */;
+			buildPhases = (
+				DF93C5E2392DB5A285DEC91D /* Sources */,
+				133207982DF0013A6CDB5D8B /* Frameworks */,
+				04D6D114AAF93AA66189F979 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PlanerkaWidgets;
+			productName = PlanerkaWidgets;
+			productReference = 977EE071ED0B385A2D7384C9 /* PlanerkaWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		504EC3031FED79650016851F /* App */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 504EC3161FED79650016851F /* Build configuration list for PBXNativeTarget "App" */;
@@ -87,10 +193,12 @@
 				504EC3001FED79650016851F /* Sources */,
 				504EC3011FED79650016851F /* Frameworks */,
 				504EC3021FED79650016851F /* Resources */,
+				8AF8417125960DB5081EEDFA /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				E503EAFABA05D8C73C452BD2 /* PBXTargetDependency */,
 			);
 			name = App;
 			packageProductDependencies = (
@@ -133,11 +241,19 @@
 			projectRoot = "";
 			targets = (
 				504EC3031FED79650016851F /* App */,
+				44D7A81CEDE9FA54ACC7AEB9 /* PlanerkaWidgets */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		04D6D114AAF93AA66189F979 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		504EC3021FED79650016851F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -160,10 +276,30 @@
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
 				9582B6832FE993A70072D4E8 /* SceneDelegate.swift in Sources */,
+				8EF2AC44DB399B2CB69F781B /* WidgetBridgePlugin.swift in Sources */,
+				2D27C971DF005A85BAF580C6 /* MyViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DF93C5E2392DB5A285DEC91D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				9AF723350D7EA16759D536A0 /* PlanerkaWidgets.swift in Sources */,
+				AB229914B81513E43A41295B /* WidgetData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		E503EAFABA05D8C73C452BD2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = PlanerkaWidgets;
+			target = 44D7A81CEDE9FA54ACC7AEB9 /* PlanerkaWidgets */;
+			targetProxy = 9585D501D336F2FF807CBDDC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		504EC30B1FED79650016851F /* Main.storyboard */ = {
@@ -299,9 +435,10 @@
 			baseConfigurationReference = 958DCC722DB07C7200EA8C5F /* debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 49MW5777PF;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 49MW5777PF;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -322,9 +459,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 49MW5777PF;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 49MW5777PF;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -337,6 +475,63 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		6F9CDE9F451F0CAE03C50E3C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = PlanerkaWidgets/PlanerkaWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 49MW5777PF;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PlanerkaWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = kz.planerka.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		8B7180D8F510698BD6B9C2A2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = PlanerkaWidgets/PlanerkaWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 49MW5777PF;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PlanerkaWidgets/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = kz.planerka.app.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -357,6 +552,15 @@
 			buildConfigurations = (
 				504EC3171FED79650016851F /* Debug */,
 				504EC3181FED79650016851F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C919309F6CEE16F0E8EF3711 /* Build configuration list for PBXNativeTarget "PlanerkaWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8B7180D8F510698BD6B9C2A2 /* Release */,
+				6F9CDE9F451F0CAE03C50E3C /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

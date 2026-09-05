@@ -24,6 +24,10 @@
     },
     "StatusBar": {
       "style": "LIGHT"
+    },
+    "Keyboard": {
+      "resize": "native",
+      "resizeOnFullScreen": true
     }
   }
 }

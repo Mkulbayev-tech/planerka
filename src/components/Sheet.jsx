@@ -2,8 +2,13 @@
 import { Letter } from './ui.jsx';
 
 export function Sheet({ title, onClose, children }) {
+  const onBackdrop = () => {
+    const el = document.activeElement;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) { el.blur(); return; }
+    onClose();
+  };
   return (
-    <div className="sheet-backdrop" onClick={onClose}>
+    <div className="sheet-backdrop" onClick={onBackdrop}>
       <div className="sheet" onClick={e => e.stopPropagation()}>
         <div className="sheet__grip" />
         <div className="row-between">
