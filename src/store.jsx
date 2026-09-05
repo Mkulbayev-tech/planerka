@@ -155,17 +155,19 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       deleteTask: id => mutate(d => ({ ...d, tasks: d.tasks.filter(x => x.id !== id) }), () => backend.remove('tasks', id)),
 
       // Цели
-      topUpGoal: id => {
+      topUpGoal: (id, amount = 10000) => {
         const g = data().goals.find(x => x.id === id);
-        if (!g) return;
-        const add = Math.max(0, Math.min(10000, g.target - g.saved));
+        const want = Math.max(0, Math.round(Number(amount) || 0));
+        if (!g || !want) return;
+        const add = Math.max(0, Math.min(want, g.target - g.saved));
         if (!add) { showToast('Цель уже достигнута'); return; }
+        const by = stateRef.current.user ? stateRef.current.user.id : null;
         mutate(
-          d => ({ ...d, goals: d.goals.map(x => (x.id === id ? { ...x, saved: x.saved + add, topups: [...(x.topups || []), { date: todayIso(), amount: add }] } : x)) }),
-          () => backend.topUpGoal(id, 10000),
+          d => ({ ...d, goals: d.goals.map(x => (x.id === id ? { ...x, saved: x.saved + add, topups: [...(x.topups || []), { date: todayIso(), amount: add, by }] } : x)) }),
+          () => backend.topUpGoal(id, want),
         );
         success();
-        showToast('Пополнено: ' + g.name);
+        showToast('Пополнено: ' + g.name + ' +' + fmt(add));
       },
       saveGoal: (fields, id) => {
         if (id) {

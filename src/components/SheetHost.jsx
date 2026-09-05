@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useBudget } from '../store.jsx';
 import { CATS, TAGS, TAG_COLORS, fmt } from '../data.js';
-import { iso } from '../lib/dates.js';
+import { iso, shortDate } from '../lib/dates.js';
 import { Sheet, Field, Chips, PrimaryButton, DangerButton } from './Sheet.jsx';
 import { Letter } from './ui.jsx';
 
@@ -16,6 +16,7 @@ export default function SheetHost() {
   switch (sh.kind) {
     case 'task': return <TaskSheet task={sh.task} onClose={close} />;
     case 'goal': return <GoalSheet goal={sh.goal} onClose={close} />;
+    case 'topup': return <TopUpSheet goal={sh.goal} onClose={close} />;
     case 'income': return <IncomeSheet income={sh.income} onClose={close} />;
     case 'tx': return <TxSheet tx={sh.tx} onClose={close} />;
     case 'salary': return <AmountSheet title="Зарплата в месяц" label="Сумма, ₸" value={sh.value} hint="Зачисляется в начале каждого периода" onSave={v => { a.setSalary(v); close(); }} onClose={close} />;
@@ -130,6 +131,34 @@ function AmountSheet({ title, label, value, hint, max, onSave, onClose }) {
       <Field label={label}><input className="input" type="number" inputMode="numeric" min="0" max={max} value={v} onChange={e => setV(e.target.value)} autoFocus /></Field>
       {hint && <div className="t-meta">{hint}</div>}
       <PrimaryButton disabled={!ok} onClick={() => onSave(n)}>Сохранить</PrimaryButton>
+    </Sheet>
+  );
+}
+
+function TopUpSheet({ goal, onClose }) {
+  const { a, d } = useBudget();
+  const [v, setV] = useState('10000');
+  const n = num(v);
+  const left = Math.max(0, goal.target - goal.saved);
+  const ok = n > 0 && left > 0;
+  const history = [...(goal.topups || [])].slice(-6).reverse();
+  return (
+    <Sheet title={'Пополнить: ' + goal.name} onClose={onClose}>
+      <div className="t-meta">Накоплено {fmt(goal.saved)} из {fmt(goal.target)}{left > 0 ? ' · осталось ' + fmt(left) : ' · цель достигнута'}</div>
+      <Field label="Сумма пополнения, ₸"><input className="input" type="number" inputMode="numeric" min="0" step="1000" value={v} onChange={e => setV(e.target.value)} autoFocus enterKeyHint="done" onKeyDown={e => e.key === 'Enter' && ok && (a.topUpGoal(goal.id, n), onClose())} /></Field>
+      <Chips options={[5000, 10000, 20000, 50000].map(x => ({ id: String(x), label: '+' + fmt(x) }))} value={v} onChange={setV} />
+      <PrimaryButton disabled={!ok} onClick={() => { a.topUpGoal(goal.id, n); onClose(); }}>Пополнить</PrimaryButton>
+      {history.length > 0 && (
+        <div className="col" style={{ gap: 8 }}>
+          <div className="field__label">Последние пополнения</div>
+          {history.map((t, i) => (
+            <div key={i} className="row-between" style={{ fontSize: 13, fontWeight: 600 }}>
+              <span className="muted">{shortDate(t.date)}{t.by && d.membersById[t.by] ? ' · ' + d.membersById[t.by] : ''}</span>
+              <span style={{ fontWeight: 800 }}>+{fmt(t.amount)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </Sheet>
   );
 }

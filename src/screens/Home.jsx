@@ -49,6 +49,25 @@ export default function Home() {
         <WalletCard label="Карта" value={d.cardFmt} pct={d.cardPct} count={d.cardCount} color="var(--accent)" kind="card" />
       </div>
 
+      {d.memberStats.length > 1 && (
+        <div className="card">
+          <div className="row-between"><div className="t-card">Кто сколько потратил</div><div className="t-sub">за период</div></div>
+          <div style={{ display: 'flex', height: 10, borderRadius: 99, overflow: 'hidden', gap: 3 }}>
+            {d.memberStats.map(m => <div key={m.id} style={{ flex: Math.max(m.spent, 1), background: m.color, borderRadius: 99 }} />)}
+          </div>
+          {d.memberStats.map(m => (
+            <div key={m.id} className="row" style={{ gap: 12 }}>
+              <Letter size={36} radius="50%" bg={m.bg} color={m.color} fontSize={14}>{m.letter}</Letter>
+              <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>{m.name}</div>
+                <div className="t-meta">{m.count} операций · {m.share}%</div>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: 'nowrap' }}>{m.spentFmt}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="chips">
         {d.catStats.map(c => (
           <div key={c.id} className="chip chip--shadow" onClick={() => a.go('cats')}>

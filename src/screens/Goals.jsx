@@ -40,8 +40,8 @@ export default function Goals() {
             <div className="t-sub" style={{ fontWeight: 600 }}>
               <b style={{ color: 'var(--tx)', fontWeight: 800 }}>{g.savedFmt}</b> из {g.targetFmt}
             </div>
-            <div className="pill" style={{ padding: '9px 14px', fontWeight: 800, background: g.bg, color: g.color }} onClick={() => a.topUpGoal(g.id)}>
-              {'+10\u00A0000\u00A0₸'}
+            <div className="pill" style={{ padding: '9px 14px', fontWeight: 800, background: g.bg, color: g.color }} onClick={() => a.openSheet('topup', { goal: g })}>
+              + Пополнить
             </div>
           </div>
         </div>

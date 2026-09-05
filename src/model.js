@@ -210,6 +210,24 @@ export function derive(s, now = new Date()) {
   }
   const skipped = tasksP.filter(t => t.date < todayIso && !t.done).length;
 
+  // Кто сколько потратил (по участникам семьи)
+  const MEMBER_COLORS = [['#7A4AE0', '#EFE9FC'], ['#2FA66F', '#E6F6EE'], ['#F2A83B', '#FDF1DE'], ['#2F5BEA', '#E8EDFD']];
+  const membersById = Object.fromEntries(members.map(m => [m.user_id, m.display_name || '']));
+  const byMember = list => {
+    const total = sum(list, t => t.amount);
+    const rows = members.map((m, i) => {
+      const mine = list.filter(t => t.created_by === m.user_id);
+      const sp = sum(mine, t => t.amount);
+      return { id: m.user_id, name: m.display_name || 'Без имени', letter: (m.display_name || '?').trim()[0].toUpperCase(), spent: sp, spentFmt: fmt(sp), share: pct(sp, total), count: mine.length, color: MEMBER_COLORS[i % MEMBER_COLORS.length][0], bg: MEMBER_COLORS[i % MEMBER_COLORS.length][1] };
+    });
+    const rest = total - sum(rows, r => r.spent);
+    if (rest > 0) rows.push({ id: 'unknown', name: 'Без автора', letter: '?', spent: rest, spentFmt: fmt(rest), share: pct(rest, total), count: list.filter(t => !membersById[t.created_by]).length, color: th.mu, bg: th.ip });
+    return rows.sort((a, b) => b.spent - a.spent);
+  };
+  const kpiTxs = s.period === 'week' ? txsAll.filter(t => inRange(t.date, W.startIso, W.endIso)) : s.period === 'year' ? txsAll.filter(t => inRange(t.date, `${thisYear}-01-01`, `${thisYear + 1}-01-01`)) : txs;
+  const memberStats = byMember(txs);
+  const memberStatsPeriod = byMember(kpiTxs);
+
   // Экран добавления траты
   const amountNum = Number(s.amount || 0);
   const picked = CAT_BY_ID[s.cat] || CATS[0];
@@ -219,6 +237,7 @@ export function derive(s, now = new Date()) {
     dark, th,
     // семья и даты
     greetingName: meName, householdName: household ? household.name : '', inviteCode: household ? household.invite_code || '' : '', membersCount: members.length,
+    membersById, memberStats, memberStatsPeriod,
     todayLabel: longLabel(today), todayIso, periodEndLabel: dayMonth(P.end), monthName: MONTHS_NOM[P.start.getMonth()],
     monthStartDay: startDay, nextSalaryLabel: dayMonth(P.end),
     // деньги

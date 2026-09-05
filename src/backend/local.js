@@ -47,7 +47,7 @@ export function createLocalBackend() {
         db.goals = db.goals.map(g => {
           if (g.id !== id) return g;
           const add = Math.max(0, Math.min(amount, g.target - g.saved));
-          return { ...g, saved: g.saved + add, topups: [...(g.topups || []), { date: iso(new Date()), amount: add }] };
+          return { ...g, saved: g.saved + add, topups: [...(g.topups || []), { date: iso(new Date()), amount: add, by: 'local' }] };
         });
       });
     },

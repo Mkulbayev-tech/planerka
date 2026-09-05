@@ -194,7 +194,7 @@ begin
   end if;
   update public.goals
      set saved = saved + add,
-         topups = topups || jsonb_build_array(jsonb_build_object('date', to_char(current_date, 'YYYY-MM-DD'), 'amount', add))
+         topups = topups || jsonb_build_array(jsonb_build_object('date', to_char(current_date, 'YYYY-MM-DD'), 'amount', add, 'by', auth.uid()))
    where id = p_id;
 end;
 $$;
