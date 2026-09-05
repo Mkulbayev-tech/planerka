@@ -13,6 +13,27 @@ npm install
 npm run dev
 ```
 
+## Где живёт приложение
+
+- Сайт: **https://mkulbayev-tech.github.io/planerka/** — публикуется автоматически из ветки `main` через GitHub Actions
+  (`.github/workflows/deploy.yml`). Пока не заданы секреты Supabase, сайт работает в локальном демо-режиме.
+- Репозиторий: https://github.com/Mkulbayev-tech/planerka
+
+## Включить общий бюджет одной командой
+
+1. Создайте токен Supabase: https://supabase.com/dashboard/account/tokens → **Generate new token**.
+2. Выполните в папке проекта:
+
+   ```
+   SUPABASE_ACCESS_TOKEN=sbp_... node scripts/setup-supabase.mjs --site=https://mkulbayev-tech.github.io/planerka/
+   ```
+
+   Скрипт создаст проект Supabase (или возьмёт существующий с именем `planerka`), применит схему, настроит вход по почте
+   с кодом в письме, запишет ключи в `.env` и в секреты GitHub и запустит деплой. Через пару минут сайт переключится
+   в режим общего бюджета.
+
+Ниже — те же шаги вручную, если скрипт по какой-то причине не подошёл.
+
 ## Общий семейный бюджет: настройка за 15 минут
 
 1. Зарегистрируйтесь на [supabase.com](https://supabase.com) и создайте проект (Free).
