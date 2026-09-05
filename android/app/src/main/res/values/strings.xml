@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Семейные планы</string>
-    <string name="title_activity_main">Семейные планы</string>
+    <string name="app_name">Бюджет семьи</string>
+    <string name="title_activity_main">Бюджет семьи</string>
     <string name="package_name">kz.planerka.app</string>
     <string name="custom_url_scheme">kz.planerka.app</string>
 </resources>

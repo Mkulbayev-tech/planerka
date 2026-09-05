@@ -18,7 +18,7 @@ export default function Access() {
   return (
     <div className="screen screen--add">
       <div className="hero hero--purple" style={{ gap: 8, marginTop: 8 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.8, letterSpacing: 1.2 }}>СЕМЕЙНЫЕ ПЛАНЫ</div>
+        <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.8, letterSpacing: 1.2 }}>БЮДЖЕТ СЕМЬИ</div>
         <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, lineHeight: 1.1 }}>Один бюджет на двоих</div>
         <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.85 }}>Траты, планы и цели видны обоим сразу.</div>
       </div>
