@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="4927e1b4-e9d1-42e7-83b8-93f9ee0a1a50"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>/* cyrillic-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("66657cf6-eba4-453c-8acf-660c9dac8478") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("5416d669-7faa-43a5-a1c2-7cafae058208") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("8f392ed8-63e4-4b0f-8999-1019b921b767") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("e123bd14-1ea5-4090-8b1d-f67c21466b06") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("5ef004aa-e6ae-44ce-8bd8-b5f039a41337") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("1fb0c99e-0fa2-4bb4-a959-2c821ff32d69") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("66657cf6-eba4-453c-8acf-660c9dac8478") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("5416d669-7faa-43a5-a1c2-7cafae058208") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("8f392ed8-63e4-4b0f-8999-1019b921b767") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("e123bd14-1ea5-4090-8b1d-f67c21466b06") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("5ef004aa-e6ae-44ce-8bd8-b5f039a41337") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("1fb0c99e-0fa2-4bb4-a959-2c821ff32d69") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("66657cf6-eba4-453c-8acf-660c9dac8478") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("5416d669-7faa-43a5-a1c2-7cafae058208") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("8f392ed8-63e4-4b0f-8999-1019b921b767") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("e123bd14-1ea5-4090-8b1d-f67c21466b06") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("5ef004aa-e6ae-44ce-8bd8-b5f039a41337") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("1fb0c99e-0fa2-4bb4-a959-2c821ff32d69") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("66657cf6-eba4-453c-8acf-660c9dac8478") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("5416d669-7faa-43a5-a1c2-7cafae058208") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("8f392ed8-63e4-4b0f-8999-1019b921b767") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("e123bd14-1ea5-4090-8b1d-f67c21466b06") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("5ef004aa-e6ae-44ce-8bd8-b5f039a41337") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("1fb0c99e-0fa2-4bb4-a959-2c821ff32d69") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("66657cf6-eba4-453c-8acf-660c9dac8478") format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+/* cyrillic */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("5416d669-7faa-43a5-a1c2-7cafae058208") format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+/* greek */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("8f392ed8-63e4-4b0f-8999-1019b921b767") format('woff2');
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
+}
+/* vietnamese */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("e123bd14-1ea5-4090-8b1d-f67c21466b06") format('woff2');
+  unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("5ef004aa-e6ae-44ce-8bd8-b5f039a41337") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("1fb0c99e-0fa2-4bb4-a959-2c821ff32d69") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+html,body{margin:0;padding:0;background:#E9E7F0;font-family:Manrope,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#7A4AE0}a:hover{color:#5F35C4}
+*{box-sizing:border-box}
+::-webkit-scrollbar{display:none}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,12px)}to{opacity:1;transform:translate(-50%,0)}}
+</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:flex-start;justify-content:center;gap:72px;padding:56px 48px;background:radial-gradient(circle at 30% 20%, #F3EEFF 0%, #E9E7F0 60%);flex-wrap:wrap">
+
+<!-- ====================== APP ====================== -->
+<div style="display:flex;flex-direction:column;gap:18px;align-items:center">
+<div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-size:13px;font-weight:800;letter-spacing:1.5px;color:#7A4AE0">ПРИЛОЖЕНИЕ</div><div style="font-size:14px;font-weight:600;color:#6F6B7D">Кликабельный прототип · тапайте по вкладкам</div></div>
+<x-import component-from-global-scope="IOSDevice" from="736f1117-f7d4-4fba-8d98-a1a8caf44aa3#/ios-frame.jsx" dark="{{ dark }}" hint-size="402px,874px">
+<div data-screen-label="App" style="--bg: {{ th.bg }}; --cd: {{ th.cd }}; --tx: {{ th.tx }}; --mu: {{ th.mu }}; --ln: {{ th.ln }}; --as: {{ th.as }}; --ip: {{ th.ip }}; --sh: {{ th.sh }}; position:relative;height:874px;width:402px;background:var(--bg,#F4F3F8);color:var(--tx,#16141D);font-family:Manrope,system-ui,sans-serif;display:flex;flex-direction:column;overflow:hidden;font-variant-numeric:tabular-nums">
+
+<!-- HOME -->
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Главная" style="flex:1;overflow:auto;padding:66px 20px 130px;display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:13px;font-weight:600;color:var(--mu,#7E7B8A)">Среда, 17 сентября</div>
+      <div style="font-size:26px;font-weight:800;letter-spacing:-0.6px">Привет, Айдана</div>
+    </div>
+    <div sc-camel-on-click="{{ goSettings }}" style="width:44px;height:44px;border-radius:50%;background:#7A4AE0;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 6px 16px rgba(122,74,224,0.35)">А</div>
+  </div>
+
+  <div style="background:#5B2ECF;background-image:radial-gradient(120% 90% at 100% 0%, #8D5CF0 0%, #5B2ECF 55%, #4A22B3 100%);border-radius:30px;padding:22px;color:#fff;display:flex;flex-direction:column;gap:20px;box-shadow:0 18px 40px rgba(91,46,207,0.32)">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:13px;font-weight:600;opacity:0.75">Можно потратить до 5 октября</div>
+        <div style="font-size:40px;font-weight:800;letter-spacing:-1.4px;line-height:1">{{ balanceFmt }}</div>
+        <div style="font-size:13px;font-weight:700;opacity:0.85">≈ {{ perDayLeftFmt }} в день · {{ daysLeft }} дней</div>
+      </div>
+      <div style="position:relative;width:76px;height:76px;flex:none">
+        <svg width="76" height="76" sc-camel-view-box="0 0 76 76" style="transform:rotate(-90deg)"><circle cx="38" cy="38" r="31" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="9"></circle><circle cx="38" cy="38" r="31" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-dasharray="{{ ringDash }}" style="transition:stroke-dasharray .5s ease"></circle></svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800">{{ spentPct }}%</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div sc-camel-on-click="{{ goIncome }}" style="flex:1;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;cursor:pointer">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;opacity:0.8"><span style="width:6px;height:6px;border-radius:50%;background:#7EE2B0"></span>Доходы</div>
+        <div style="font-size:17px;font-weight:800">{{ incomeFmt }}</div>
+      </div>
+      <div sc-camel-on-click="{{ goCats }}" style="flex:1;background:rgba(255,255,255,0.14);border:1px solid rgba(255,255,255,0.12);border-radius:18px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;cursor:pointer">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;opacity:0.8"><span style="width:6px;height:6px;border-radius:50%;background:#FFB4A4"></span>Расходы</div>
+        <div style="font-size:17px;font-weight:800">{{ spentFmt }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div style="font-size:16px;font-weight:800">Эта неделя</div>
+      <div style="font-size:13px;font-weight:700;color:var(--mu,#7E7B8A)">{{ weekTotalFmt }}</div>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:8px;height:72px">
+      <sc-for list="{{ weekBars }}" as="b" hint-placeholder-count="7">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+          <div style="width:100%;border-radius:7px;background: {{ b.color }};height: {{ b.h }}%"></div>
+          <div style="font-size:11px;font-weight:700;color: {{ b.labelColor }}">{{ b.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:12px">
+    <div style="flex:1;background:var(--cd,#fff);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:30px;height:30px;border-radius:10px;background:#E6F6EE;display:flex;align-items:center;justify-content:center"><div style="width:15px;height:11px;border:2px solid #2FA66F;border-radius:3px"></div></div><div style="font-size:13px;font-weight:700;color:var(--mu,#7E7B8A)">Наличные</div></div>
+      <div style="font-size:21px;font-weight:800;letter-spacing:-0.5px">{{ cashFmt }}</div>
+      <div style="height:5px;border-radius:99px;background:var(--ip,#F1EFF6);overflow:hidden"><div style="height:100%;background:#2FA66F;border-radius:99px;width: {{ cashPct }}%"></div></div>
+      <div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">{{ cashPct }}% трат · {{ cashCount }} операций</div>
+    </div>
+    <div style="flex:1;background:var(--cd,#fff);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+      <div style="display:flex;align-items:center;gap:8px"><div style="width:30px;height:30px;border-radius:10px;background:var(--as,#EFE9FC);display:flex;align-items:center;justify-content:center"><div style="width:15px;height:11px;border-radius:3px;background:#7A4AE0"></div></div><div style="font-size:13px;font-weight:700;color:var(--mu,#7E7B8A)">Карта</div></div>
+      <div style="font-size:21px;font-weight:800;letter-spacing:-0.5px">{{ cardFmt }}</div>
+      <div style="height:5px;border-radius:99px;background:var(--ip,#F1EFF6);overflow:hidden"><div style="height:100%;background:#7A4AE0;border-radius:99px;width: {{ cardPct }}%"></div></div>
+      <div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">{{ cardPct }}% трат · {{ cardCount }} операций</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;overflow:auto;margin:0 -20px;padding:0 20px">
+    <sc-for list="{{ catStats }}" as="c" hint-placeholder-count="6">
+      <div sc-camel-on-click="{{ goCats }}" style="flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;border-radius:99px;background:var(--cd,#fff);cursor:pointer;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+        <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background: {{ c.bg }};color: {{ c.color }}">{{ c.letter }}</div>
+        <div style="display:flex;flex-direction:column"><div style="font-size:12px;font-weight:700">{{ c.name }}</div><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A)">{{ c.spentFmt }}</div></div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="position:relative;width:60px;height:60px;flex:none">
+        <svg width="60" height="60" sc-camel-view-box="0 0 60 60" style="transform:rotate(-90deg)"><circle cx="30" cy="30" r="26" fill="none" stroke="var(--ip,#F1EFF6)" stroke-width="8"></circle><circle cx="30" cy="30" r="26" fill="none" stroke="#2FA66F" stroke-width="8" stroke-linecap="round" stroke-dasharray="{{ taskRingDash }}" style="transition:stroke-dasharray .4s ease"></circle></svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">{{ doneCount }}/{{ taskTotal }}</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+        <div style="font-size:16px;font-weight:800">План на сегодня</div>
+        <div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">Выполнено {{ taskPct }}% · затраты по плану {{ plannedCostFmt }}</div>
+      </div>
+      <div sc-camel-on-click="{{ goPlans }}" style="font-size:13px;font-weight:700;color:#7A4AE0;cursor:pointer;white-space:nowrap">Все →</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <sc-for list="{{ topTasks }}" as="t" hint-placeholder-count="3">
+        <div sc-camel-on-click="{{ t.toggle }}" style="display:flex;align-items:center;gap:11px;padding:7px 0;cursor:pointer">
+          <div style="width:22px;height:22px;border-radius:7px;flex:none;border:2px solid {{ t.boxBorder }};background: {{ t.boxBg }};display:flex;align-items:center;justify-content:center">
+            <svg width="12" height="12" sc-camel-view-box="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{ t.checkOpacity }}"><path d="M2 6.5l2.6 2.6L10 3.5"></path></svg>
+          </div>
+          <div style="flex:1;font-size:14px;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.name }}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A);white-space:nowrap">{{ t.time }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:16px;font-weight:800">Цели</div>
+      <div sc-camel-on-click="{{ goGoals }}" style="font-size:13px;font-weight:700;color:#7A4AE0;cursor:pointer">Все →</div>
+    </div>
+    <sc-for list="{{ topGoals }}" as="g" hint-placeholder-count="2">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;background: {{ g.bg }};color: {{ g.color }}">{{ g.letter }}</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700"><span>{{ g.name }}</span><span style="color:var(--mu,#7E7B8A)">{{ g.pct }}%</span></div>
+          <div style="height:7px;border-radius:99px;background:var(--ip,#F1EFF6);overflow:hidden"><div style="height:100%;border-radius:99px;background: {{ g.color }};width: {{ g.pct }}%"></div></div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px">
+      <div style="font-size:16px;font-weight:800">Последние траты</div>
+      <div sc-camel-on-click="{{ goCats }}" style="font-size:13px;font-weight:700;color:#7A4AE0;cursor:pointer">Все →</div>
+    </div>
+    <div style="background:var(--cd,#fff);border-radius:24px;padding:6px 16px;display:flex;flex-direction:column;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+      <sc-for list="{{ recentTxs }}" as="t" hint-placeholder-count="4">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--ln,#ECEAF2)">
+          <div style="width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;background: {{ t.bg }};color: {{ t.color }}">{{ t.letter }}</div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0">
+            <div style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">{{ t.meta }}</div>
+          </div>
+          <div style="font-size:15px;font-weight:800;white-space:nowrap">−{{ t.amountFmt }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ADD -->
+<sc-if value="{{ isAdd }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Добавить трату" style="flex:1;display:flex;flex-direction:column;padding:66px 20px 40px;gap:14px">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div sc-camel-on-click="{{ goHome }}" style="font-size:15px;font-weight:700;color:#7A4AE0;cursor:pointer">Отмена</div>
+    <div style="font-size:17px;font-weight:800">Новая трата</div>
+    <div style="width:52px"></div>
+  </div>
+  <div style="display:flex;justify-content:center;gap:8px">
+    <div sc-camel-on-click="{{ setCard }}" style="padding:9px 18px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;background: {{ cardPillBg }};color: {{ cardPillFg }}">Карта</div>
+    <div sc-camel-on-click="{{ setCash }}" style="padding:9px 18px;border-radius:99px;font-size:13px;font-weight:700;cursor:pointer;background: {{ cashPillBg }};color: {{ cashPillFg }}">Наличные</div>
+  </div>
+  <div style="text-align:center;padding:14px 0 4px;display:flex;flex-direction:column;gap:6px">
+    <div style="font-size:52px;font-weight:800;letter-spacing:-2px;line-height:1;color: {{ amountColor }}">{{ amountDisplay }}</div>
+    <div style="font-size:13px;font-weight:600;color:var(--mu,#7E7B8A)">{{ pickedCatName }} · {{ methodName }}</div>
+  </div>
+  <div style="display:flex;gap:8px;overflow:auto;padding:2px 20px;margin:0 -20px">
+    <sc-for list="{{ cats }}" as="c" hint-placeholder-count="5">
+      <div sc-camel-on-click="{{ c.pick }}" style="flex:none;display:flex;align-items:center;gap:8px;padding:8px 12px 8px 8px;border-radius:99px;cursor:pointer;background: {{ c.pickBg }};border:1.5px solid {{ c.pickBorder }}">
+        <div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background: {{ c.bg }};color: {{ c.color }}">{{ c.letter }}</div>
+        <div style="font-size:13px;font-weight:700">{{ c.name }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <input value="{{ note }}" sc-camel-on-change="{{ setNote }}" placeholder="Комментарий, например «Magnum»" style="width:100%;border:none;outline:none;background:var(--cd,#fff);color:var(--tx,#16141D);border-radius:16px;padding:15px 16px;font-size:15px;font-weight:600;font-family:inherit">
+  <div style="flex:1"></div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+    <sc-for list="{{ keys }}" as="k" hint-placeholder-count="12">
+      <div sc-camel-on-click="{{ k.press }}" style="height:58px;border-radius:18px;background:var(--cd,#fff);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;cursor:pointer;user-select:none">{{ k.label }}</div>
+    </sc-for>
+  </div>
+  <div sc-camel-on-click="{{ submitTx }}" style="height:58px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;cursor:pointer;background: {{ submitBg }}">Добавить трату</div>
+</div>
+</sc-if>
+
+<!-- CATEGORIES -->
+<sc-if value="{{ isCats }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Категории" style="flex:1;overflow:auto;padding:66px 20px 130px;display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div sc-camel-on-click="{{ goHome }}" style="width:40px;height:40px;border-radius:50%;background:var(--cd,#fff);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;font-weight:700;padding-bottom:2px">‹</div>
+    <div style="font-size:22px;font-weight:800;letter-spacing:-0.4px">Категории затрат</div>
+  </div>
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:20px;display:flex;align-items:center;gap:20px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="position:relative;width:120px;height:120px;flex:none;border-radius:50%;background: {{ donut }}">
+      <div style="position:absolute;inset:18px;border-radius:50%;background:var(--cd,#fff);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px"><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A)">Всего</div><div style="font-size:15px;font-weight:800;letter-spacing:-0.3px">{{ spentShort }}</div></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{ catStats }}" as="c" hint-placeholder-count="6">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700"><div style="width:9px;height:9px;border-radius:50%;background: {{ c.color }}"></div><div style="flex:1">{{ c.name }}</div><div style="color:var(--mu,#7E7B8A)">{{ c.share }}%</div></div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:6px 16px;display:flex;flex-direction:column;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <sc-for list="{{ catStats }}" as="c" hint-placeholder-count="6">
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--ln,#ECEAF2)">
+        <div style="width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;background: {{ c.bg }};color: {{ c.color }}">{{ c.letter }}</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+          <div style="font-size:15px;font-weight:700">{{ c.name }}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">{{ c.count }} операций</div>
+        </div>
+        <div style="font-size:15px;font-weight:800">{{ c.spentFmt }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <div sc-camel-on-click="{{ goBudget }}" style="background:var(--as,#EFE9FC);border-radius:20px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+    <div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:15px;font-weight:800;color:#7A4AE0">Лимиты по категориям</div><div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">{{ overCount }} превышено</div></div>
+    <div style="font-size:20px;color:#7A4AE0">›</div>
+  </div>
+</div>
+</sc-if>
+
+<!-- BUDGET -->
+<sc-if value="{{ isBudget }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Бюджет" style="flex:1;overflow:auto;padding:66px 20px 130px;display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div sc-camel-on-click="{{ goCats }}" style="width:40px;height:40px;border-radius:50%;background:var(--cd,#fff);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;font-weight:700;padding-bottom:2px">‹</div>
+    <div style="font-size:22px;font-weight:800;letter-spacing:-0.4px">Бюджет на месяц</div>
+  </div>
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:18px;display:flex;justify-content:space-between;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">Лимит</div><div style="font-size:18px;font-weight:800">{{ budgetTotalFmt }}</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">Потрачено</div><div style="font-size:18px;font-weight:800">{{ spentFmt }}</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end"><div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">Осталось</div><div style="font-size:18px;font-weight:800;color:#2FA66F">{{ budgetLeftFmt }}</div></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <sc-for list="{{ catStats }}" as="c" hint-placeholder-count="6">
+      <div style="background:var(--cd,#fff);border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;background: {{ c.bg }};color: {{ c.color }}">{{ c.letter }}</div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px"><div style="font-size:15px;font-weight:700">{{ c.name }}</div><div style="font-size:12px;font-weight:600;color: {{ c.statusColor }}">{{ c.status }}</div></div>
+          <div style="text-align:right;display:flex;flex-direction:column;gap:2px"><div style="font-size:15px;font-weight:800">{{ c.spentFmt }}</div><div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">из {{ c.limitFmt }}</div></div>
+        </div>
+        <div style="height:8px;border-radius:99px;background:var(--ip,#F1EFF6);overflow:hidden"><div style="height:100%;border-radius:99px;background: {{ c.barColor }};width: {{ c.budgetPct }}%"></div></div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- INCOME -->
+<sc-if value="{{ isIncome }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Доходы" style="flex:1;overflow:auto;padding:66px 20px 130px;display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div sc-camel-on-click="{{ goHome }}" style="width:40px;height:40px;border-radius:50%;background:var(--cd,#fff);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:20px;font-weight:700;padding-bottom:2px">‹</div>
+    <div style="font-size:22px;font-weight:800;letter-spacing:-0.4px">Доходы</div>
+  </div>
+  <div style="background:#1F8F5E;background-image:radial-gradient(120% 90% at 100% 0%, #3DBF85 0%, #1F8F5E 60%);border-radius:30px;padding:22px;color:#fff;display:flex;flex-direction:column;gap:14px;box-shadow:0 18px 40px rgba(31,143,94,0.28)">
+    <div style="display:flex;flex-direction:column;gap:6px"><div style="font-size:13px;font-weight:600;opacity:0.8">Доход за сентябрь</div><div style="font-size:38px;font-weight:800;letter-spacing:-1.2px;line-height:1">{{ incomeFmt }}</div></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span style="opacity:0.85">Среднее за 6 мес · 628&nbsp;000&nbsp;₸</span><span style="background:rgba(255,255,255,0.18);padding:4px 10px;border-radius:99px">+3,5%</span></div>
+  </div>
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:6px 16px;display:flex;flex-direction:column;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <sc-for list="{{ incomes }}" as="i" hint-placeholder-count="3">
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--ln,#ECEAF2)">
+        <div style="width:42px;height:42px;border-radius:14px;background:#E6F6EE;color:#2FA66F;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px">{{ i.letter }}</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:2px"><div style="font-size:15px;font-weight:700">{{ i.name }}</div><div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">{{ i.meta }}</div></div>
+        <div style="font-size:15px;font-weight:800;color:#2FA66F">+{{ i.amountFmt }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="font-size:15px;font-weight:800">Зарплата — регулярно</div>
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:600"><span style="color:var(--mu,#7E7B8A)">Следующая</span><span>5 октября · 600&nbsp;000&nbsp;₸</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:600"><span style="color:var(--mu,#7E7B8A)">Аванс</span><span>20 сентября · 200&nbsp;000&nbsp;₸</span></div>
+  </div>
+  <div sc-camel-on-click="{{ addIncome }}" style="height:54px;border-radius:18px;background:var(--as,#EFE9FC);color:#7A4AE0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;cursor:pointer">+ Добавить доход</div>
+</div>
+</sc-if>
+
+<!-- GOALS -->
+<sc-if value="{{ isGoals }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Цели" style="flex:1;overflow:auto;padding:66px 20px 130px;display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="font-size:26px;font-weight:800;letter-spacing:-0.6px">Цели накоплений</div>
+    <div sc-camel-on-click="{{ addGoal }}" style="width:42px;height:42px;border-radius:50%;background:#7A4AE0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;cursor:pointer;line-height:1;padding-bottom:2px">+</div>
+  </div>
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:18px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">Накоплено всего</div><div style="font-size:24px;font-weight:800;letter-spacing:-0.6px">{{ savedTotalFmt }}</div></div>
+    <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-end;flex:none;white-space:nowrap"><div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">В месяц</div><div style="font-size:16px;font-weight:800;color:#2FA66F">120&nbsp;000&nbsp;₸</div></div>
+  </div>
+  <sc-for list="{{ goals }}" as="g" hint-placeholder-count="3">
+    <div style="background:var(--cd,#fff);border-radius:26px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:48px;height:48px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;background: {{ g.bg }};color: {{ g.color }}">{{ g.letter }}</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:2px"><div style="font-size:16px;font-weight:800">{{ g.name }}</div><div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">{{ g.eta }}</div></div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-0.4px;color: {{ g.color }}">{{ g.pct }}%</div>
+      </div>
+      <div style="height:10px;border-radius:99px;background:var(--ip,#F1EFF6);overflow:hidden"><div style="height:100%;border-radius:99px;background: {{ g.color }};width: {{ g.pct }}%;transition:width .4s ease"></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-size:13px;font-weight:600;color:var(--mu,#7E7B8A)"><b style="color:var(--tx,#16141D);font-weight:800">{{ g.savedFmt }}</b> из {{ g.targetFmt }}</div>
+        <div sc-camel-on-click="{{ g.topUp }}" style="padding:9px 14px;border-radius:99px;font-size:13px;font-weight:800;cursor:pointer;background: {{ g.bg }};color: {{ g.color }}">+10&nbsp;000&nbsp;₸</div>
+      </div>
+    </div>
+  </sc-for>
+</div>
+</sc-if>
+
+<!-- PLANS -->
+<sc-if value="{{ isPlans }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Планы" style="flex:1;overflow:auto;padding:66px 20px 130px;display:flex;flex-direction:column;gap:14px">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:13px;font-weight:600;color:var(--mu,#7E7B8A)">Среда, 17 сентября</div>
+      <div style="font-size:26px;font-weight:800;letter-spacing:-0.6px">Планы на день</div>
+    </div>
+    <div sc-camel-on-click="{{ addTask }}" style="width:42px;height:42px;border-radius:50%;background:#7A4AE0;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;cursor:pointer;line-height:1;padding-bottom:2px">+</div>
+  </div>
+
+  <div style="background:#1F8F5E;background-image:radial-gradient(120% 90% at 100% 0%, #3DBF85 0%, #1F8F5E 60%);border-radius:30px;padding:22px;color:#fff;display:flex;align-items:center;gap:18px;box-shadow:0 18px 40px rgba(31,143,94,0.26)">
+    <div style="position:relative;width:84px;height:84px;flex:none">
+      <svg width="84" height="84" sc-camel-view-box="0 0 84 84" style="transform:rotate(-90deg)"><circle cx="42" cy="42" r="35" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="10"></circle><circle cx="42" cy="42" r="35" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-dasharray="{{ taskRingDashBig }}" style="transition:stroke-dasharray .4s ease"></circle></svg>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1"><div style="font-size:20px;font-weight:800">{{ taskPct }}%</div></div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px">{{ doneCount }} из {{ taskTotal }} задач</div>
+      <div style="font-size:13px;font-weight:700;opacity:0.85;white-space:nowrap">Затраты по плану · {{ plannedCostFmt }}</div>
+      <div style="font-size:13px;font-weight:700;opacity:0.85;white-space:nowrap">Осталось потратить · {{ leftOnPlanFmt }}</div>
+    </div>
+  </div>
+
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:16px;font-weight:800">Выполнение за неделю</div>
+      <div style="font-size:13px;font-weight:800;color:#2FA66F;white-space:nowrap">{{ weekPlanPct }}%</div>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:8px;height:86px">
+      <sc-for list="{{ weekPlan }}" as="d" hint-placeholder-count="7">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+          <div style="font-size:10px;font-weight:700;color:var(--mu,#7E7B8A);white-space:nowrap">{{ d.ratio }}</div>
+          <div style="width:100%;border-radius:7px;background: {{ d.color }};height: {{ d.h }}%"></div>
+          <div style="font-size:11px;font-weight:700;color: {{ d.labelColor }}">{{ d.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+    <div style="background:var(--cd,#fff);border-radius:20px;padding:14px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))"><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A)">Сегодня</div><div style="font-size:19px;font-weight:800;letter-spacing:-0.4px">{{ doneCount }}</div><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A);white-space:nowrap">{{ todayRatio }}</div></div>
+    <div style="background:var(--cd,#fff);border-radius:20px;padding:14px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))"><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A)">Неделя</div><div style="font-size:19px;font-weight:800;letter-spacing:-0.4px">{{ weekDone }}</div><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A);white-space:nowrap">{{ weekDoneRatio }}</div></div>
+    <div style="background:var(--cd,#fff);border-radius:20px;padding:14px 12px;display:flex;flex-direction:column;gap:5px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))"><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A)">Месяц</div><div style="font-size:19px;font-weight:800;letter-spacing:-0.4px">{{ monthDone }}</div><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A);white-space:nowrap">{{ monthRatio }}</div></div>
+  </div>
+
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="font-size:16px;font-weight:800">Статистика по типам</div>
+    <sc-for list="{{ tagStats }}" as="t" hint-placeholder-count="5">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:34px;height:34px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;background: {{ t.bg }};color: {{ t.color }}">{{ t.letter }}</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px;min-width:0">
+          <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span>{{ t.name }}</span><span style="color:var(--mu,#7E7B8A);white-space:nowrap">{{ t.ratio }}</span></div>
+          <div style="height:6px;border-radius:99px;background:var(--ip,#F1EFF6);overflow:hidden"><div style="height:100%;border-radius:99px;background: {{ t.color }};width: {{ t.pct }}%"></div></div>
+        </div>
+        <div style="width:38px;text-align:right;font-size:13px;font-weight:800;white-space:nowrap">{{ t.pct }}%</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div style="background:var(--cd,#fff);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))"><div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A)">Серия без пропусков</div><div style="font-size:19px;font-weight:800;letter-spacing:-0.4px;white-space:nowrap">{{ streak }} дней</div></div>
+    <div style="background:var(--cd,#fff);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))"><div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A)">В день в среднем</div><div style="font-size:19px;font-weight:800;letter-spacing:-0.4px;white-space:nowrap">{{ avgPerDay }} задач</div></div>
+    <div style="background:var(--cd,#fff);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))"><div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A)">Лучший день недели</div><div style="font-size:19px;font-weight:800;letter-spacing:-0.4px;white-space:nowrap">{{ bestDayLabel }} · {{ bestDayRatio }}</div></div>
+    <div style="background:var(--cd,#fff);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))"><div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A)">Не выполнено за месяц</div><div style="font-size:19px;font-weight:800;letter-spacing:-0.4px;color:#E0553F;white-space:nowrap">{{ skipped }} задач</div></div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:0 4px">
+    <div style="font-size:16px;font-weight:800">Задачи на сегодня</div>
+    <div style="font-size:13px;font-weight:700;color:var(--mu,#7E7B8A)">Тапните, чтобы отметить</div>
+  </div>
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:6px 16px;display:flex;flex-direction:column;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <sc-for list="{{ tasks }}" as="t" hint-placeholder-count="6">
+      <div sc-camel-on-click="{{ t.toggle }}" style="display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--ln,#ECEAF2);cursor:pointer">
+        <div style="width:24px;height:24px;border-radius:8px;flex:none;border:2px solid {{ t.boxBorder }};background: {{ t.boxBg }};display:flex;align-items:center;justify-content:center;transition:background .2s">
+          <svg width="13" height="13" sc-camel-view-box="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{ t.checkOpacity }}"><path d="M2 6.5l2.6 2.6L10 3.5"></path></svg>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:3px;min-width:0">
+          <div style="font-size:15px;font-weight:700;text-decoration: {{ t.titleStyle }};color: {{ t.titleColor }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.name }}</div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background: {{ t.bg }};color: {{ t.color }};white-space:nowrap">{{ t.tag }}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A);white-space:nowrap">{{ t.time }}</div>
+          </div>
+        </div>
+        <div style="font-size:14px;font-weight:800;white-space:nowrap;color: {{ t.costColor }}">{{ t.costFmt }}</div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div sc-camel-on-click="{{ goGoals }}" style="background:var(--as,#EFE9FC);border-radius:20px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+    <div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:15px;font-weight:800;color:#7A4AE0">Долгосрочные планы</div><div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">Цели накоплений · {{ savedTotalFmt }}</div></div>
+    <div style="font-size:20px;color:#7A4AE0">›</div>
+  </div>
+</div>
+</sc-if>
+
+<!-- DASHBOARD -->
+<sc-if value="{{ isStats }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Дашборд" style="flex:1;overflow:auto;padding:66px 20px 130px;display:flex;flex-direction:column;gap:14px">
+  <div style="font-size:26px;font-weight:800;letter-spacing:-0.6px">Дашборд</div>
+  <div style="display:flex;background:var(--cd,#fff);border-radius:16px;padding:4px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div sc-camel-on-click="{{ setPeriodWeek }}" style="flex:1;text-align:center;padding:9px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;background: {{ weekBg }};color: {{ weekFg }}">Неделя</div>
+    <div sc-camel-on-click="{{ setPeriodMonth }}" style="flex:1;text-align:center;padding:9px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;background: {{ monthBg }};color: {{ monthFg }}">Месяц</div>
+    <div sc-camel-on-click="{{ setPeriodYear }}" style="flex:1;text-align:center;padding:9px;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;background: {{ yearBg }};color: {{ yearFg }}">Год</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div style="background:var(--cd,#fff);border-radius:20px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))"><div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A)">Расходы</div><div style="font-size:19px;font-weight:800;letter-spacing:-0.4px">{{ chartTotalFmt }}</div><div style="font-size:12px;font-weight:700;color: {{ deltaColor }}">{{ deltaText }}</div></div>
+    <div style="background:var(--cd,#fff);border-radius:20px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))"><div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A)">Доходы</div><div style="font-size:19px;font-weight:800;letter-spacing:-0.4px">{{ kpiIncomeFmt }}</div><div style="font-size:12px;font-weight:700;color:#2FA66F">+3,5% к прошлому</div></div>
+    <div style="background:var(--cd,#fff);border-radius:20px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))"><div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A)">Отложено</div><div style="font-size:19px;font-weight:800;letter-spacing:-0.4px">{{ kpiSavedFmt }}</div><div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A)">{{ saveRate }}% от дохода</div></div>
+    <div style="background:var(--cd,#fff);border-radius:20px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))"><div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A)">В день</div><div style="font-size:19px;font-weight:800;letter-spacing:-0.4px">{{ perDayFmt }}</div><div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A)">в среднем</div></div>
+  </div>
+
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:20px 18px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:16px;font-weight:800">Доходы и расходы</div>
+      <div style="display:flex;gap:12px;font-size:11px;font-weight:700;color:var(--mu,#7E7B8A)"><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:3px;background:#2FA66F"></span>Доход</span><span style="display:flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:3px;background:#7A4AE0"></span>Расход</span></div>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:10px;height:130px">
+      <sc-for list="{{ pairBars }}" as="b" hint-placeholder-count="6">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+          <div style="display:flex;gap:3px;align-items:flex-end;width:100%;flex:1">
+            <div style="flex:1;border-radius:6px 6px 2px 2px;background:#2FA66F;height: {{ b.hi }}%;opacity: {{ b.op }}"></div>
+            <div style="flex:1;border-radius:6px 6px 2px 2px;background:#7A4AE0;height: {{ b.he }}%;opacity: {{ b.op }}"></div>
+          </div>
+          <div style="font-size:11px;font-weight:700;color: {{ b.labelColor }}">{{ b.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:20px 18px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="font-size:16px;font-weight:800">Структура расходов</div>
+    <div style="display:flex;align-items:center;gap:18px">
+      <div style="position:relative;width:110px;height:110px;flex:none;border-radius:50%;background: {{ donut }}">
+        <div style="position:absolute;inset:17px;border-radius:50%;background:var(--cd,#fff);display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font-size:18px;font-weight:800;letter-spacing:-0.3px">{{ topCatShare }}%</div><div style="font-size:10px;font-weight:700;color:var(--mu,#7E7B8A)">{{ topCatName }}</div></div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:9px">
+        <sc-for list="{{ catStats }}" as="c" hint-placeholder-count="6">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:9px;height:9px;border-radius:50%;background: {{ c.color }}"></div>
+            <div style="flex:1;font-size:13px;font-weight:700">{{ c.name }}</div>
+            <div style="font-size:12px;font-weight:800;color:var(--mu,#7E7B8A)">{{ c.spentShort }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:16px;font-weight:800">Наличные и карта</div><div style="font-size:12px;font-weight:700;color:var(--mu,#7E7B8A)">{{ cashPct }}% / {{ cardPct }}%</div></div>
+    <div style="display:flex;height:12px;border-radius:99px;overflow:hidden;gap:3px"><div style="background:#2FA66F;border-radius:99px;width: {{ cashPct }}%"></div><div style="background:#7A4AE0;border-radius:99px;flex:1"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700"><span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#2FA66F"></span>Наличные {{ cashFmt }}</span><span style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#7A4AE0"></span>Карта {{ cardFmt }}</span></div>
+  </div>
+
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:16px;font-weight:800">Выполнение планов</div>
+      <div sc-camel-on-click="{{ goPlans }}" style="font-size:13px;font-weight:700;color:#7A4AE0;cursor:pointer;white-space:nowrap">Все →</div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px"><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A)">Сегодня</div><div style="font-size:17px;font-weight:800">{{ taskPct }}%</div></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px"><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A)">Неделя</div><div style="font-size:17px;font-weight:800">{{ weekPlanPct }}%</div></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px"><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A)">Месяц</div><div style="font-size:17px;font-weight:800">{{ monthPct }}%</div></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:3px"><div style="font-size:11px;font-weight:700;color:var(--mu,#7E7B8A)">Серия</div><div style="font-size:17px;font-weight:800;white-space:nowrap">{{ streak }} дн</div></div>
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:8px;height:76px;flex:none">
+      <sc-for list="{{ weekPlan }}" as="d" hint-placeholder-count="7">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end">
+          <div style="width:100%;border-radius:7px;background: {{ d.color }};height: {{ d.h }}%"></div>
+          <div style="font-size:11px;font-weight:700;color: {{ d.labelColor }}">{{ d.label }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:6px 16px;display:flex;flex-direction:column;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="font-size:16px;font-weight:800;padding:12px 0 6px">Самые крупные траты</div>
+    <sc-for list="{{ topTxs }}" as="t" hint-placeholder-count="3">
+      <div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--ln,#ECEAF2)">
+        <div style="width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;background: {{ t.bg }};color: {{ t.color }}">{{ t.letter }}</div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0"><div style="font-size:14px;font-weight:700">{{ t.title }}</div><div style="font-size:12px;font-weight:600;color:var(--mu,#7E7B8A)">{{ t.meta }}</div></div>
+        <div style="font-size:14px;font-weight:800">−{{ t.amountFmt }}</div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- SETTINGS -->
+<sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Настройки" style="flex:1;overflow:auto;padding:66px 20px 130px;display:flex;flex-direction:column;gap:14px">
+  <div style="font-size:26px;font-weight:800;letter-spacing:-0.6px">Ещё</div>
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:16px;display:flex;align-items:center;gap:14px;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="width:52px;height:52px;border-radius:50%;background:#7A4AE0;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px">А</div>
+    <div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:16px;font-weight:800">Айдана Сейткали</div><div style="font-size:13px;font-weight:600;color:var(--mu,#7E7B8A)">Личный бюджет · ₸ KZT</div></div>
+  </div>
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:4px 16px;display:flex;flex-direction:column;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div sc-camel-on-click="{{ goBudget }}" style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--ln,#ECEAF2);cursor:pointer"><span style="font-size:15px;font-weight:700">Бюджет по категориям</span><span style="color:var(--mu,#7E7B8A)">›</span></div>
+    <div sc-camel-on-click="{{ goCats }}" style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--ln,#ECEAF2);cursor:pointer"><span style="font-size:15px;font-weight:700">Категории</span><span style="color:var(--mu,#7E7B8A)">›</span></div>
+    <div sc-camel-on-click="{{ goPlans }}" style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--ln,#ECEAF2);cursor:pointer"><span style="font-size:15px;font-weight:700">Планы и задачи</span><span style="color:var(--mu,#7E7B8A)">›</span></div>
+    <div sc-camel-on-click="{{ goGoals }}" style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--ln,#ECEAF2);cursor:pointer"><span style="font-size:15px;font-weight:700">Цели накоплений</span><span style="color:var(--mu,#7E7B8A)">›</span></div>
+    <div sc-camel-on-click="{{ goIncome }}" style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;cursor:pointer"><span style="font-size:15px;font-weight:700">Доходы и зарплата</span><span style="color:var(--mu,#7E7B8A)">›</span></div>
+  </div>
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:4px 16px;display:flex;flex-direction:column;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div sc-camel-on-click="{{ toggleDark }}" style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--ln,#ECEAF2);cursor:pointer">
+      <span style="font-size:15px;font-weight:700">Тёмная тема</span>
+      <div style="width:50px;height:30px;border-radius:99px;padding:3px;transition:background .2s;background: {{ darkSwitchBg }}"><div style="width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:transform .2s;transform: translateX({{ darkKnobX }}px)"></div></div>
+    </div>
+    <div sc-camel-on-click="{{ toggleNotif }}" style="display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--ln,#ECEAF2);cursor:pointer">
+      <span style="font-size:15px;font-weight:700">Напоминать вносить траты</span>
+      <div style="width:50px;height:30px;border-radius:99px;padding:3px;transition:background .2s;background: {{ notifSwitchBg }}"><div style="width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.2);transition:transform .2s;transform: translateX({{ notifKnobX }}px)"></div></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--ln,#ECEAF2)"><span style="font-size:15px;font-weight:700">Виджеты на экране</span><span style="font-size:14px;font-weight:700;color:var(--mu,#7E7B8A)">3 активных</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--ln,#ECEAF2)"><span style="font-size:15px;font-weight:700">Валюта</span><span style="font-size:14px;font-weight:700;color:var(--mu,#7E7B8A)">₸ Тенге</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0"><span style="font-size:15px;font-weight:700">Начало месяца</span><span style="font-size:14px;font-weight:700;color:var(--mu,#7E7B8A)">5-е число</span></div>
+  </div>
+  <div style="background:var(--cd,#fff);border-radius:24px;padding:4px 16px;display:flex;flex-direction:column;box-shadow:var(--sh,0 2px 12px rgba(30,20,60,0.05))">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0;border-bottom:1px solid var(--ln,#ECEAF2)"><span style="font-size:15px;font-weight:700">Экспорт в Excel</span><span style="color:var(--mu,#7E7B8A)">›</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:15px 0"><span style="font-size:15px;font-weight:700;color:#E0553F">Сбросить данные</span></div>
+  </div>
+</div>
+</sc-if>
+
+<!-- TAB BAR -->
+<sc-if value="{{ showTabs }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;left:16px;right:16px;bottom:44px;height:68px;border-radius:99px;background:var(--cd,#fff);box-shadow:0 12px 32px rgba(20,10,60,0.16);display:flex;align-items:center;justify-content:space-around;padding:0 6px;z-index:30">
+  <div sc-camel-on-click="{{ goHome }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;width:60px;color: {{ tabHomeColor }}">
+    <svg width="24" height="24" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>
+    <div style="font-size:10px;font-weight:700">Главная</div>
+  </div>
+  <div sc-camel-on-click="{{ goStats }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;width:60px;color: {{ tabStatsColor }}">
+    <svg width="24" height="24" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 20V12M12 20V4M19 20v-6"></path></svg>
+    <div style="font-size:10px;font-weight:700">Дашборд</div>
+  </div>
+  <div sc-camel-on-click="{{ goAdd }}" style="width:54px;height:54px;border-radius:50%;background:#7A4AE0;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 20px rgba(122,74,224,0.4)">
+    <svg width="24" height="24" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+  </div>
+  <div sc-camel-on-click="{{ goPlans }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;width:60px;color: {{ tabPlansColor }}">
+    <svg width="24" height="24" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5l2 2L9.5 5"></path><path d="M4 17.5l2 2 3.5-3.5"></path><path d="M13 7h7M13 18h7"></path></svg>
+    <div style="font-size:10px;font-weight:700">Планы</div>
+  </div>
+  <div sc-camel-on-click="{{ goSettings }}" style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;width:60px;color: {{ tabMoreColor }}">
+    <svg width="24" height="24" sc-camel-view-box="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2.2"></circle><circle cx="12" cy="12" r="2.2"></circle><circle cx="19" cy="12" r="2.2"></circle></svg>
+    <div style="font-size:10px;font-weight:700">Ещё</div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:50%;bottom:128px;transform:translateX(-50%);background:var(--tx,#16141D);color:var(--bg,#F4F3F8);padding:12px 18px;border-radius:99px;font-size:13px;font-weight:700;white-space:nowrap;z-index:40;animation:toastIn .25s ease;box-shadow:0 8px 24px rgba(0,0,0,0.2)">{{ toast }}</div>
+</sc-if>
+</div>
+</x-import>
+</div>
+
+<!-- ====================== WIDGETS ====================== -->
+<div style="display:flex;flex-direction:column;gap:18px;align-items:center">
+<div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-size:13px;font-weight:800;letter-spacing:1.5px;color:#7A4AE0">ВИДЖЕТЫ iOS</div><div style="font-size:14px;font-weight:600;color:#6F6B7D">Главный экран iPhone · обновляются вместе с приложением</div></div>
+<x-import component-from-global-scope="IOSDevice" from="736f1117-f7d4-4fba-8d98-a1a8caf44aa3#/ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+<div data-screen-label="Виджеты" style="position:relative;height:874px;width:402px;background:#12101C;background-image:radial-gradient(90% 60% at 20% 0%, #4A2DA8 0%, rgba(74,45,168,0) 60%),radial-gradient(70% 50% at 100% 90%, #1E6A52 0%, rgba(30,106,82,0) 60%);font-family:Manrope,system-ui,sans-serif;color:#fff;display:flex;flex-direction:column;padding:66px 26px 0;gap:14px;font-variant-numeric:tabular-nums;overflow:hidden">
+
+  <!-- medium widget -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:7px">
+    <div style="width:350px;height:164px;border-radius:24px;background:#7A4AE0;background-image:radial-gradient(120% 90% at 100% 0%, #9A6BF5 0%, #7A4AE0 55%, #5F35C4 100%);padding:16px 18px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:3px"><div style="font-size:12px;font-weight:700;opacity:0.8">Остаток до зарплаты</div><div style="font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1">{{ balanceFmt }}</div></div>
+        <div style="width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">₸</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="height:7px;border-radius:99px;background:rgba(255,255,255,0.22);overflow:hidden"><div style="height:100%;border-radius:99px;background:#fff;width: {{ spentPct }}%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;opacity:0.85;white-space:nowrap"><span>Потрачено {{ spentFmt }}</span><span>{{ daysLeft }} дней · {{ perDayLeftFmt }}/день</span></div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <sc-for list="{{ widgetCats }}" as="c" hint-placeholder-count="3">
+          <div style="flex:1;background:rgba(255,255,255,0.14);border-radius:12px;padding:7px 10px;display:flex;align-items:center;gap:7px"><div style="width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;background: {{ c.bg }};color: {{ c.color }}">{{ c.letter }}</div><div style="display:flex;flex-direction:column"><div style="font-size:10px;font-weight:700;opacity:0.8">{{ c.name }}</div><div style="font-size:11px;font-weight:800">{{ c.spentShort }}</div></div></div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:600;opacity:0.85">Бюджет</div>
+  </div>
+
+  <!-- two small widgets -->
+  <div style="display:flex;justify-content:center;gap:22px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px">
+      <div style="width:164px;height:164px;border-radius:24px;background:#1C1A26;padding:16px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:12px;font-weight:700;color:#9D9AAA">План дня</div><div style="font-size:11px;font-weight:800;color:#7EE2B0;white-space:nowrap">{{ taskRatio }}</div></div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <sc-for list="{{ widgetTasks }}" as="t" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:16px;height:16px;border-radius:5px;flex:none;border:2px solid {{ t.wBorder }};background: {{ t.boxBg }};display:flex;align-items:center;justify-content:center">
+                <svg width="9" height="9" sc-camel-view-box="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="opacity: {{ t.checkOpacity }}"><path d="M2 6.5l2.6 2.6L10 3.5"></path></svg>
+              </div>
+              <div style="flex:1;min-width:0;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration: {{ t.titleStyle }};color: {{ t.wColor }}">{{ t.name }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="height:6px;border-radius:99px;background:#2A2833;overflow:hidden"><div style="height:100%;border-radius:99px;background:#2FA66F;width: {{ taskPct }}%"></div></div>
+      </div>
+      <div style="font-size:12px;font-weight:600;opacity:0.85">Планы</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:7px">
+      <div style="width:164px;height:164px;border-radius:24px;background:#F2A83B;background-image:radial-gradient(120% 90% at 100% 0%, #FFC46A 0%, #F2A83B 60%);padding:16px;display:flex;flex-direction:column;justify-content:space-between;color:#3A2600;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
+        <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-size:12px;font-weight:800">Цель</div><div style="width:26px;height:26px;border-radius:9px;background:rgba(58,38,0,0.15);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">О</div></div>
+        <div style="display:flex;flex-direction:column;gap:2px"><div style="font-size:13px;font-weight:700;opacity:0.8">{{ wGoal.name }}</div><div style="font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1">{{ wGoal.pct }}%</div></div>
+        <div style="display:flex;flex-direction:column;gap:6px"><div style="height:7px;border-radius:99px;background:rgba(58,38,0,0.18);overflow:hidden"><div style="height:100%;border-radius:99px;background:#3A2600;width: {{ wGoal.pct }}%"></div></div><div style="font-size:11px;font-weight:700;opacity:0.85">{{ wGoal.savedShort }} из {{ wGoal.targetShort }}</div></div>
+      </div>
+      <div style="font-size:12px;font-weight:600;opacity:0.85">Накопления</div>
+    </div>
+  </div>
+
+  <!-- large widget -->
+  <div style="display:flex;flex-direction:column;align-items:center;gap:7px">
+    <div style="width:350px;height:236px;border-radius:24px;background:#1C1A26;padding:16px 18px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 30px rgba(0,0,0,0.3)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:3px"><div style="font-size:12px;font-weight:700;color:#9D9AAA">Эта неделя</div><div style="font-size:24px;font-weight:800;letter-spacing:-0.7px;line-height:1">{{ weekTotalFmt }}</div></div>
+        <div style="font-size:11px;font-weight:800;padding:5px 9px;border-radius:99px;background:#2A2145;color:#C9B5FF;white-space:nowrap">−8% к прошлой</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:7px;height:56px;flex:none">
+        <sc-for list="{{ weekBarsDark }}" as="b" hint-placeholder-count="7">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end">
+            <div style="width:100%;border-radius:6px;background: {{ b.color }};height: {{ b.h }}%"></div>
+            <div style="font-size:10px;font-weight:700;color: {{ b.labelColor }}">{{ b.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0;border-top:1px solid #2A2833;padding-top:4px;flex:none">
+        <sc-for list="{{ widgetTxs }}" as="t" hint-placeholder-count="2">
+          <div style="display:flex;align-items:center;gap:10px;padding:5px 0">
+            <div style="width:26px;height:26px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;background: {{ t.bg }};color: {{ t.color }}">{{ t.letter }}</div>
+            <div style="flex:1;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.title }}</div>
+            <div style="font-size:12px;font-weight:800">−{{ t.amountFmt }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:600;opacity:0.85">Обзор</div>
+  </div>
+
+  <!-- dock -->
+  <div style="position:absolute;left:16px;right:16px;bottom:30px;height:88px;border-radius:34px;background:rgba(255,255,255,0.12);backdrop-filter:blur(20px);display:flex;align-items:center;justify-content:space-around;padding:0 14px">
+    <div style="width:62px;height:62px;border-radius:16px;background:#7A4AE0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;font-weight:800">₸</div>
+    <div style="width:62px;height:62px;border-radius:16px;background:#2E2C3A"></div>
+    <div style="width:62px;height:62px;border-radius:16px;background:#2E2C3A"></div>
+    <div style="width:62px;height:62px;border-radius:16px;background:#2E2C3A"></div>
+  </div>
+</div>
+</x-import>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;darkMode&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Тема&quot;},&quot;salary&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:600000,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:100000,&quot;max&quot;:3000000,&quot;step&quot;:10000,&quot;unit&quot;:&quot;₸&quot;,&quot;section&quot;:&quot;Данные&quot;}}">
+const CATS = [
+  { id: 'food', name: 'Продукты', color: '#2FA66F', bg: '#E6F6EE', limit: 80000 },
+  { id: 'cafe', name: 'Кафе', color: '#E0553F', bg: '#FCE9E5', limit: 20000 },
+  { id: 'home', name: 'Жильё', color: '#7A4AE0', bg: '#EFE9FC', limit: 45000 },
+  { id: 'transport', name: 'Транспорт', color: '#2F5BEA', bg: '#E8EDFD', limit: 25000 },
+  { id: 'fun', name: 'Развлечения', color: '#F2A83B', bg: '#FDF1DE', limit: 20000 },
+  { id: 'health', name: 'Здоровье', color: '#1BA3B5', bg: '#E1F5F7', limit: 15000 },
+];
+const INIT_TXS = [
+  { title: 'Аренда квартиры', cat: 'home', amount: 45000, method: 'card', date: '5 сен' },
+  { title: 'Magnum', cat: 'food', amount: 18400, method: 'card', date: '6 сен' },
+  { title: 'Проездной', cat: 'transport', amount: 9000, method: 'card', date: '6 сен' },
+  { title: 'Кофейня у дома', cat: 'cafe', amount: 3200, method: 'cash', date: '7 сен' },
+  { title: 'Аптека', cat: 'health', amount: 5250, method: 'card', date: '8 сен' },
+  { title: 'Кино', cat: 'fun', amount: 7300, method: 'card', date: '9 сен' },
+  { title: 'Рынок', cat: 'food', amount: 12500, method: 'cash', date: '10 сен' },
+  { title: 'Обед с коллегами', cat: 'cafe', amount: 8600, method: 'cash', date: '11 сен' },
+  { title: 'Такси', cat: 'transport', amount: 9200, method: 'card', date: '12 сен' },
+  { title: 'Small', cat: 'food', amount: 15300, method: 'card', date: '13 сен' },
+  { title: 'Боулинг', cat: 'fun', amount: 5000, method: 'cash', date: '14 сен' },
+  { title: 'Ужин в ресторане', cat: 'cafe', amount: 12800, method: 'card', date: '15 сен' },
+  { title: 'Galmart', cat: 'food', amount: 12200, method: 'cash', date: '16 сен' },
+];
+const fmt = n => Math.round(n).toLocaleString('ru-RU').replace(/,/g, '\u00A0') + '\u00A0₸';
+const short = n => n >= 1000000 ? (n / 1000000).toFixed(2).replace('.', ',').replace(/,?0+$/, '') + '\u00A0млн\u00A0₸' : n >= 1000 ? Math.round(n / 1000) + '\u00A0тыс\u00A0₸' : fmt(n);
+const THEMES = {
+  light: { bg: '#F4F3F8', cd: '#FFFFFF', tx: '#16141D', mu: '#7E7B8A', ln: '#ECEAF2', as: '#EFE9FC', ip: '#F1EFF6', sh: '0 2px 12px rgba(30,20,60,0.05)' },
+  dark: { bg: '#0F0E13', cd: '#1C1B22', tx: '#F5F3FA', mu: '#9D9AAA', ln: '#2A2833', as: '#2A2145', ip: '#26242E', sh: 'none' },
+};
+const WEEK = [{ label: 'Пн', v: 12500 }, { label: 'Вт', v: 8600 }, { label: 'Ср', v: 9200 }, { label: 'Чт', v: 15300 }, { label: 'Пт', v: 5000 }, { label: 'Сб', v: 12800 }, { label: 'Вс', v: 12200 }];
+
+class Component extends DCLogic {
+  state = {
+    screen: 'home', dark: null, notif: true, period: 'month', day: 'today',
+    tasks: [
+      { id: 't1', name: 'Выпечка на заказ', time: '08:00', cat: 'food', cost: 6500, done: true, tag: 'Дом' },
+      { id: 't2', name: 'Уборка кухни', time: '10:30', cat: null, cost: 0, done: true, tag: 'Дом' },
+      { id: 't3', name: 'Закупка продуктов в Magnum', time: '12:00', cat: 'food', cost: 15000, done: false, tag: 'Покупки' },
+      { id: 't4', name: 'Оплатить коммунальные', time: '14:00', cat: 'home', cost: 18500, done: false, tag: 'Платежи' },
+      { id: 't5', name: 'Отложить на отпуск', time: '18:00', cat: null, cost: 20000, done: false, tag: 'Накопления' },
+      { id: 't6', name: 'Тренировка', time: '19:30', cat: null, cost: 0, done: false, tag: 'Здоровье' },
+    ],
+    weekPlan: [
+      { label: 'Пн', done: 6, total: 6 }, { label: 'Вт', done: 4, total: 5 }, { label: 'Ср', done: 5, total: 5 },
+      { label: 'Чт', done: 3, total: 6 }, { label: 'Пт', done: 2, total: 6 }, { label: 'Сб', done: 0, total: 4 }, { label: 'Вс', done: 0, total: 3 },
+    ],
+    amount: '', cat: 'food', method: 'card', note: '', txs: INIT_TXS, toast: null,
+    goals: [
+      { id: 'trip', name: 'Отпуск в Турции', saved: 450000, target: 1200000, color: '#F2A83B', bg: '#FDF1DE', per: 60000 },
+      { id: 'mac', name: 'Новый MacBook', saved: 310000, target: 900000, color: '#7A4AE0', bg: '#EFE9FC', per: 40000 },
+      { id: 'safe', name: 'Подушка безопасности', saved: 1250000, target: 1800000, color: '#2FA66F', bg: '#E6F6EE', per: 20000 },
+    ],
+  };
+  go(s) { return () => this.setState({ screen: s }); }
+  showToast(msg) {
+    clearTimeout(this._t);
+    this.setState({ toast: msg });
+    this._t = setTimeout(() => this.setState({ toast: null }), 1800);
+  }
+  renderVals() {
+    const s = this.state;
+    const dark = s.dark ?? (this.props.darkMode ?? false);
+    const th = dark ? THEMES.dark : THEMES.light;
+    const accent = '#7A4AE0';
+    const salary = this.props.salary ?? 600000;
+    const incomes = [
+      { letter: 'З', name: 'Зарплата', meta: 'ТОО «Kaspi Lab» · 5 сен · карта', amount: salary },
+      { letter: 'Ф', name: 'Фриланс', meta: 'Дизайн лендинга · 12 сен · карта', amount: 50000 },
+    ].map(i => ({ ...i, amountFmt: fmt(i.amount) }));
+    const income = incomes.reduce((a, i) => a + i.amount, 0);
+    const spent = s.txs.reduce((a, t) => a + t.amount, 0);
+    const cashTx = s.txs.filter(t => t.method === 'cash');
+    const cardTx = s.txs.filter(t => t.method === 'card');
+    const cash = cashTx.reduce((a, t) => a + t.amount, 0), card = spent - cash;
+    const catById = Object.fromEntries(CATS.map(c => [c.id, c]));
+    const catStats = CATS.map(c => {
+      const list = s.txs.filter(t => t.cat === c.id);
+      const sp = list.reduce((a, t) => a + t.amount, 0);
+      const bp = Math.round(sp / c.limit * 100);
+      const over = sp > c.limit, warn = !over && bp >= 80;
+      return {
+        ...c, letter: c.name[0], count: list.length, spent: sp, spentFmt: fmt(sp), spentShort: short(sp),
+        share: spent ? Math.round(sp / spent * 100) : 0, limitFmt: fmt(c.limit), budgetPct: Math.min(100, bp),
+        barColor: over ? '#E0553F' : warn ? '#F2A83B' : c.color,
+        status: over ? 'Превышено на ' + fmt(sp - c.limit) : 'Осталось ' + fmt(c.limit - sp),
+        statusColor: over ? '#E0553F' : warn ? '#F2A83B' : th.mu,
+      };
+    }).sort((a, b) => b.spent - a.spent);
+    let acc = 0;
+    const donut = 'conic-gradient(' + catStats.map(c => { const from = acc; acc += c.share; return c.color + ' ' + from + '% ' + acc + '%'; }).join(', ') + (acc < 100 ? ', ' + th.ip + ' ' + acc + '% 100%' : '') + ')';
+    const budgetTotal = CATS.reduce((a, c) => a + c.limit, 0);
+    const toTx = t => {
+      const c = catById[t.cat];
+      return { ...t, letter: c.name[0], color: c.color, bg: c.bg, amountFmt: fmt(t.amount), meta: c.name + ' · ' + (t.method === 'cash' ? 'наличные' : 'карта') + ' · ' + t.date };
+    };
+    const recentTxs = [...s.txs].reverse().slice(0, 6).map(toTx);
+    const topTxs = [...s.txs].sort((a, b) => b.amount - a.amount).slice(0, 3).map(toTx);
+    const goals = s.goals.map(g => {
+      const pct = Math.min(100, Math.round(g.saved / g.target * 100));
+      const months = Math.max(0, Math.ceil((g.target - g.saved) / g.per));
+      return {
+        ...g, letter: g.name[0], pct, savedFmt: fmt(g.saved), targetFmt: fmt(g.target), savedShort: short(g.saved), targetShort: short(g.target),
+        eta: pct >= 100 ? 'Цель достигнута' : 'Ещё ' + months + ' мес · по ' + fmt(g.per) + ' в месяц',
+        topUp: () => {
+          this.setState(st => ({ goals: st.goals.map(x => x.id === g.id ? { ...x, saved: Math.min(x.target, x.saved + 10000) } : x) }));
+          this.showToast('Пополнено: ' + g.name);
+        },
+      };
+    });
+    const savedTotal = s.goals.reduce((a, g) => a + g.saved, 0);
+    const picked = catById[s.cat];
+    const amountNum = Number(s.amount || 0);
+    const keys = ['1','2','3','4','5','6','7','8','9','000','0','⌫'].map(label => ({
+      label,
+      press: () => this.setState(st => {
+        if (label === '⌫') return { amount: st.amount.slice(0, -1) };
+        if (st.amount.length >= 8) return {};
+        if (st.amount === '' && (label === '0' || label === '000')) return {};
+        return { amount: st.amount + label };
+      }),
+    }));
+    const cats = CATS.map(c => ({ ...c, letter: c.name[0], pick: () => this.setState({ cat: c.id }), pickBg: s.cat === c.id ? c.bg : th.cd, pickBorder: s.cat === c.id ? c.color : 'transparent' }));
+    const spentPct = Math.round(spent / income * 100);
+    const daysLeft = 18;
+    const weekTotal = WEEK.reduce((a, d) => a + d.v, 0), weekMax = Math.max(...WEEK.map(d => d.v));
+    const weekBars = WEEK.map((d, i) => ({ ...d, h: Math.round(d.v / weekMax * 100), color: i === 2 ? accent : th.ip, labelColor: i === 2 ? th.tx : th.mu }));
+    const weekBarsDark = WEEK.map((d, i) => ({ ...d, h: Math.round(d.v / weekMax * 100), color: i === 2 ? accent : '#2E2C3A', labelColor: i === 2 ? '#fff' : '#9D9AAA' }));
+    const monthPairs = [{ label: 'Апр', i: 600000, e: 142000 }, { label: 'Май', i: 620000, e: 168000 }, { label: 'Июн', i: 600000, e: 155000 }, { label: 'Июл', i: 680000, e: 189000 }, { label: 'Авг', i: 628000, e: 171000 }, { label: 'Сен', i: income, e: spent }];
+    const weekPairs = WEEK.map((d, i) => ({ label: d.label, i: i === 0 ? 50000 : 0, e: d.v }));
+    const yearPairs = [{ label: '2022', i: 6100000, e: 1610000 }, { label: '2023', i: 6700000, e: 1780000 }, { label: '2024', i: 7100000, e: 1920000 }, { label: '2025', i: 7400000, e: 2050000 }, { label: '2026', i: 5600000, e: 1410000 }];
+    const pairs = s.period === 'week' ? weekPairs : s.period === 'year' ? yearPairs : monthPairs;
+    const pmax = Math.max(...pairs.map(p => Math.max(p.i, p.e)));
+    const pairBars = pairs.map((p, idx) => { const last = idx === pairs.length - 1; return { label: p.label, hi: Math.max(2, Math.round(p.i / pmax * 100)), he: Math.max(2, Math.round(p.e / pmax * 100)), op: last ? 1 : 0.45, labelColor: last ? th.tx : th.mu }; });
+    const cur = pairs[pairs.length - 1], prev = pairs[pairs.length - 2];
+    const delta = Math.round((cur.e - prev.e) / prev.e * 100);
+    const segBg = p => s.period === p ? accent : 'transparent';
+    const segFg = p => s.period === p ? '#fff' : th.mu;
+    const tab = sc => (s.screen === sc ? accent : th.mu);
+    const kpiIncome = s.period === 'week' ? 50000 : cur.i;
+    const kpiSaved = s.period === 'week' ? 30000 : s.period === 'year' ? 1080000 : 120000;
+    const circ = 2 * Math.PI * 31, circS = 2 * Math.PI * 35;
+    const tasks = s.tasks.map(t => {
+      const c = t.cat ? catById[t.cat] : null;
+      return {
+        ...t,
+        color: c ? c.color : accent, bg: c ? c.bg : th.as,
+        letter: t.name[0],
+        costFmt: t.cost ? fmt(t.cost) : 'без затрат',
+        costColor: t.cost ? (t.done ? th.mu : th.tx) : th.mu,
+        titleStyle: t.done ? 'line-through' : 'none',
+        titleColor: t.done ? th.mu : th.tx,
+        boxBg: t.done ? '#2FA66F' : 'transparent',
+        boxBorder: t.done ? '#2FA66F' : (dark ? '#3A3746' : '#D5D1E0'),
+        checkOpacity: t.done ? 1 : 0,
+        toggle: () => {
+          this.setState(st => ({ tasks: st.tasks.map(x => x.id === t.id ? { ...x, done: !x.done } : x) }));
+          if (!t.done) this.showToast('Готово: ' + t.name);
+        },
+      };
+    });
+    const doneCount = s.tasks.filter(t => t.done).length;
+    const taskPct = Math.round(doneCount / s.tasks.length * 100);
+    const plannedCost = s.tasks.reduce((a, t) => a + t.cost, 0);
+    const spentOnPlan = s.tasks.filter(t => t.done).reduce((a, t) => a + t.cost, 0);
+    const weekPlan = s.weekPlan.map((d, i) => {
+      const pct = d.total ? Math.round(d.done / d.total * 100) : 0;
+      return { ...d, pct, h: Math.max(8, pct), color: i === 2 ? accent : (pct >= 100 ? '#2FA66F' : th.ip), labelColor: i === 2 ? th.tx : th.mu, ratio: d.done + '/' + d.total };
+    });
+    const weekPlanPct = Math.round(s.weekPlan.reduce((a, d) => a + d.done, 0) / s.weekPlan.reduce((a, d) => a + d.total, 0) * 100);
+    const ringT = 2 * Math.PI * 26;
+    const weekDone = s.weekPlan.reduce((a, d) => a + d.done, 0) - s.weekPlan[2].done + doneCount;
+    const weekTotalTasks = s.weekPlan.reduce((a, d) => a + d.total, 0) - s.weekPlan[2].total + s.tasks.length;
+    const monthDone = 68 + doneCount, monthTotal = 92 + s.tasks.length;
+    const tagColors = { 'Дом': ['#7A4AE0', '#EFE9FC'], 'Покупки': ['#2FA66F', '#E6F6EE'], 'Платежи': ['#2F5BEA', '#E8EDFD'], 'Накопления': ['#F2A83B', '#FDF1DE'], 'Здоровье': ['#1BA3B5', '#E1F5F7'] };
+    const tagBase = { 'Дом': { done: 22, total: 26 }, 'Покупки': { done: 12, total: 18 }, 'Платежи': { done: 9, total: 10 }, 'Накопления': { done: 6, total: 9 }, 'Здоровье': { done: 14, total: 22 } };
+    const tagStats = Object.keys(tagBase).map(k => {
+      const today = s.tasks.filter(t => t.tag === k);
+      const done = tagBase[k].done + today.filter(t => t.done).length;
+      const total = tagBase[k].total + today.length;
+      const pct = Math.round(done / total * 100);
+      return { name: k, done, total, pct, ratio: done + ' из ' + total, color: tagColors[k][0], bg: dark ? th.as : tagColors[k][1], letter: k[0] };
+    }).sort((a, b) => b.pct - a.pct);
+    const bestDay = [...s.weekPlan].sort((a, b) => (b.done / (b.total || 1)) - (a.done / (a.total || 1)))[0];
+    const monthPct = Math.round(monthDone / monthTotal * 100);
+    const skipped = monthTotal - monthDone;
+    return {
+      tasks, topTasks: tasks.filter(t => !t.done).slice(0, 3), weekPlan, weekPlanPct,
+      widgetTasks: tasks.slice(0, 4).map(t => ({ ...t, wBorder: t.done ? '#2FA66F' : '#3A3746', wColor: t.done ? '#7B7889' : '#fff' })),
+      doneCount, taskTotal: s.tasks.length, taskPct,
+      taskRingDash: (ringT * taskPct / 100).toFixed(1) + ' ' + ringT.toFixed(1),
+      taskRingDashBig: (circS * taskPct / 100).toFixed(1) + ' ' + circS.toFixed(1),
+      taskRatio: doneCount + '/' + s.tasks.length,
+      tagStats, monthDone, monthTotal, monthPct, skipped,
+      weekDoneRatio: weekDone + ' из ' + weekTotalTasks,
+      weekDone, monthRatio: monthDone + ' из ' + monthTotal,
+      todayRatio: doneCount + ' из ' + s.tasks.length,
+      streak: 12, avgPerDay: (monthDone / 17).toFixed(1).replace('.', ','),
+      bestDayLabel: bestDay.label, bestDayRatio: bestDay.done + '/' + bestDay.total,
+      plannedCostFmt: fmt(plannedCost), spentOnPlanFmt: fmt(spentOnPlan), leftOnPlanFmt: fmt(plannedCost - spentOnPlan),
+      isPlans: s.screen === 'plans', goPlans: this.go('plans'),
+      tabPlansColor: s.screen === 'plans' ? accent : th.mu,
+      addTask: () => this.showToast('Новая задача — скоро'),
+      dark, th,
+      isHome: s.screen === 'home', isAdd: s.screen === 'add', isCats: s.screen === 'cats', isBudget: s.screen === 'budget',
+      isIncome: s.screen === 'income', isGoals: s.screen === 'goals', isStats: s.screen === 'stats', isSettings: s.screen === 'settings',
+      showTabs: s.screen !== 'add',
+      goHome: this.go('home'), goAdd: this.go('add'), goCats: this.go('cats'), goBudget: this.go('budget'),
+      goIncome: this.go('income'), goGoals: this.go('goals'), goStats: this.go('stats'), goSettings: this.go('settings'),
+      tabHomeColor: tab('home'), tabStatsColor: tab('stats'), tabGoalsColor: tab('goals'), tabMoreColor: tab('settings'),
+      balanceFmt: fmt(income - spent), incomeFmt: fmt(income), spentFmt: fmt(spent), spentShort: short(spent),
+      spentPct, daysLeft, perDayLeftFmt: fmt((income - spent) / daysLeft),
+      ringDash: (circ * spentPct / 100).toFixed(1) + ' ' + circ.toFixed(1),
+      ringDashSmall: (circS * spentPct / 100).toFixed(1) + ' ' + circS.toFixed(1),
+      cashFmt: fmt(cash), cashCount: cashTx.length, cashPct: Math.round(cash / spent * 100),
+      cardFmt: fmt(card), cardCount: cardTx.length, cardPct: 100 - Math.round(cash / spent * 100),
+      weekBars, weekBarsDark, weekTotalFmt: fmt(weekTotal),
+      topGoals: goals.slice(0, 2), goals, savedTotalFmt: fmt(savedTotal), wGoal: goals[0],
+      addGoal: () => this.showToast('Создание цели — скоро'),
+      recentTxs, topTxs, widgetTxs: recentTxs.slice(0, 2), catStats, widgetCats: catStats.slice(0, 3),
+      donut, topCatShare: catStats[0].share, topCatName: catStats[0].name,
+      overCount: catStats.filter(c => c.spent > c.limit).length,
+      budgetTotalFmt: fmt(budgetTotal), budgetLeftFmt: fmt(budgetTotal - spent),
+      incomes, addIncome: () => this.showToast('Добавление дохода — скоро'),
+      cats, keys, note: s.note, setNote: e => this.setState({ note: e.target.value }),
+      amountDisplay: amountNum ? fmt(amountNum) : '0 ₸', amountColor: amountNum ? th.tx : th.mu,
+      pickedCatName: picked.name, methodName: s.method === 'cash' ? 'наличные' : 'карта',
+      setCard: () => this.setState({ method: 'card' }), setCash: () => this.setState({ method: 'cash' }),
+      cardPillBg: s.method === 'card' ? accent : th.cd, cardPillFg: s.method === 'card' ? '#fff' : th.mu,
+      cashPillBg: s.method === 'cash' ? accent : th.cd, cashPillFg: s.method === 'cash' ? '#fff' : th.mu,
+      submitBg: amountNum ? accent : (dark ? '#3A3746' : '#CFCBDB'),
+      submitTx: () => {
+        if (!amountNum) return;
+        const tx = { title: s.note.trim() || picked.name, cat: s.cat, amount: amountNum, method: s.method, date: '17 сен' };
+        this.setState(st => ({ txs: [...st.txs, tx], amount: '', note: '', screen: 'home' }));
+        this.showToast('Добавлено −' + fmt(amountNum));
+      },
+      setPeriodWeek: () => this.setState({ period: 'week' }), setPeriodMonth: () => this.setState({ period: 'month' }), setPeriodYear: () => this.setState({ period: 'year' }),
+      weekBg: segBg('week'), weekFg: segFg('week'), monthBg: segBg('month'), monthFg: segFg('month'), yearBg: segBg('year'), yearFg: segFg('year'),
+      pairBars, chartTotalFmt: fmt(cur.e), kpiIncomeFmt: fmt(kpiIncome), kpiSavedFmt: fmt(kpiSaved), saveRate: Math.round(kpiSaved / kpiIncome * 100),
+      deltaText: (delta > 0 ? '+' : '') + delta + '% к прошлому', deltaColor: delta > 0 ? '#E0553F' : '#2FA66F',
+      perDayFmt: fmt(s.period === 'week' ? weekTotal / 7 : s.period === 'year' ? cur.e / 248 : spent / 12),
+      toggleDark: () => this.setState({ dark: !dark }), darkSwitchBg: dark ? accent : '#D9D6E3', darkKnobX: dark ? 20 : 0,
+      toggleNotif: () => this.setState(st => ({ notif: !st.notif })), notifSwitchBg: s.notif ? accent : (dark ? '#3A3746' : '#D9D6E3'), notifKnobX: s.notif ? 20 : 0,
+      hasToast: !!s.toast, toast: s.toast,
+    };
+  }
+}
+</script>
+
+
+</body></html>
