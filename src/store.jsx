@@ -4,7 +4,7 @@ import { iso } from './lib/dates.js';
 import { derive } from './model.js';
 import { backend } from './backend/index.js';
 import { useNow } from './hooks.js';
-import { tap, success } from './native.js';
+import { tap, success, onAppUrlOpen, getLaunchUrl } from './native.js';
 
 const PREFS_KEY = 'planerka.prefs';
 const EMPTY = { txs: [], tasks: [], goals: [], incomes: [] };
@@ -70,8 +70,15 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       if (sameUser && cur.auth !== 'loading') return;
       apply(u);
     });
-    return () => { alive = false; off(); };
-  }, [skipBoot, update, loadHousehold]);
+    // Ссылка из письма открыла приложение — завершаем вход
+    const handleUrl = async url => {
+      try { if (await backend.handleAuthUrl(url)) showToast('Вход выполнен'); }
+      catch (e) { console.error(e); showToast('Ссылка устарела, запросите новую'); }
+    };
+    getLaunchUrl().then(u => { if (u) handleUrl(u); });
+    const offUrl = onAppUrlOpen(handleUrl);
+    return () => { alive = false; off(); offUrl(); };
+  }, [skipBoot, update, loadHousehold, showToast]);
 
   // Живые обновления от партнёра и обновление при возврате в приложение
   const hid = s.household ? s.household.id : null;

@@ -39,8 +39,13 @@ async function api(method, path, body) {
 // 1. Проект
 let ref = args['project-ref'];
 if (!ref) {
-  const orgs = await api('GET', '/organizations');
-  if (!orgs.length) throw new Error('В аккаунте Supabase нет организаций');
+  let orgs = await api('GET', '/organizations');
+  if (!Array.isArray(orgs)) throw new Error('Неожиданный ответ /organizations: ' + JSON.stringify(orgs).slice(0, 200));
+  if (!orgs.length) {
+    const created = await api('POST', '/organizations', { name: args['org-name'] || 'Planerka' });
+    log('Организация создана:', created.name || created.id);
+    orgs = [created];
+  }
   const org = (args.org && orgs.find(o => o.id === args.org || o.name === args.org)) || orgs[0];
   log('Организация:', org.name);
   const existing = (await api('GET', '/projects')).find(p => p.name === name && p.organization_id === org.id);
@@ -69,22 +74,26 @@ const sql = readFileSync(new URL('../supabase/schema.sql', import.meta.url), 'ut
 await api('POST', `/projects/${ref}/database/query`, { query: sql });
 log('Схема базы применена (supabase/schema.sql)');
 
-// 4. Вход по почте: адрес сайта, разрешённые редиректы, письмо с кодом
+// 4. Вход по почте: адрес сайта и разрешённые редиректы (в приложении ссылка из письма открывает planerka://login)
 const url = `https://${ref}.supabase.co`;
-const allow = [site, 'http://localhost:5173/', 'http://localhost:4173/'].filter(Boolean);
+const allow = [site, site ? site + '*' : '', 'http://localhost:5173/', 'http://localhost:4173/', 'planerka://login', 'planerka://*'].filter(Boolean);
+try {
+  await api('PATCH', `/projects/${ref}/config/auth`, { site_url: site || 'http://localhost:5173/', uri_allow_list: allow.join(',') });
+  log('Адреса входа настроены. Site URL:', site || 'http://localhost:5173/');
+} catch (e) {
+  log('Не удалось настроить адреса входа:', e.message, '— задайте вручную: Authentication → URL Configuration');
+}
+// Письмо с кодом доступно только с собственным SMTP (на бесплатном тарифе шаблон менять нельзя)
 try {
   await api('PATCH', `/projects/${ref}/config/auth`, {
-    site_url: site || 'http://localhost:5173/',
-    uri_allow_list: allow.join(','),
-    mailer_subjects_magic_link: 'Код для входа в семейный бюджет',
+    mailer_subjects_magic_link: 'Вход в семейный бюджет',
     mailer_templates_magic_link_content:
       '<h2>Вход в семейный бюджет</h2><p>Ваш код: <b style="font-size:24px;letter-spacing:2px">{{ .Token }}</b></p>' +
       '<p>Или <a href="{{ .ConfirmationURL }}">войдите по ссылке</a>. Код действует один час.</p>',
   });
-  log('Вход по почте настроен. Site URL:', site || 'http://localhost:5173/');
+  log('Письмо с кодом настроено');
 } catch (e) {
-  log('Не удалось настроить Auth автоматически:', e.message);
-  log('Сделайте вручную: Authentication → URL Configuration (Site URL =', site || 'адрес сайта', ') и Email Templates → Magic Link (добавьте {{ .Token }}).');
+  log('Шаблон письма оставлен стандартным (вход по ссылке из письма):', e.message.split('{')[0].trim());
 }
 
 // 5. Ключи

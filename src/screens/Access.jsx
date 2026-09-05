@@ -33,7 +33,7 @@ export default function Access() {
       {!loading && s.auth === 'out' && s.authStep === 'email' && (
         <div className="card">
           <div className="t-card">Вход по почте</div>
-          <div className="t-meta">{isNative ? 'Пришлём письмо с кодом для входа. Пароль не нужен.' : 'Пришлём письмо с кодом и ссылкой для входа. Пароль не нужен.'}</div>
+          <div className="t-meta">{isNative ? 'Пришлём письмо со ссылкой для входа. Пароль не нужен.' : 'Пришлём письмо со ссылкой для входа. Пароль не нужен.'}</div>
           <input className="input" type="email" inputMode="email" autoComplete="email" placeholder="you@example.com" value={email}
             onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && a.sendCode(email)} />
           <div className="submit" style={btn(s.busy)} onClick={() => !s.busy && a.sendCode(email)}>Получить код</div>
@@ -43,7 +43,7 @@ export default function Access() {
       {!loading && s.auth === 'out' && s.authStep === 'code' && (
         <div className="card">
           <div className="t-card">Проверьте почту</div>
-          <div className="t-meta">Мы написали на {s.pendingEmail}. {isNative ? 'Введите код из письма.' : 'Введите код из письма или просто перейдите по ссылке в нём.'}</div>
+          <div className="t-meta">Мы написали на {s.pendingEmail}. {isNative ? 'Откройте письмо на этом телефоне и нажмите ссылку «Log In» — приложение откроется и войдёт само. Если в письме есть код, введите его ниже.' : 'Перейдите по ссылке в письме. Если в письме есть код, введите его ниже.'}</div>
           <input className="input" inputMode="numeric" autoComplete="one-time-code" placeholder="Код из письма" value={code}
             onChange={e => setCode(e.target.value)} onKeyDown={e => e.key === 'Enter' && a.verifyCode(code)} />
           <div className="submit" style={btn(s.busy)} onClick={() => !s.busy && a.verifyCode(code)}>Войти</div>

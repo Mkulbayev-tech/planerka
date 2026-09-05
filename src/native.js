@@ -46,3 +46,15 @@ export const nativeStorage = isNative
     removeItem: async key => { await Preferences.remove({ key }); },
   }
   : undefined;
+
+// Ссылка из письма для входа открывает приложение по схеме planerka://login
+export const AUTH_REDIRECT = 'planerka://login';
+export function onAppUrlOpen(handler) {
+  if (!isNative) return () => {};
+  const pending = CapApp.addListener('appUrlOpen', e => handler(e.url));
+  return () => { pending.then(h => h.remove()).catch(() => {}); };
+}
+export async function getLaunchUrl() {
+  if (!isNative) return null;
+  try { const r = await CapApp.getLaunchUrl(); return r && r.url ? r.url : null; } catch { return null; }
+}

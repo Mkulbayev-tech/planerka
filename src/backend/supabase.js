@@ -1,7 +1,7 @@
 // Общий семейный бюджет на Supabase: вход по почте, семья по коду приглашения,
 // строки в таблицах transactions / tasks / goals / incomes и живые обновления через Realtime.
 import { createClient } from '@supabase/supabase-js';
-import { isNative, nativeStorage } from '../native.js';
+import { isNative, nativeStorage, AUTH_REDIRECT } from '../native.js';
 
 const TABLES = ['transactions', 'tasks', 'goals', 'incomes'];
 
@@ -22,7 +22,7 @@ export function createSupabaseBackend(url, key) {
       return () => data.subscription.unsubscribe();
     },
     async signInWithEmail(email) {
-      const options = isNative ? {} : { emailRedirectTo: window.location.origin + window.location.pathname };
+      const options = { emailRedirectTo: isNative ? AUTH_REDIRECT : window.location.origin + window.location.pathname };
       const { error } = await sb.auth.signInWithOtp({ email, options });
       if (error) throw error;
     },
@@ -31,6 +31,20 @@ export function createSupabaseBackend(url, key) {
       if (error) throw error;
     },
     async signOut() { await sb.auth.signOut(); },
+    // Вход по ссылке из письма, открывшей приложение: planerka://login#access_token=…&refresh_token=… или ?code=…
+    async handleAuthUrl(url) {
+      if (!url || !/^planerka:/i.test(url)) return false;
+      const u = new URL(url.replace(/^planerka:\/\//i, 'https://planerka.local/'));
+      const hash = new URLSearchParams(u.hash.replace(/^#/, ''));
+      const code = u.searchParams.get('code');
+      if (code) { const { error } = await sb.auth.exchangeCodeForSession(code); if (error) throw error; return true; }
+      const access_token = hash.get('access_token');
+      const refresh_token = hash.get('refresh_token');
+      if (access_token && refresh_token) { const { error } = await sb.auth.setSession({ access_token, refresh_token }); if (error) throw error; return true; }
+      const err = hash.get('error_description') || u.searchParams.get('error_description');
+      if (err) throw new Error(err);
+      return false;
+    },
 
     async getHousehold() {
       const { data: { user } } = await sb.auth.getUser();

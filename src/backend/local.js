@@ -32,6 +32,7 @@ export function createLocalBackend() {
     async signInWithEmail() {},
     async verifyCode() {},
     async signOut() {},
+    async handleAuthUrl() { return false; },
     async getHousehold() { const db = ensure(); return { household: db.household, members: db.members, me: db.members[0] }; },
     async createHousehold() { return ensure().household; },
     async joinHousehold() { return ensure().household; },
