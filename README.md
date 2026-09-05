@@ -43,7 +43,15 @@ npm run dev
   (`.github/workflows/deploy.yml`). Пока не заданы секреты Supabase, сайт работает в локальном демо-режиме.
 - Репозиторий: https://github.com/Mkulbayev-tech/planerka
 
-## Включить общий бюджет одной командой
+## Supabase уже подключён
+
+Проект `planerka` (регион eu-central-1): https://supabase.com/dashboard/project/skaodnffgivkoiymfjxe.
+Ключи лежат в `.env` (не в репозитории) и в секретах GitHub. Пароль базы — в `.supabase-db-password`.
+Вход: письмо со ссылкой; в приложении ссылка открывает его по схеме `planerka://login`, на сайте — возвращает на сайт.
+Бесплатный тариф не даёт менять шаблон письма, поэтому кода в письме нет. Если подключить свой SMTP
+(Authentication → SMTP Settings), скрипт ниже добавит в письмо код.
+
+## Настроить Supabase заново одной командой
 
 1. Создайте токен Supabase: https://supabase.com/dashboard/account/tokens → **Generate new token**.
 2. Выполните в папке проекта:
