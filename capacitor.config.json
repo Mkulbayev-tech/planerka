@@ -1,6 +1,6 @@
 {
   "appId": "kz.planerka.app",
-  "appName": "Планёрка",
+  "appName": "Семейные планы",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

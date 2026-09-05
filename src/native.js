@@ -86,7 +86,7 @@ export async function enableReminder() {
   if (perm.display !== 'granted') perm = await LocalNotifications.requestPermissions();
   if (perm.display !== 'granted') return false;
   await LocalNotifications.schedule({ notifications: [{
-    id: REMINDER_ID, title: 'Планёрка', body: 'Не забудьте внести сегодняшние траты',
+    id: REMINDER_ID, title: 'Семейные планы', body: 'Не забудьте внести сегодняшние траты',
     schedule: { on: { hour: 20, minute: 0 }, repeats: true, allowWhileIdle: true },
   }] });
   return true;
