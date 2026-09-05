@@ -14,7 +14,7 @@ export default function SheetHost() {
   if (!sh) return null;
   const close = a.closeSheet;
   switch (sh.kind) {
-    case 'task': return <TaskSheet task={sh.task} onClose={close} />;
+    case 'task': return <TaskSheet task={sh.task} date={sh.date} ownerDefault={sh.owner} onClose={close} />;
     case 'goal': return <GoalSheet goal={sh.goal} onClose={close} />;
     case 'topup': return <TopUpSheet goal={sh.goal} onClose={close} />;
     case 'income': return <IncomeSheet income={sh.income} onClose={close} />;
@@ -26,29 +26,48 @@ export default function SheetHost() {
   }
 }
 
-function TaskSheet({ task, onClose }) {
-  const { a } = useBudget();
+function TaskSheet({ task, date, ownerDefault, onClose }) {
+  const { a, d } = useBudget();
   const [name, setName] = useState(task ? task.name : '');
+  const [dateV, setDateV] = useState(task ? task.date : (date || d.todayIso));
   const [time, setTime] = useState(task ? task.time || '' : '');
+  const [owner, setOwner] = useState(task ? (task.owner || null) : (ownerDefault !== undefined ? ownerDefault : d.me));
   const [tag, setTag] = useState(task ? task.tag : TAGS[0]);
   const [cat, setCat] = useState(task ? task.cat || null : null);
   const [cost, setCost] = useState(task && task.cost ? String(task.cost) : '');
-  const ok = name.trim().length > 0;
-  const save = () => { if (!ok) return; a.saveTask({ name: name.trim(), time, tag, cat, cost: num(cost) }, task && task.id); onClose(); };
+  const [repeat, setRepeat] = useState('none');
+  const ok = name.trim().length > 0 && /^\d{4}-\d{2}-\d{2}$/.test(dateV);
+  const save = () => { if (!ok) return; a.saveTask({ name: name.trim(), date: dateV, time, owner, tag, cat, cost: num(cost), repeat }, task && task.id); onClose(); };
+  const ownerOptions = d.members.length > 1
+    ? [...d.members.map(m => ({ id: m.id, label: m.id === d.me ? 'Мне' : m.name })), { id: null, label: 'Общая' }]
+    : null;
   return (
     <Sheet title={task ? 'Задача' : 'Новая задача'} onClose={onClose}>
       <Field label="Название"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Например, оплатить интернет" autoFocus={!task} enterKeyHint="done" onKeyDown={e => e.key === 'Enter' && save()} /></Field>
       <div className="row" style={{ gap: 10, alignItems: 'stretch' }}>
+        <Field label="Дата" style={{ flex: 1.2 }}><input className="input" type="date" value={dateV} onChange={e => setDateV(e.target.value)} /></Field>
         <Field label="Время" style={{ flex: 1 }}><input className="input" type="time" value={time} onChange={e => setTime(e.target.value)} /></Field>
-        <Field label="Затраты, ₸" style={{ flex: 1 }}><input className="input" type="number" inputMode="numeric" min="0" step="500" value={cost} onChange={e => setCost(e.target.value)} placeholder="0" /></Field>
       </div>
+      {ownerOptions && (
+        <Field label="Кому">
+          <Chips options={ownerOptions} value={owner} onChange={setOwner} />
+        </Field>
+      )}
+      {!task && (
+        <Field label="Повторять">
+          <Chips options={[{ id: 'none', label: 'Один раз' }, { id: 'daily', label: 'Каждый день · 30 дней' }, { id: 'weekly', label: 'Каждую неделю · 8 недель' }]} value={repeat} onChange={setRepeat} />
+        </Field>
+      )}
       <Field label="Тип">
         <Chips options={TAGS.map(t => ({ id: t, label: t, color: TAG_COLORS[t][0], bg: TAG_COLORS[t][1] }))} value={tag} onChange={setTag} />
       </Field>
+      <div className="row" style={{ gap: 10, alignItems: 'stretch' }}>
+        <Field label="Затраты, ₸" style={{ flex: 1 }}><input className="input" type="number" inputMode="numeric" min="0" step="500" value={cost} onChange={e => setCost(e.target.value)} placeholder="0" /></Field>
+      </div>
       <Field label="Категория трат">
         <Chips options={[{ id: null, label: 'Без категории' }, ...CATS.map(c => ({ id: c.id, label: c.name, color: c.color, bg: c.bg, letter: c.name[0] }))]} value={cat} onChange={setCat} />
       </Field>
-      <PrimaryButton disabled={!ok} onClick={save}>{task ? 'Сохранить' : 'Добавить задачу'}</PrimaryButton>
+      <PrimaryButton disabled={!ok} onClick={save}>{task ? 'Сохранить' : repeat === 'none' ? 'Добавить задачу' : 'Добавить задачи'}</PrimaryButton>
       {task && <DangerButton onClick={() => { a.deleteTask(task.id); onClose(); }}>Удалить задачу</DangerButton>}
     </Sheet>
   );

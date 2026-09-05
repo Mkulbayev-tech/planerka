@@ -43,3 +43,13 @@ export function weekBounds(now) {
   const end = addDays(start, 7);
   return { start, end, index, startIso: iso(start), endIso: iso(end) };
 }
+
+// «Сегодня, 5 сентября», «Завтра, …», «Вчера, …», иначе день недели.
+export function dayLabel(d, today) {
+  const diff = daysBetween(today, d);
+  const base = `${d.getDate()} ${MONTHS_GEN[d.getMonth()]}`;
+  if (diff === 0) return 'Сегодня, ' + base;
+  if (diff === 1) return 'Завтра, ' + base;
+  if (diff === -1) return 'Вчера, ' + base;
+  return `${WEEKDAYS[d.getDay()]}, ${base}`;
+}

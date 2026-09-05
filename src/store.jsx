@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { CAT_BY_ID, DEFAULT_SETTINGS, GOAL_PALETTE, fmt, uid } from './data.js';
-import { iso } from './lib/dates.js';
+import { iso, addDays, parseIso } from './lib/dates.js';
 import { derive } from './model.js';
 import { backend } from './backend/index.js';
 import { useNow } from './hooks.js';
@@ -23,6 +23,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     auth: 'loading', user: null, household: undefined, members: [], me: null, data: null, loadError: false,
     ...loadPrefs(),
     screen: 'home', period: 'month', amount: '', cat: 'food', method: 'card', note: '', toast: null, sheet: null,
+    planDate: null, planOwner: 'me',
     busy: false,
     ...(initial || {}),
   }));
@@ -120,6 +121,10 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
         return false;
       },
       setPeriod: period => update({ period }),
+      setPlanDate: dateIso => update({ planDate: dateIso }),
+      planToday: () => update({ planDate: null }),
+      shiftPlanWeek: n => update(st => ({ planDate: iso(addDays(parseIso(st.planDate || todayIso()), 7 * n)) })),
+      setPlanOwner: planOwner => update({ planOwner }),
       toggleDark: () => update(st => { const dark = !st.dark; savePrefs({ dark, notif: st.notif }); return { dark }; }),
       toggleNotif: async () => {
         const next = !stateRef.current.notif;
@@ -144,13 +149,21 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
         if (done) { tap(); showToast('Готово: ' + t.name); }
       },
       saveTask: (fields, id) => {
+        const { repeat = 'none', ...f } = fields;
         if (id) {
-          mutate(d => ({ ...d, tasks: d.tasks.map(x => (x.id === id ? { ...x, ...fields } : x)) }), () => backend.update('tasks', id, fields));
-        } else {
-          const row = { id: uid(), ...fields, done: false, date: todayIso() };
-          mutate(d => ({ ...d, tasks: [...d.tasks, row] }), () => backend.insert('tasks', row, hid()));
-          showToast('Задача добавлена');
+          mutate(d => ({ ...d, tasks: d.tasks.map(x => (x.id === id ? { ...x, ...f } : x)) }), () => backend.update('tasks', id, f));
+          return;
         }
+        const base = /^\d{4}-\d{2}-\d{2}$/.test(f.date || '') ? f.date : todayIso();
+        const dates = repeat === 'daily'
+          ? Array.from({ length: 30 }, (_, i) => iso(addDays(parseIso(base), i)))
+          : repeat === 'weekly'
+            ? Array.from({ length: 8 }, (_, i) => iso(addDays(parseIso(base), 7 * i)))
+            : [base];
+        const owner = f.owner === undefined ? (stateRef.current.user ? stateRef.current.user.id : null) : f.owner;
+        const rows = dates.map(date => ({ id: uid(), ...f, owner, date, done: false }));
+        mutate(d => ({ ...d, tasks: [...d.tasks, ...rows] }), () => backend.insertMany('tasks', rows, hid()));
+        showToast(rows.length > 1 ? 'Добавлено задач: ' + rows.length : 'Задача добавлена');
       },
       deleteTask: id => mutate(d => ({ ...d, tasks: d.tasks.filter(x => x.id !== id) }), () => backend.remove('tasks', id)),
 

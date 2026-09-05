@@ -42,8 +42,10 @@ create table if not exists public.tasks (
   cost integer not null default 0,
   done boolean not null default false,
   date date not null,
+  owner uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now()
 );
+alter table public.tasks add column if not exists owner uuid references auth.users(id) on delete set null;
 
 create table if not exists public.goals (
   id text primary key,
@@ -70,6 +72,7 @@ create table if not exists public.incomes (
 
 create index if not exists transactions_household_date on public.transactions (household_id, date);
 create index if not exists tasks_household_date on public.tasks (household_id, date);
+create index if not exists tasks_household_owner_date on public.tasks (household_id, owner, date);
 create index if not exists goals_household on public.goals (household_id);
 create index if not exists incomes_household_date on public.incomes (household_id, date);
 

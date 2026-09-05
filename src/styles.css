@@ -185,3 +185,14 @@ body{overscroll-behavior:none}
 /* ---------- выбор профиля на входе ---------- */
 .profile-pick{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;border-radius:18px;background:var(--ip);border:2px solid transparent;cursor:pointer;transition:background .15s,border-color .15s}
 .profile-pick[data-on="true"]{border-color:var(--accent);background:var(--as)}
+
+/* ---------- лента недели на экране «Планы» ---------- */
+.strip{display:flex;gap:4px}
+.strip__day{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 6px;border-radius:14px;cursor:pointer;border:1.5px solid transparent;-webkit-user-select:none;user-select:none}
+.strip__wd{font-size:10px;font-weight:700;color:var(--mu)}
+.strip__num{font-size:16px;font-weight:800}
+.strip__count{font-size:10px;font-weight:700;color:var(--mu)}
+.strip__day[data-today="true"]{border-color:var(--accent)}
+.strip__day[data-on="true"]{background:var(--accent);border-color:var(--accent)}
+.strip__day[data-on="true"] .strip__wd,.strip__day[data-on="true"] .strip__num,.strip__day[data-on="true"] .strip__count{color:#fff}
+.strip-nav{width:32px;height:32px;border-radius:50%;background:var(--ip);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;cursor:pointer;color:var(--tx);padding-bottom:2px}

@@ -2,7 +2,7 @@
 import { ACCENT, GREEN, RED, AMBER, CATS, CAT_BY_ID, TAGS, TAG_COLORS, THEMES, DEFAULT_SETTINGS, fmt, short } from './data.js';
 import {
   iso, startOfDay, addDays, daysBetween, inRange, parseIso, periodBounds, weekBounds,
-  longLabel, dayMonth, shortDate, MONTHS_NOM, MONTHS_CAP, WEEKDAYS_SHORT,
+  longLabel, dayMonth, dayLabel, shortDate, MONTHS_NOM, MONTHS_CAP, MONTHS_GEN, WEEKDAYS_SHORT,
 } from './lib/dates.js';
 
 const sum = (list, f) => list.reduce((a, x) => a + (f(x) || 0), 0);
@@ -22,6 +22,7 @@ export function derive(s, now = new Date()) {
   const limits = settings.limits || {};
   const members = s.members || [];
   const nameOf = id => { const m = members.find(x => x.user_id === id); return (m && m.display_name) || ''; };
+  const membersById = Object.fromEntries(members.map(m => [m.user_id, m.display_name || '']));
   const meName = (s.me && s.me.display_name) || (s.user && s.user.email ? s.user.email.split('@')[0] : '') || 'Айдана';
 
   // Даты
@@ -154,12 +155,14 @@ export function derive(s, now = new Date()) {
       : { total: spent, prev: periodSpent(prevP), income, saved: topupsIn(P.startIso, P.endIso), perDay: spent / daysElapsed, suffix: 'к прошлому' };
   const delta = kpi.prev ? Math.round((kpi.total - kpi.prev) / kpi.prev * 100) : null;
 
-  // Задачи
-  const view = t => {
+  // Задачи: у каждого свои (owner), задачи без владельца видны всем
+  const me = s.user ? s.user.id : null;
+  const viewTask = t => {
     const c = t.cat ? CAT_BY_ID[t.cat] : null;
     return {
       ...t,
       color: c ? c.color : ACCENT, bg: c ? c.bg : th.as,
+      ownerName: t.owner ? (membersById[t.owner] || '') : '',
       costFmt: t.cost ? fmt(t.cost) : 'без затрат',
       costColor: t.cost ? (t.done ? th.mu : th.tx) : th.mu,
       titleStyle: t.done ? 'line-through' : 'none',
@@ -170,49 +173,95 @@ export function derive(s, now = new Date()) {
     };
   };
   const byTime = (a, b) => String(a.time || '').localeCompare(String(b.time || '')) || String(a.created_at || '').localeCompare(String(b.created_at || ''));
-  const tasksToday = data.tasks.filter(t => t.date === todayIso).sort(byTime);
-  const tasks = tasksToday.map(view);
-  const doneCount = tasksToday.filter(t => t.done).length;
-  const taskTotal = tasksToday.length;
-  const taskPct = pct(doneCount, taskTotal);
-  const plannedCost = sum(tasksToday, t => t.cost);
-  const spentOnPlan = sum(tasksToday.filter(t => t.done), t => t.cost);
-
-  const tasksP = inP(data.tasks);
-  const weekPlan = weekDays.map((d, i) => {
-    const total = d.tasks.length;
-    const done = d.tasks.filter(t => t.done).length;
-    const p = pct(done, total);
-    return { label: d.label, done, total, pct: p, h: Math.max(8, p), color: i === W.index ? ACCENT : (total && done === total ? GREEN : th.ip), labelColor: i === W.index ? th.tx : th.mu, ratio: `${done}/${total}` };
-  });
-  const weekDone = sum(weekPlan, d => d.done);
-  const weekTotalTasks = sum(weekPlan, d => d.total);
-  const monthDone = tasksP.filter(t => t.done).length;
-  const monthTotal = tasksP.length;
-  const tagStats = TAGS.map(k => {
-    const list = tasksP.filter(t => t.tag === k);
-    const done = list.filter(t => t.done).length;
-    return { name: k, done, total: list.length, pct: pct(done, list.length), ratio: `${done} из ${list.length}`, color: TAG_COLORS[k][0], bg: dark ? th.as : TAG_COLORS[k][1], letter: k[0] };
-  }).filter(t => t.total > 0).sort((a, b) => b.pct - a.pct);
-  const byDow = WEEKDAYS_SHORT.map(label => ({ label, done: 0, total: 0 }));
-  tasksP.forEach(t => { const i = (parseIso(t.date).getDay() + 6) % 7; byDow[i].total++; if (t.done) byDow[i].done++; });
-  const bestDay = byDow.filter(d => d.total > 0).sort((a, b) => (b.done / b.total) - (a.done / a.total))[0] || null;
+  const forOwner = (list, ownerId) => (ownerId === 'all' ? list : list.filter(t => !t.owner || t.owner === ownerId));
   const tasksByDate = {};
   data.tasks.forEach(t => { (tasksByDate[t.date] = tasksByDate[t.date] || []).push(t); });
-  let streak = 0;
-  let cursor = today;
-  if (tasksToday.length === 0 || tasksToday.some(t => !t.done)) cursor = addDays(today, -1);
-  for (let i = 0; i < 366; i++) {
-    const list = tasksByDate[iso(cursor)];
-    if (!list || !list.length || list.some(t => !t.done)) break;
-    streak++;
-    cursor = addDays(cursor, -1);
-  }
-  const skipped = tasksP.filter(t => t.date < todayIso && !t.done).length;
+
+  // Статистика списка задач: неделя WB (с выделенным днём) и текущий период
+  const planStats = (list, WB, selectedIso) => {
+    const days = [0, 1, 2, 3, 4, 5, 6].map(i => {
+      const dIso = iso(addDays(WB.start, i));
+      const dt = list.filter(t => t.date === dIso);
+      const done = dt.filter(t => t.done).length;
+      return { iso: dIso, label: WEEKDAYS_SHORT[i], day: parseIso(dIso).getDate(), total: dt.length, done, isToday: dIso === todayIso, selected: dIso === selectedIso };
+    });
+    const weekPlan = days.map(d => {
+      const p = pct(d.done, d.total);
+      return { ...d, pct: p, h: Math.max(8, p), ratio: `${d.done}/${d.total}`, color: d.selected ? ACCENT : (d.total && d.done === d.total ? GREEN : th.ip), labelColor: d.selected ? th.tx : th.mu };
+    });
+    const weekDone = sum(days, d => d.done);
+    const weekTotal = sum(days, d => d.total);
+    const inPeriod = inP(list);
+    const monthDone = inPeriod.filter(t => t.done).length;
+    const monthTotal = inPeriod.length;
+    const tagStats = TAGS.map(k => {
+      const l = inPeriod.filter(t => t.tag === k);
+      const done = l.filter(t => t.done).length;
+      return { name: k, done, total: l.length, pct: pct(done, l.length), ratio: `${done} из ${l.length}`, color: TAG_COLORS[k][0], bg: dark ? th.as : TAG_COLORS[k][1], letter: k[0] };
+    }).filter(t => t.total > 0).sort((a, b) => b.pct - a.pct);
+    const byDow = WEEKDAYS_SHORT.map(label => ({ label, done: 0, total: 0 }));
+    inPeriod.forEach(t => { const i = (parseIso(t.date).getDay() + 6) % 7; byDow[i].total++; if (t.done) byDow[i].done++; });
+    const bestDay = byDow.filter(d => d.total > 0).sort((a, b) => (b.done / b.total) - (a.done / a.total))[0] || null;
+    const listByDate = {};
+    list.forEach(t => { (listByDate[t.date] = listByDate[t.date] || []).push(t); });
+    let streak = 0;
+    let cursor = today;
+    const todayList = listByDate[todayIso] || [];
+    if (todayList.length === 0 || todayList.some(t => !t.done)) cursor = addDays(today, -1);
+    for (let i = 0; i < 366; i++) {
+      const l = listByDate[iso(cursor)];
+      if (!l || !l.length || l.some(t => !t.done)) break;
+      streak++;
+      cursor = addDays(cursor, -1);
+    }
+    return {
+      weekPlan, weekDone, weekTotal, weekPct: pct(weekDone, weekTotal), weekRatio: `${weekDone} из ${weekTotal}`,
+      monthDone, monthTotal, monthPct: pct(monthDone, monthTotal), monthRatio: `${monthDone} из ${monthTotal}`,
+      tagStats, bestDayLabel: bestDay ? bestDay.label : '—', bestDayRatio: bestDay ? `${bestDay.done}/${bestDay.total}` : '',
+      streak, avgPerDay: (monthDone / daysElapsed).toFixed(1).replace('.', ','),
+      skipped: inPeriod.filter(t => t.date < todayIso && !t.done).length,
+    };
+  };
+
+  // Сегодня, мои задачи — главная, дашборд, виджеты
+  const myTasks = forOwner(data.tasks, me);
+  const todayMine = myTasks.filter(t => t.date === todayIso).sort(byTime);
+  const tasks = todayMine.map(viewTask);
+  const doneCount = todayMine.filter(t => t.done).length;
+  const taskTotal = todayMine.length;
+  const taskPct = pct(doneCount, taskTotal);
+  const plannedCost = sum(todayMine, t => t.cost);
+  const spentOnPlan = sum(todayMine.filter(t => t.done), t => t.cost);
+  const my = planStats(myTasks, W, todayIso);
+
+  // Экран «Планы»: выбранный день, неделя и чей план
+  const planDateIso = s.planDate || todayIso;
+  const planDate = parseIso(planDateIso);
+  const rawOwner = s.planOwner || 'me';
+  const ownerId = rawOwner === 'me' || rawOwner === 'all' || membersById[rawOwner] !== undefined ? rawOwner : 'me';
+  const ownerTasks = forOwner(data.tasks, ownerId === 'me' ? me : ownerId);
+  const PW = weekBounds(planDate);
+  const dayTasks = ownerTasks.filter(t => t.date === planDateIso).sort(byTime);
+  const planDone = dayTasks.filter(t => t.done).length;
+  const planCost = sum(dayTasks, t => t.cost);
+  const planSpent = sum(dayTasks.filter(t => t.done), t => t.cost);
+  const pwEnd = addDays(PW.start, 6);
+  const weekLabel = PW.start.getMonth() === pwEnd.getMonth()
+    ? `${PW.start.getDate()}–${pwEnd.getDate()} ${MONTHS_GEN[pwEnd.getMonth()]}`
+    : `${PW.start.getDate()} ${MONTHS_GEN[PW.start.getMonth()]} – ${pwEnd.getDate()} ${MONTHS_GEN[pwEnd.getMonth()]}`;
+  const plan = {
+    dateIso: planDateIso, dateLabel: dayLabel(planDate, today), dateShort: shortDate(planDateIso), isToday: planDateIso === todayIso, weekLabel,
+    owners: members.length > 1
+      ? [{ id: 'me', name: 'Мои' }, ...members.filter(m => m.user_id !== me).map(m => ({ id: m.user_id, name: m.display_name || 'Партнёр' })), { id: 'all', name: 'Все' }]
+      : [],
+    ownerId, showOwner: ownerId === 'all', ownerDefault: ownerId === 'me' || ownerId === 'all' ? me : ownerId,
+    tasks: dayTasks.map(viewTask), done: planDone, total: dayTasks.length, pct: pct(planDone, dayTasks.length),
+    dayRatio: `${planDone} из ${dayTasks.length}`, costFmt: fmt(planCost), leftFmt: fmt(planCost - planSpent),
+    ...planStats(ownerTasks, PW, planDateIso),
+  };
 
   // Кто сколько потратил (по участникам семьи)
   const MEMBER_COLORS = [['#7A4AE0', '#EFE9FC'], ['#2FA66F', '#E6F6EE'], ['#F2A83B', '#FDF1DE'], ['#2F5BEA', '#E8EDFD']];
-  const membersById = Object.fromEntries(members.map(m => [m.user_id, m.display_name || '']));
   const byMember = list => {
     const total = sum(list, t => t.amount);
     const rows = members.map((m, i) => {
@@ -262,15 +311,15 @@ export function derive(s, now = new Date()) {
     deltaText: delta === null ? 'нет данных за прошлый' : `${signed(delta)}% ${kpi.suffix}`,
     deltaColor: delta !== null && delta > 0 ? RED : GREEN,
     perDayFmt: fmt(kpi.perDay),
-    // задачи и планы
+    // задачи и планы (сегодня, мои)
     tasks, topTasks: tasks.filter(t => !t.done).slice(0, 3),
     widgetTasks: tasks.slice(0, 4).map(t => ({ ...t, wBorder: t.done ? GREEN : '#3A3746', wColor: t.done ? '#7B7889' : '#fff' })),
     doneCount, taskTotal, taskPct, taskRatio: `${doneCount}/${taskTotal}`, todayRatio: `${doneCount} из ${taskTotal}`,
     plannedCostFmt: fmt(plannedCost), leftOnPlanFmt: fmt(plannedCost - spentOnPlan),
-    weekPlan, weekPlanPct: pct(weekDone, weekTotalTasks), weekDone, weekDoneRatio: `${weekDone} из ${weekTotalTasks}`,
-    monthDone, monthPct: pct(monthDone, monthTotal), monthRatio: `${monthDone} из ${monthTotal}`, skipped,
-    tagStats, streak, avgPerDay: (monthDone / daysElapsed).toFixed(1).replace('.', ','),
-    bestDayLabel: bestDay ? bestDay.label : '—', bestDayRatio: bestDay ? `${bestDay.done}/${bestDay.total}` : '',
+    weekPlan: my.weekPlan, weekPlanPct: my.weekPct, weekDone: my.weekDone, weekDoneRatio: my.weekRatio,
+    monthDone: my.monthDone, monthPct: my.monthPct, monthRatio: my.monthRatio, skipped: my.skipped,
+    tagStats: my.tagStats, streak: my.streak, avgPerDay: my.avgPerDay, bestDayLabel: my.bestDayLabel, bestDayRatio: my.bestDayRatio,
+    plan, me, members: members.map(m => ({ id: m.user_id, name: m.display_name || '' })),
     // добавление траты
     cats, amountNum,
     amountDisplay: amountNum ? fmt(amountNum) : '0\u00A0₸',

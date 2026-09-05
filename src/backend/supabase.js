@@ -69,6 +69,7 @@ export function createSupabaseBackend(url, key) {
       return { txs, tasks, goals, incomes };
     },
     async insert(table, row, hid) { await rows(sb.from(table).insert({ ...row, household_id: hid })); },
+    async insertMany(table, list, hid) { await rows(sb.from(table).insert(list.map(r => ({ ...r, household_id: hid })))); },
     async update(table, id, patch) { await rows(sb.from(table).update(patch).eq('id', id)); },
     async remove(table, id) { await rows(sb.from(table).delete().eq('id', id)); },
     async topUpGoal(id, amount) { await rows(sb.rpc('top_up_goal', { p_id: id, p_amount: amount })); },

@@ -40,6 +40,7 @@ export function createLocalBackend() {
     },
     async loadData() { const db = ensure(); return { txs: db.txs, tasks: db.tasks, goals: db.goals, incomes: db.incomes }; },
     async insert(table, row) { change(db => { db[TABLES[table]].push({ ...row, created_at: new Date().toISOString() }); }); },
+    async insertMany(table, list) { change(db => { list.forEach(row => db[TABLES[table]].push({ ...row, created_at: new Date().toISOString() })); }); },
     async update(table, id, patch) { change(db => { db[TABLES[table]] = db[TABLES[table]].map(r => (r.id === id ? { ...r, ...patch } : r)); }); },
     async remove(table, id) { change(db => { db[TABLES[table]] = db[TABLES[table]].filter(r => r.id !== id); }); },
     async topUpGoal(id, amount) {
