@@ -22,7 +22,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     auth: 'loading', user: null, household: undefined, members: [], me: null, data: null, loadError: false,
     ...loadPrefs(),
     screen: 'home', period: 'month', amount: '', cat: 'food', method: 'card', note: '', toast: null, sheet: null,
-    authStep: 'email', pendingEmail: '', busy: false,
+    busy: false,
     ...(initial || {}),
   }));
   const stateRef = useRef(s);
@@ -251,18 +251,12 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       },
 
       // Вход и семья
-      sendCode: email => busy(async () => {
-        const e = String(email || '').trim().toLowerCase();
-        if (!/^\S+@\S+\.\S+$/.test(e)) { showToast('Введите почту'); return; }
-        try { await backend.signInWithEmail(e); update({ pendingEmail: e, authStep: 'code' }); showToast('Письмо отправлено'); }
-        catch (err) { showToast('Не удалось отправить: ' + errText(err)); }
+      signIn: (login, pin) => busy(async () => {
+        if (!login) { showToast('Выберите, кто вы'); return; }
+        if (!String(pin || '').trim()) { showToast('Введите пароль'); return; }
+        try { await backend.signIn(login, pin); }
+        catch (err) { showToast(/invalid|credentials/i.test(errText(err)) ? 'Неверный пароль' : 'Не удалось войти: ' + errText(err)); }
       }),
-      verifyCode: code => busy(async () => {
-        const c = String(code || '').replace(/\s/g, '');
-        if (c.length < 6) { showToast('Введите код из письма'); return; }
-        try { await backend.verifyCode(stateRef.current.pendingEmail, c); } catch { showToast('Неверный или устаревший код'); }
-      }),
-      backToEmail: () => update({ authStep: 'email' }),
       createHousehold: (name, myName) => busy(async () => {
         try { await backend.createHousehold(String(name || '').trim() || 'Семейный бюджет', String(myName || '').trim()); await loadHousehold(); showToast('Бюджет создан'); }
         catch (err) { showToast('Не удалось создать: ' + errText(err)); }
@@ -276,7 +270,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       retryLoad: () => loadHousehold(),
       signOut: async () => {
         try { await backend.signOut(); } catch { /* ignore */ }
-        update({ auth: 'out', user: null, household: undefined, members: [], me: null, data: null, screen: 'home', authStep: 'email', sheet: null });
+        update({ auth: 'out', user: null, household: undefined, members: [], me: null, data: null, screen: 'home', sheet: null });
       },
     };
   }, [update, showToast, mutate, patchSettings, loadHousehold]);
