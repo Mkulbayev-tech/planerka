@@ -1,5 +1,5 @@
 // Производные значения для экранов и виджетов: всё считается от реальных дат и общих данных семьи.
-import { ACCENT, GREEN, RED, AMBER, CATS, OTHER_CAT, allCats, TAGS, TAG_COLORS, THEMES, DEFAULT_SETTINGS, fmt, short } from './data.js';
+import { ACCENT, GREEN, RED, AMBER, CATS, OTHER_CAT, allCats, TAGS, TAG_COLORS, THEMES, DEFAULT_SETTINGS, fmt, short, traty } from './data.js';
 import {
   iso, startOfDay, addDays, daysBetween, inRange, parseIso, periodBounds, weekBounds,
   longLabel, dayMonth, dayLabel, shortDate, MONTHS_NOM, MONTHS_CAP, MONTHS_GEN, WEEKDAYS_SHORT,
@@ -24,7 +24,8 @@ export function derive(s, now = new Date()) {
   const startDay = Math.min(28, Math.max(1, Number(settings.monthStartDay) || 5));
   const limits = settings.limits || {};
   // Категории: встроенные + свои (кредит, рассрочка…); лимит 0 — без лимита
-  const catList = allCats(settings).map(c => ({ ...c, letter: (c.name.trim()[0] || '?').toUpperCase(), limit: Number(limits[c.id]) > 0 ? Number(limits[c.id]) : (c.limit || 0) }));
+  // letter — иконка категории (🛒, ☕…), а если её нет — первая буква названия
+  const catList = allCats(settings).map(c => ({ ...c, letter: c.icon || (c.name.trim()[0] || '?').toUpperCase(), limit: Number(limits[c.id]) > 0 ? Number(limits[c.id]) : (c.limit || 0) }));
   const catMap = Object.fromEntries(catList.map(c => [c.id, c]));
   const catOf = id => catMap[id] || OTHER_CAT;
   const visibleCats = catList.filter(c => !c.hidden);
@@ -73,16 +74,18 @@ export function derive(s, now = new Date()) {
   const cashPct = pct(cash, spent);
   const cardPct = spent ? 100 - cashPct : 0;
 
-  const catStats = [...catList, { ...OTHER_CAT, letter: OTHER_CAT.name[0] }].map(c => {
+  const OTHER_ROW = { ...OTHER_CAT, letter: OTHER_CAT.icon };
+  // Категории с тратами за список операций list (текущий или просматриваемый прошлый месяц)
+  const buildCatStats = (rows, total) => [...catList, OTHER_ROW].map(c => {
     const limit = c.limit;
-    const list = txs.filter(t => catOf(t.cat).id === c.id);
+    const list = rows.filter(t => catOf(t.cat).id === c.id);
     const sp = sum(list, t => t.amount);
     const bp = limit ? Math.round(sp / limit * 100) : 0;
     const over = !!limit && sp > limit;
     const warn = !over && bp >= 80;
     return {
       ...c, limit, count: list.length, spent: sp, spentFmt: fmt(sp), spentShort: short(sp),
-      share: pct(sp, spent), limitFmt: limit ? fmt(limit) : 'без лимита', budgetPct: Math.min(100, bp),
+      share: pct(sp, total), limitFmt: limit ? fmt(limit) : 'без лимита', budgetPct: Math.min(100, bp),
       barColor: over ? RED : warn ? AMBER : c.color,
       status: !limit ? 'Без лимита' : over ? 'Превышено на ' + fmt(sp - limit) : 'Осталось ' + fmt(limit - sp),
       statusColor: over ? RED : warn ? AMBER : th.mu,
@@ -91,6 +94,7 @@ export function derive(s, now = new Date()) {
     // удалённые свои категории и «Другое» показываем, только пока по ним есть траты
     .filter(c => c.spent > 0 || (!c.hidden && c.id !== OTHER_CAT.id))
     .sort((a, b) => b.spent - a.spent);
+  const catStats = buildCatStats(txs, spent);
   let acc = 0;
   const donut = 'conic-gradient(' +
     catStats.map(c => { const from = acc; acc += c.share; return `${c.color} ${from}% ${acc}%`; }).join(', ') +
@@ -102,7 +106,7 @@ export function derive(s, now = new Date()) {
     const who = nameOf(t.created_by);
     const methodName = t.method === 'cash' ? 'наличные' : 'карта';
     return {
-      ...t, letter: c.name[0], color: c.color, bg: c.bg, catName: c.name, amountFmt: fmt(t.amount), dateLabel: shortDate(t.date), methodName, author: who,
+      ...t, letter: c.letter || c.icon || c.name[0], color: c.color, bg: c.bg, catName: c.name, amountFmt: fmt(t.amount), dateLabel: shortDate(t.date), methodName, author: who,
       meta: `${c.name} · ${methodName} · ${shortDate(t.date)}${who && members.length > 1 ? ' · ' + who : ''}`,
       metaDay: `${c.name} · ${methodName}${who && members.length > 1 ? ' · ' + who : ''}`,
     };
@@ -298,7 +302,7 @@ export function derive(s, now = new Date()) {
 
   // Аналитика: куда уходят деньги за выбранный период (неделя / месяц / год)
   const kpiSpent = sum(kpiTxs, t => t.amount);
-  const periodCats = [...catList, { ...OTHER_CAT, letter: OTHER_CAT.name[0] }].map(c => {
+  const periodCats = [...catList, OTHER_ROW].map(c => {
     const sp = sum(kpiTxs.filter(t => catOf(t.cat).id === c.id), t => t.amount);
     return { id: c.id, name: c.name, color: c.color, letter: c.letter, spent: sp, spentShort: short(sp), share: pct(sp, kpiSpent) };
   }).filter(c => c.spent > 0).sort((a, b) => b.spent - a.spent);
@@ -307,11 +311,17 @@ export function derive(s, now = new Date()) {
     ? 'conic-gradient(' + periodCats.map(c => { const from = accP; accP += c.share; return `${c.color} ${from}% ${accP}%`; }).join(', ') + (accP < 100 ? `, ${th.ip} ${accP}% 100%` : '') + ')'
     : th.ip;
 
-  // Расходы: категории с тратами (они же фильтр) и операции периода по дням, новые сверху
-  const spendCat = s.spendCat && catStats.some(c => c.id === s.spendCat && c.spent > 0) ? s.spendCat : null;
-  const spendCats = catStats.filter(c => c.spent > 0).map(c => ({ ...c, selected: c.id === spendCat }));
+  // Расходы: просматриваемый месяц (shift — сколько зарплатных периодов назад), его категории (они же фильтр)
+  // и траты по дням, новые сверху
+  const shift = Math.min(0, Math.round(Number(s.shift) || 0));
+  const VP = shift ? periodBounds(now, startDay, shift) : P;
+  const vTxs = shift ? txsAll.filter(t => inRange(t.date, VP.startIso, VP.endIso)) : txs;
+  const vSpent = shift ? sum(vTxs, t => t.amount) : spent;
+  const vStats = shift ? buildCatStats(vTxs, vSpent) : catStats;
+  const spendCat = s.spendCat && vStats.some(c => c.id === s.spendCat && c.spent > 0) ? s.spendCat : null;
+  const spendCats = vStats.filter(c => c.spent > 0).map(c => ({ ...c, selected: c.id === spendCat }));
   const spendDays = [];
-  [...txs].reverse().filter(t => !spendCat || catOf(t.cat).id === spendCat).forEach(t => {
+  [...vTxs].reverse().filter(t => !spendCat || catOf(t.cat).id === spendCat).forEach(t => {
     let g = spendDays[spendDays.length - 1];
     if (!g || g.iso !== t.date) { g = { iso: t.date, label: dayLabel(parseIso(t.date), today), total: 0, items: [] }; spendDays.push(g); }
     g.total += t.amount;
@@ -319,6 +329,35 @@ export function derive(s, now = new Date()) {
   });
   spendDays.forEach(g => { g.totalFmt = fmt(g.total); });
   const budgetSpentPct = pct(spent, budgetTotal);
+  // Пустой месяц: подсказать, когда были последние траты, и открыть тот месяц
+  const lastTx = txsAll[txsAll.length - 1] || null;
+  const monthOf = Pk => MONTHS_NOM[Pk.start.getMonth()] + (Pk.start.getFullYear() !== today.getFullYear() ? ' ' + Pk.start.getFullYear() : '');
+  // Последняя трата раньше месяца Pk → { дата, сколько месяцев назад, название месяца }
+  const lastHintFor = Pk => {
+    if (!lastTx || lastTx.date >= Pk.startIso) return null;
+    for (let k = 1; k <= 36; k++) {
+      const Q = periodBounds(now, startDay, -k);
+      if (inRange(lastTx.date, Q.startIso, Q.endIso)) return { date: dayMonth(parseIso(lastTx.date)), shift: -k, month: monthOf(Q) };
+    }
+    return null;
+  };
+  const capFirst = x => x[0].toUpperCase() + x.slice(1);
+  const budgetLeft = budgetTotal - spent;
+  const sv = {
+    shift, isCurrent: !shift, title: shift ? capFirst(monthOf(VP)) : 'Этот месяц',
+    range: `${dayMonth(VP.start)} – ${dayMonth(addDays(VP.end, -1))}`,
+    canPrev: txsAll.some(t => t.date < VP.startIso) || data.incomes.some(i => i.date < VP.startIso), canNext: shift < 0,
+    spent: vSpent, spentFmt: fmt(vSpent), count: vTxs.length, empty: vTxs.length === 0,
+    cashFmt: fmt(sum(vTxs.filter(t => t.method === 'cash'), t => t.amount)), cardFmt: fmt(sum(vTxs.filter(t => t.method !== 'cash'), t => t.amount)),
+    say: shift
+      ? (vTxs.length ? `${traty(vTxs.length)}, в среднем ${fmt(vSpent / Math.max(1, daysBetween(VP.start, VP.end)))} в день` : '')
+      : budgetTotal > 0
+        ? (budgetLeft >= 0 ? `Можно ещё ${fmt(budgetLeft)} — примерно ${fmt(budgetLeft / daysLeft)} в день` : `Лимит превышен на ${fmt(-budgetLeft)}`)
+        : '',
+    over: !shift && budgetTotal > 0 && budgetLeft < 0,
+    lastHint: lastHintFor(VP),
+  };
+  const homeLastHint = lastHintFor(P);
 
   // Автораспределение: средние траты по категориям за 3 прошлых периода с записями,
   // уже потраченное и затраты невыполненных задач до конца периода
@@ -343,7 +382,7 @@ export function derive(s, now = new Date()) {
     const c = catOf(b.cat);
     const payer = b.payer ? membersById[b.payer] || '' : '';
     return {
-      ...b, letter: (b.title.trim()[0] || '?').toUpperCase(), color: c.color, bg: c.bg, catName: c.name, amountFmt: fmt(b.amount),
+      ...b, letter: c.letter || c.icon || (b.title.trim()[0] || '?').toUpperCase(), color: c.color, bg: c.bg, catName: c.name, amountFmt: fmt(b.amount),
       date, paid, payerName: payer,
       status: !active ? 'со следующего периода' : paid ? 'внесено' : date === todayIso ? 'сегодня' : shortDate(date),
       statusColor: paid ? GREEN : date === todayIso ? ACCENT : th.mu,
@@ -402,10 +441,16 @@ export function derive(s, now = new Date()) {
   };
 
   // Кто кому переводит, чтобы общие траты делились поровну (или в выбранной доле)
-  const settleLog = (settings.settle && Array.isArray(settings.settle.log)) ? settings.settle.log : [];
-  const st = settleUp(members, data.txs, settings.split, settleLog);
+  // Считается только после включения (since): раньше один из двоих мог вносить общие траты за всю семью
+  const settleCfg = settings.settle || {};
+  const settleAvailable = members.length === 2;
+  const settleOn = settleAvailable && !!settleCfg.on;
+  const settleSince = settleCfg.since || todayIso;
+  const settleLog = (Array.isArray(settleCfg.log) ? settleCfg.log : []).filter(x => x.date >= settleSince);
+  const st = settleOn ? settleUp(members, data.txs.filter(t => t.date >= settleSince), settings.split, settleLog) : null;
   const nm = m => (m && (m.display_name || 'Партнёр')) || '';
-  const settle = st && (st.total > 0 || settleLog.length) ? {
+  const settle = st ? {
+    sinceLabel: dayMonth(parseIso(settleSince)),
     aId: st.A.user_id, bId: st.B.user_id, aName: nm(st.A), bName: nm(st.B),
     paidAFmt: fmt(st.paidA), paidBFmt: fmt(st.paidB), totalFmt: fmt(st.total),
     settled: st.settled, amount: st.amount, amountFmt: fmt(st.amount),
@@ -439,14 +484,15 @@ export function derive(s, now = new Date()) {
     catStats, widgetCats: catStats.slice(0, 3), donut,
     topCatShare: catStats[0].share, topCatName: catStats[0].name,
     overCount: catStats.filter(c => c.spent > c.limit).length,
-    budgetTotalFmt: fmt(budgetTotal), budgetLeftFmt: fmt(budgetTotal - spent),
+    budgetTotal, budgetTotalFmt: fmt(budgetTotal), budgetLeftFmt: fmt(budgetTotal - spent),
     budgetSpentPct: Math.min(100, budgetSpentPct), budgetBarColor: budgetSpentPct > 100 ? RED : budgetSpentPct >= 80 ? AMBER : ACCENT,
     spendCats, spendDays, spendCatName: spendCat ? catOf(spendCat).name : '',
     // автораспределение
     planInput, autoPlan, autoSave, autoOn: !!autoCfg.on, autoPeriod: autoCfg.period || null, periodStartIso: P.startIso,
     // регулярные платежи, лимиты, остаток в цель, расчёты
     billRows, billsDue, billReminders, billsMonthlyFmt: fmt(billsMonthly), billsLeftFmt: fmt(billsLeft), billsLeft,
-    limitAlerts, sweep, settle,
+    limitAlerts, sweep, settle, settleAvailable, settleOn, sv, homeLastHint,
+    nextBillText: (() => { const b = billRows.filter(x => x.date && !x.paid && x.status !== 'со следующего периода').sort((p, q) => (p.date < q.date ? -1 : 1))[0]; return b ? shortDate(b.date) + ' · ' + b.title : billRows.length ? 'всё внесено' : 'добавить'; })(),
     periodCats, periodDonut, periodWord: s.period === 'week' ? 'за неделю' : s.period === 'year' ? 'за год' : 'за месяц',
     recentTxs, topTxs, widgetTxs: recentTxs.slice(0, 2), txCount: txs.length,
     // цели
@@ -455,8 +501,9 @@ export function derive(s, now = new Date()) {
     weekBars, weekBarsDark, weekTotalFmt: fmt(weekTotal), weekDeltaText,
     pairBars, chartTotalFmt: fmt(kpi.total), kpiIncomeFmt: fmt(kpi.income), kpiSavedFmt: fmt(kpi.saved),
     saveRate: pct(kpi.saved, kpi.income),
-    deltaText: delta === null ? kpi.noPrev : `${signed(delta)}% ${kpi.suffix}`,
-    deltaColor: delta === null ? th.mu : delta > 0 ? RED : GREEN,
+    // ещё ничего не внесли — не «−100%», а честное «пока нет трат»
+    deltaText: kpi.total === 0 ? 'пока нет трат' : delta === null ? kpi.noPrev : `${signed(delta)}% ${kpi.suffix}`,
+    deltaColor: kpi.total === 0 || delta === null ? th.mu : delta > 0 ? RED : GREEN,
     kpiIncomeDeltaText: incDelta === null ? kpi.noPrev : `${signed(incDelta)}% ${kpi.suffix}`,
     kpiIncomeDeltaColor: incDelta === null ? th.mu : incDelta < 0 ? RED : GREEN,
     perDayFmt: fmt(kpi.perDay),

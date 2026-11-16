@@ -31,11 +31,12 @@ export function BarChart({ items, height, gap = 8, colGap = 6, radius = 7, label
   );
 }
 
-export function PairBars({ items, height }) {
+// onPick(i) — нажали на столбец (например, открыть траты этого месяца)
+export function PairBars({ items, height, onPick }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10, height, flex: 'none' }}>
-      {items.map(b => (
-        <div key={b.label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end' }}>
+      {items.map((b, i) => (
+        <div key={b.label} onClick={onPick ? () => onPick(i) : undefined} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, height: '100%', justifyContent: 'flex-end', cursor: onPick ? 'pointer' : undefined }}>
           <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', width: '100%', flex: 1 }}>
             <div style={{ flex: 1, borderRadius: '6px 6px 2px 2px', background: 'var(--green)', height: b.hi + '%', opacity: b.op }} />
             <div style={{ flex: 1, borderRadius: '6px 6px 2px 2px', background: 'var(--accent)', height: b.he + '%', opacity: b.op }} />
@@ -47,9 +48,12 @@ export function PairBars({ items, height }) {
   );
 }
 
+// Плитка с буквой или иконкой категории (эмодзи рисуем чуть крупнее буквы — так они читаются одинаково)
+const EMOJI_RE = /\p{Extended_Pictographic}/u;
 export function Letter({ size, radius, bg, color, fontSize, children, style }) {
+  const emoji = typeof children === 'string' && EMOJI_RE.test(children);
   return (
-    <div style={{ width: size, height: size, borderRadius: radius, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize, background: bg, color, flex: 'none', ...style }}>
+    <div style={{ width: size, height: size, borderRadius: radius, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: emoji ? Math.round(fontSize * 1.3) : fontSize, lineHeight: 1, background: bg, color, flex: 'none', ...style }}>
       {children}
     </div>
   );

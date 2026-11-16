@@ -228,3 +228,27 @@ body{overscroll-behavior:none}
 .imp-check[data-on="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
 .imp-cat{font-size:11px;font-weight:800;border-radius:8px;padding:3px 8px;white-space:nowrap;max-width:130px;overflow:hidden;text-overflow:ellipsis}
 .alert-row{display:flex;align-items:center;gap:12px;cursor:pointer}
+
+/* Расходы: месяц, сводка, быстрые действия, пустой месяц */
+.month-switch{display:flex;align-items:center;gap:8px;background:var(--cd);border-radius:20px;padding:6px;box-shadow:var(--sh);flex:none}
+.month-switch__arrow{width:42px;height:42px;border-radius:14px;border:none;background:var(--ip);color:var(--tx);font:inherit;font-size:22px;font-weight:700;line-height:1;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;padding-bottom:2px}
+.month-switch__arrow:disabled{opacity:.3;cursor:default}
+.month-switch__arrow:focus-visible,.quick-tile:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.month-switch__label{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0}
+.month-switch__title{font-size:16px;font-weight:800}
+.spend-say{font-size:14px;font-weight:700;color:var(--tx)}
+.spend-say[data-over="true"]{color:var(--red)}
+.alert-pills{display:flex;flex-wrap:wrap;gap:6px}
+.alert-pill{font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;background:var(--ip);color:#B46F00;cursor:pointer;white-space:nowrap}
+.alert-pill[data-over="true"]{color:var(--red)}
+.quick-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex:none}
+.quick-tile{background:var(--cd);border:none;border-radius:20px;padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;box-shadow:var(--sh);cursor:pointer;font:inherit;color:var(--tx);text-align:left;min-width:0}
+.quick-tile__icon{font-size:22px;line-height:1.2}
+.quick-tile__title{font-size:14px;font-weight:800}
+.quick-tile__sub{font-size:11px;font-weight:600;color:var(--mu);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.empty-month{align-items:center;text-align:center;gap:8px;padding:24px 18px}
+.empty-month__icon{font-size:40px;line-height:1}
+.empty-month__title{font-size:17px;font-weight:800}
+.icon-pick{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.icon-pick__item{aspect-ratio:1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;background:var(--ip);cursor:pointer;border:2px solid transparent}
+.icon-pick__item[data-on="true"]{border-color:var(--accent);background:var(--as)}

@@ -52,7 +52,11 @@ export default function Settings() {
         <div className="menu-row menu-row--link" onClick={() => a.openSheet('sweep')}>
           <span className="menu-row__title">Остаток месяца в цель</span><span className="menu-row__value">{d.sweep.on ? 'включено ›' : 'выключено ›'}</span>
         </div>
-        {d.settle && <MenuLink title="Расчёт между нами" onClick={() => a.openSheet('settle')} />}
+        {d.settleAvailable && (
+          <div className="menu-row menu-row--link" onClick={() => a.openSheet('settle')}>
+            <span className="menu-row__title">Расчёт между нами</span><span className="menu-row__value">{d.settleOn ? 'включён ›' : 'выключен ›'}</span>
+          </div>
+        )}
         <MenuLink title="Импорт выписки Kaspi" onClick={() => a.openSheet('import')} />
       </div>
 

@@ -1,7 +1,7 @@
 // Формы: задача, цель, доход, детали траты, зарплата, лимит и своя категория, начало периода, пароль, автораспределение.
 import { useMemo, useRef, useState } from 'react';
 import { useBudget } from '../store.jsx';
-import { CAT_PALETTE, CAT_SUGGEST, TAGS, TAG_COLORS, fmt, traty } from '../data.js';
+import { CAT_PALETTE, CAT_SUGGEST, CAT_ICON_CHOICES, guessIcon, TAGS, TAG_COLORS, fmt, traty } from '../data.js';
 import { pinProblem } from '../auth-profiles.js';
 import { iso, shortDate } from '../lib/dates.js';
 import { Sheet, Field, Chips, PrimaryButton, DangerButton } from './Sheet.jsx';
@@ -201,26 +201,35 @@ function CategorySheet({ cat, pick, onClose }) {
   const [name, setName] = useState(cat ? cat.name : '');
   const [color, setColor] = useState(cat ? [cat.color, cat.bg] : (CAT_PALETTE.find(([c]) => !usedColors.has(c)) || CAT_PALETTE[0]));
   const [limit, setLimit] = useState(cat && cat.limit ? String(cat.limit) : '');
+  const [icon, setIcon] = useState(cat ? cat.icon || null : null);
+  const iconV = icon || guessIcon(name);
   const key = name.trim().toLowerCase();
   const taken = !!key && d.cats.some(c => c.id !== (cat && cat.id) && c.name.trim().toLowerCase() === key);
   const ok = key.length > 0 && !taken;
   const suggest = cat ? [] : CAT_SUGGEST.filter(x => !d.cats.some(c => c.name.trim().toLowerCase() === x.toLowerCase()));
   const save = () => {
     if (!ok) return;
-    const id = a.saveCategory({ name: name.trim(), color: color[0], bg: color[1], limit: num(limit) }, cat && cat.id);
+    const id = a.saveCategory({ name: name.trim(), color: color[0], bg: color[1], limit: num(limit), icon: icon || null }, cat && cat.id);
     if (pick) a.pickCat(id);
     onClose();
   };
   return (
     <Sheet title={cat ? 'Категория' : 'Новая категория'} onClose={onClose}>
       <div className="row" style={{ gap: 12, alignItems: 'flex-end' }}>
-        <Letter size={48} radius={16} bg={color[1]} color={color[0]} fontSize={18}>{(name.trim()[0] || '+').toUpperCase()}</Letter>
+        <Letter size={48} radius={16} bg={color[1]} color={color[0]} fontSize={18}>{iconV || (name.trim()[0] || '+').toUpperCase()}</Letter>
         <Field label="Название" style={{ flex: 1 }}>
           <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Например, кредит" autoFocus={!cat} maxLength={24} enterKeyHint="done" onKeyDown={e => e.key === 'Enter' && save()} />
         </Field>
       </div>
       {taken && <div className="t-meta" style={{ color: 'var(--red)' }}>Такая категория уже есть</div>}
       {suggest.length > 0 && <Chips options={suggest.map(x => ({ id: x, label: x }))} value={name.trim()} onChange={setName} />}
+      <Field label={icon ? 'Иконка' : 'Иконка · подобрана по названию'}>
+        <div className="icon-pick">
+          {CAT_ICON_CHOICES.map(x => (
+            <div key={x} className="icon-pick__item" data-on={x === iconV ? 'true' : 'false'} onClick={() => setIcon(x === icon ? null : x)}>{x}</div>
+          ))}
+        </div>
+      </Field>
       <Field label="Цвет">
         <div className="swatches">
           {CAT_PALETTE.map(([c, bg]) => (
@@ -426,7 +435,7 @@ function ImportSheet({ onClose }) {
   const pickedInc = incRows.filter(r => r.checked);
   const sumOf = list => list.reduce((x, r) => x + r.amount, 0);
   const catById = Object.fromEntries(d.cats.map(c => [c.id, c]));
-  const catView = id => catById[id] || { name: 'Другое', letter: 'Д', color: '#8E8A9C', bg: '#EFEEF3' };
+  const catView = id => catById[id] || { name: 'Другое', letter: '📦', color: '#8E8A9C', bg: '#EFEEF3' };
   const go = async () => {
     setSaving(true);
     const ok = await a.importRows([...pickedTx, ...pickedInc]);
@@ -470,7 +479,7 @@ function ImportSheet({ onClose }) {
           </div>
           <div className="col" style={{ gap: 4, alignItems: 'flex-end' }}>
             <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap', color: r.kind === 'income' ? 'var(--green)' : 'var(--tx)' }}>{r.kind === 'income' ? '+' : '−'}{fmt(r.amount)}</div>
-            {c && <div className="imp-cat" style={{ background: c.bg, color: c.color }} onClick={() => setOpenId(openId === r.id ? null : r.id)}>{c.name} ▾</div>}
+            {c && <div className="imp-cat" style={{ background: c.bg, color: c.color }} onClick={() => setOpenId(openId === r.id ? null : r.id)}>{c.letter} {c.name} ▾</div>}
           </div>
         </div>
         {openId === r.id && <div style={{ paddingBottom: 10 }}><Chips options={catOptions(d.cats)} value={r.cat} onChange={v => setCat(r.id, v)} /></div>}
@@ -561,9 +570,19 @@ function SweepSheet({ onClose }) {
 function SettleSheet({ onClose }) {
   const { a, d } = useBudget();
   const t = d.settle;
-  if (!t) return null;
+  if (!d.settleAvailable) return null;
+  if (!t) {
+    return (
+      <Sheet title="Расчёт между вами" onClose={onClose}>
+        <div className="t-meta">Приложение посчитает, кто сколько заплатил за общие траты, и подскажет, кому сколько перевести, чтобы делить поровну или в вашей доле.</div>
+        <div className="t-meta">Считаются траты с дня включения: раньше один из вас мог вносить траты за всю семью, и старая история дала бы неверный долг.</div>
+        <PrimaryButton onClick={() => { a.setSettle(true); }}>Включить с сегодняшнего дня</PrimaryButton>
+      </Sheet>
+    );
+  }
   return (
     <Sheet title="Расчёт между вами" onClose={onClose}>
+      <div className="t-meta">Считаем траты с {t.sinceLabel}.</div>
       <div className="plan-sum">
         <div className="plan-sum__row"><span className="muted">Общие траты</span><b>{t.totalFmt}</b></div>
         <div className="plan-sum__row"><span className="muted">{t.aName}: оплачено</span><b>{t.paidAFmt}</b></div>
@@ -576,7 +595,7 @@ function SettleSheet({ onClose }) {
       <Field label="Как делим траты">
         <Chips options={t.options} value={t.splitId} onChange={id => a.setSplit(t.options.find(o => o.id === id).share)} />
       </Field>
-      <div className="t-meta">Считаются все траты с автором; «Перевод сделан» записывает перевод и выравнивает счёт. Прошлые переводы учитываются.</div>
+      <div className="t-meta">«Перевод сделан» записывает перевод и выравнивает счёт.</div>
       {!t.settled && <PrimaryButton onClick={() => { a.recordSettle(t.fromId, t.toId, t.amount); onClose(); }}>Перевод сделан · {t.amountFmt}</PrimaryButton>}
       {t.log.length > 0 && (
         <div className="col" style={{ gap: 8 }}>
@@ -588,6 +607,7 @@ function SettleSheet({ onClose }) {
           ))}
         </div>
       )}
+      <div className="t-link" style={{ textAlign: 'center', color: 'var(--mu)' }} onClick={() => { a.setSettle(false); onClose(); }}>Выключить расчёт</div>
     </Sheet>
   );
 }

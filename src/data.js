@@ -9,12 +9,12 @@ export const AMBER = '#F2A83B';
 export const DEFAULT_SETTINGS = { salary: 600000, monthStartDay: 5, limits: {} };
 
 export const CATS = [
-  { id: 'food', name: 'Продукты', color: '#2FA66F', bg: '#E6F6EE', limit: 80000 },
-  { id: 'cafe', name: 'Кафе', color: '#E0553F', bg: '#FCE9E5', limit: 20000 },
-  { id: 'home', name: 'Жильё', color: '#7A4AE0', bg: '#EFE9FC', limit: 45000 },
-  { id: 'transport', name: 'Транспорт', color: '#2F5BEA', bg: '#E8EDFD', limit: 25000 },
-  { id: 'fun', name: 'Развлечения', color: '#F2A83B', bg: '#FDF1DE', limit: 20000 },
-  { id: 'health', name: 'Здоровье', color: '#1BA3B5', bg: '#E1F5F7', limit: 15000 },
+  { id: 'food', name: 'Продукты', icon: '🛒', color: '#2FA66F', bg: '#E6F6EE', limit: 80000 },
+  { id: 'cafe', name: 'Кафе', icon: '☕', color: '#E0553F', bg: '#FCE9E5', limit: 20000 },
+  { id: 'home', name: 'Жильё', icon: '🏠', color: '#7A4AE0', bg: '#EFE9FC', limit: 45000 },
+  { id: 'transport', name: 'Транспорт', icon: '🚌', color: '#2F5BEA', bg: '#E8EDFD', limit: 25000 },
+  { id: 'fun', name: 'Развлечения', icon: '🎬', color: '#F2A83B', bg: '#FDF1DE', limit: 20000 },
+  { id: 'health', name: 'Здоровье', icon: '💊', color: '#1BA3B5', bg: '#E1F5F7', limit: 15000 },
 ];
 export const CAT_BY_ID = Object.fromEntries(CATS.map(c => [c.id, c]));
 
@@ -26,12 +26,25 @@ export const CAT_PALETTE = [
 ];
 export const CAT_SUGGEST = ['Кредит', 'Рассрочка', 'Связь', 'Дети', 'Одежда', 'Подарки'];
 // Трата с неизвестной категорией (например, стёртой вручную) попадает сюда, а не в «Продукты».
-export const OTHER_CAT = { id: 'other', name: 'Другое', color: '#8E8A9C', bg: '#EFEEF3', limit: 0 };
+export const OTHER_CAT = { id: 'other', name: 'Другое', icon: '📦', color: '#8E8A9C', bg: '#EFEEF3', limit: 0 };
+
+// Иконка своей категории: выбранная вручную или подобранная по названию; иначе — первая буква
+const ICON_RULES = [
+  [/кредит|рассроч|ипотек|займ|долг/i, '💳'], [/садик|детсад|школ|дет|ребён|ребен|малыш|игрушк/i, '🧸'],
+  [/одежд|обув/i, '👕'], [/связь|телефон|мобил|интернет/i, '📱'], [/подар|праздник/i, '🎁'],
+  [/спорт|фитнес|трениров/i, '🏋️'], [/красот|салон|космет|маникюр/i, '💅'], [/путешеств|отпуск|поездк/i, '✈️'],
+  [/авто|машин|бензин|топлив/i, '🚗'], [/животн|кот|собак|питом/i, '🐾'], [/учёб|учеб|курс|книг|образован/i, '📚'],
+  [/коммун|свет|газ|вода/i, '💡'], [/подписк/i, '🔁'], [/хоз|быт|уборк/i, '🧽'], [/еда|ресторан|доставк/i, '🍽️'],
+  [/аптек|лекар|врач/i, '💊'], [/благотвор|помощь|родител/i, '🤝'],
+];
+export const guessIcon = name => { const r = ICON_RULES.find(([re]) => re.test(name || '')); return r ? r[1] : null; };
+export const CAT_ICON_CHOICES = ['🛒', '☕', '🏠', '🚌', '🎬', '💊', '💳', '🧸', '👕', '📱', '🎁', '🚗', '✈️', '🐾', '📚', '💡', '🏋️', '💅', '🍽️', '🧽', '🤝', '👤'];
+
 export const allCats = settings => [
   ...CATS,
   ...(settings && Array.isArray(settings.cats) ? settings.cats : [])
     .filter(c => c && c.id && c.name)
-    .map(c => ({ limit: 0, ...c, custom: true })),
+    .map(c => ({ limit: 0, ...c, icon: c.icon || guessIcon(c.name), custom: true })),
 ];
 
 export const TAGS = ['Дом', 'Покупки', 'Платежи', 'Накопления', 'Здоровье'];

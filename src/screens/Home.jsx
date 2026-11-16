@@ -11,8 +11,8 @@ export default function Home() {
     <div className="screen">
       <div className="row-between" style={{ gap: 12 }}>
         <div className="col" style={{ gap: 2, minWidth: 0 }}>
-          <div className="t-eyebrow ellipsis">Привет, {d.greetingName} · {d.todayLabel}</div>
-          <div className="t-title">Аналитика</div>
+          <div className="t-eyebrow ellipsis">{d.todayLabel}</div>
+          <div className="t-title ellipsis">Привет, {d.greetingName} 👋</div>
         </div>
         <div className="avatar-btn" style={{ flex: 'none' }} onClick={() => a.go('settings')}>{d.greetingName[0].toUpperCase()}</div>
       </div>
@@ -56,7 +56,8 @@ export default function Home() {
             <span><i style={{ background: 'var(--accent)' }} />Расход</span>
           </div>
         </div>
-        <PairBars items={d.pairBars} height={120} />
+        <PairBars items={d.pairBars} height={120} onPick={s.period === 'month' ? i => a.openPeriod(i - (d.pairBars.length - 1)) : undefined} />
+        {s.period === 'month' && <div className="t-meta" style={{ marginTop: -6 }}>Нажмите на месяц, чтобы открыть его траты</div>}
         <div className="col">
           <KpiRow label="Расходы" value={d.chartTotalFmt} sub={d.deltaText} color={d.deltaColor} />
           <KpiRow label="Доходы" value={d.kpiIncomeFmt} sub={d.kpiIncomeDeltaText} color={d.kpiIncomeDeltaColor} />
@@ -72,7 +73,13 @@ export default function Home() {
           </div>
           <div className="t-link" onClick={() => a.go('spend')}>Все траты →</div>
         </div>
-        {!top && <div className="empty">Трат за этот период нет</div>}
+        {!top && s.period === 'month' && d.homeLastHint && (
+          <div className="col" style={{ gap: 8, alignItems: 'flex-start' }}>
+            <div className="t-meta">В этом месяце трат пока нет. Последние были {d.homeLastHint.date}.</div>
+            <div className="t-link" onClick={() => a.openPeriod(d.homeLastHint.shift)}>Открыть {d.homeLastHint.month}</div>
+          </div>
+        )}
+        {!top && !(s.period === 'month' && d.homeLastHint) && <div className="empty">Трат за этот период нет</div>}
         {top && (
           <div className="row" style={{ gap: 18 }}>
             <Donut size={104} inset={16} bg={d.periodDonut} gap={0}>
@@ -91,6 +98,10 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {!(d.memberStatsPeriod.length > 1 && d.memberStatsPeriod.some(m => m.spent > 0)) && d.settle && (
+        <div className="card"><SettleRow first /></div>
+      )}
 
       {d.memberStatsPeriod.length > 1 && d.memberStatsPeriod.some(m => m.spent > 0) && (
         <div className="card">
@@ -146,14 +157,14 @@ function Stat({ label, value }) {
 }
 
 // Кто кому переводит, чтобы общие траты делились как договорились
-function SettleRow() {
+function SettleRow({ first = false }) {
   const { d, a } = useBudget();
   const t = d.settle;
   return (
-    <div className="row-between list-row--tap" style={{ borderTop: '1px solid var(--ln)', paddingTop: 12, gap: 10 }} onClick={() => a.openSheet('settle')}>
+    <div className="row-between list-row--tap" style={first ? { gap: 10 } : { borderTop: '1px solid var(--ln)', paddingTop: 12, gap: 10 }} onClick={() => a.openSheet('settle')}>
       <div className="col" style={{ gap: 2, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 700 }}>{t.settled ? 'Расчёт: всё ровно' : `${t.fromName} → ${t.toName}`}</div>
-        <div className="t-meta">Траты делим {t.splitLabel}</div>
+        <div className="t-meta">С {t.sinceLabel}, делим {t.splitLabel}</div>
       </div>
       <div className="row" style={{ gap: 6 }}>
         {!t.settled && <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--accent)', whiteSpace: 'nowrap' }}>{t.amountFmt}</div>}

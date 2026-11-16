@@ -29,7 +29,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     auth: 'loading', user: null, household: undefined, members: [], me: null, data: null, loadError: false,
     ...loadPrefs(),
     screen: 'home', period: 'month', amount: '', cat: 'food', method: 'card', note: '', toast: null, sheet: null,
-    planDate: null, planOwner: 'me', spendCat: null, prev: null, catPicked: false, catAuto: false,
+    planDate: null, planOwner: 'me', spendCat: null, shift: 0, prev: null, catPicked: false, catAuto: false,
     busy: false,
     ...(initial || {}),
   }));
@@ -129,7 +129,14 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     const busy = async fn => { update({ busy: true }); try { await fn(); } finally { update({ busy: false }); } };
     return {
       // prev — вкладка, с которой открыли «+»: после траты возвращаемся туда же
-      go: screen => update(st => ({ screen, sheet: null, prev: screen === 'add' ? st.screen : st.prev, ...(screen === 'add' ? { catPicked: false, catAuto: false } : {}) })),
+      go: screen => update(st => ({
+        screen, sheet: null, prev: screen === 'add' ? st.screen : st.prev,
+        ...(screen === 'add' ? { catPicked: false, catAuto: false } : {}),
+        // вкладка «Расходы» (в том числе повторное нажатие) — текущий месяц; назад из лимитов и платежей — тот, что смотрели
+        ...(screen === 'spend' && !['budget', 'bills'].includes(st.screen) ? { shift: 0, spendCat: null } : {}),
+      })),
+      setShift: shift => update({ shift: Math.min(0, shift), spendCat: null }),
+      openPeriod: shift => update({ screen: 'spend', shift: Math.min(0, shift), spendCat: null, sheet: null }),
       // Аппаратная кнопка «назад»: закрыть шторку, вернуться на главную, иначе выйти
       back: () => {
         const st = stateRef.current;
@@ -333,6 +340,11 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
 
       // Расчёты между двумя участниками: доля трат и запись «перевёл» в settings.settle.log
       setSplit: share => patchSettings({ split: { share } }),
+      // Расчёт включается явно и считает траты с этого дня: раньше один мог вносить общие траты за всю семью
+      setSettle: on => {
+        patchSettings(cur => ({ settle: { ...(cur.settle || {}), on, ...(on ? { since: todayIso() } : {}) } }));
+        showToast(on ? 'Расчёт включён — считаем траты с сегодняшнего дня' : 'Расчёт выключен');
+      },
       recordSettle: (from, to, amount) => {
         const v = Math.max(0, Math.round(Number(amount) || 0));
         if (!from || !to || !v) return;
@@ -373,7 +385,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       // Свои категории трат (кредит, рассрочка…): общие для семьи, лежат в настройках
       saveCategory: (fields, id) => {
         const catId = id || 'c-' + uid().replace(/^id-/, '').slice(0, 8);
-        const row = { id: catId, name: fields.name, color: fields.color, bg: fields.bg };
+        const row = { id: catId, name: fields.name, color: fields.color, bg: fields.bg, icon: fields.icon || null };
         const limit = Math.max(0, Math.round(Number(fields.limit) || 0));
         patchSettings(cur => {
           const list = Array.isArray(cur.cats) ? cur.cats : [];
