@@ -1,7 +1,7 @@
 // Формы: задача, цель, доход, детали траты, зарплата, лимит и своя категория, начало периода, пароль, автораспределение.
 import { useMemo, useRef, useState } from 'react';
 import { useBudget } from '../store.jsx';
-import { CAT_PALETTE, CAT_SUGGEST, TAGS, TAG_COLORS, fmt } from '../data.js';
+import { CAT_PALETTE, CAT_SUGGEST, TAGS, TAG_COLORS, fmt, traty } from '../data.js';
 import { pinProblem } from '../auth-profiles.js';
 import { iso, shortDate } from '../lib/dates.js';
 import { Sheet, Field, Chips, PrimaryButton, DangerButton } from './Sheet.jsx';
@@ -406,7 +406,7 @@ function ImportSheet({ onClose }) {
       }
       if (!items.length) throw new Error('empty');
       const all = s.data || { txs: [], incomes: [] };
-      const res = buildImport(items, { txs: all.txs, incomes: all.incomes, cats: d.cats, allCats: d.cats });
+      const res = buildImport(items, { txs: all.txs, incomes: all.incomes, cats: d.cats, allCats: d.cats, ns: s.household ? s.household.id : '' });
       setRows(res.rows);
       setSkipped(res.skipped);
       setStage('review');
@@ -503,7 +503,7 @@ function ImportSheet({ onClose }) {
       )}
       <PrimaryButton disabled={saving || (!pickedTx.length && !pickedInc.length)} onClick={go}>
         {saving ? 'Добавляю…' : pickedTx.length || pickedInc.length
-          ? `Добавить ${pickedTx.length ? `${pickedTx.length} трат на ${fmt(sumOf(pickedTx))}` : ''}${pickedTx.length && pickedInc.length ? ' и ' : ''}${pickedInc.length ? `${pickedInc.length} поступл.` : ''}`
+          ? `Добавить ${pickedTx.length ? `${traty(pickedTx.length)} на ${fmt(sumOf(pickedTx))}` : ''}${pickedTx.length && pickedInc.length ? ' и ' : ''}${pickedInc.length ? `${pickedInc.length} поступл.` : ''}`
           : 'Отметьте операции'}
       </PrimaryButton>
       <div className="t-link" style={{ textAlign: 'center' }} onClick={() => input.current && input.current.click()}>Выбрать другой файл</div>

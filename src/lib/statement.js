@@ -104,12 +104,12 @@ function hash(s) {
 }
 
 /**
- * items — из parseKaspiLines / parseCsv; ctx: { txs, incomes, cats (видимые), allCats }
+ * items — из parseKaspiLines / parseCsv; ctx: { txs, incomes, cats (видимые), allCats, ns (id семьи) }
  * Возвращает { rows, skipped }: строки для экрана импорта (kind 'tx' | 'income', checked, cat, likely)
  * и сколько операций уже импортировано раньше.
  */
 export function buildImport(items, ctx) {
-  const { txs = [], incomes = [], cats = [], allCats = cats } = ctx;
+  const { txs = [], incomes = [], cats = [], allCats = cats, ns = '' } = ctx;
   const ids = new Set([...txs.map(t => t.id), ...incomes.map(i => i.id)]);
   const sameDay = new Map();
   [...txs, ...incomes].forEach(t => { const k = t.date + '|' + t.amount; sameDay.set(k, (sameDay.get(k) || 0) + 1); });
@@ -120,7 +120,7 @@ export function buildImport(items, ctx) {
     const key = [it.date, it.amount, it.income ? '+' : '-', norm(it.details)].join('|');
     const n = (seen.get(key) || 0) + 1;
     seen.set(key, n);
-    const id = 'imp-' + hash(key + '|' + n);
+    const id = 'imp-' + hash(ns + '|' + key + '|' + n); // ns — id семьи: у другой семьи тот же чек даст другой id
     const kind = it.income ? 'income' : 'tx';
     const exists = ids.has(id);
     // Та же сумма в тот же день уже записана вручную — скорее всего, это она

@@ -77,24 +77,37 @@ export function createSupabaseBackend(url, key) {
       return { txs, tasks, goals, incomes };
     },
     async insert(table, row, hid) { await rows(sb.from(table).insert({ ...row, household_id: hid })); },
-    // skipExisting — INSERT … ON CONFLICT (id) DO NOTHING: второй телефон не создаст дубль
+    // skipExisting — INSERT … ON CONFLICT (id) DO NOTHING: второй телефон не создаст дубль.
+    // Возвращает, сколько строк реально записано (пропущенные уже были) — по нему store решает, перечитать ли данные.
     async insertMany(table, list, hid, opts) {
       const data = list.map(r => ({ ...r, household_id: hid }));
-      await rows(opts && opts.skipExisting
-        ? sb.from(table).upsert(data, { onConflict: 'id', ignoreDuplicates: true })
-        : sb.from(table).insert(data));
+      if (opts && opts.skipExisting) {
+        const res = await rows(sb.from(table).upsert(data, { onConflict: 'id', ignoreDuplicates: true }).select('id'));
+        return Array.isArray(res) ? res.length : data.length;
+      }
+      await rows(sb.from(table).insert(data));
+      return data.length;
     },
     async update(table, id, patch) { await rows(sb.from(table).update(patch).eq('id', id)); },
     async remove(table, id) { await rows(sb.from(table).delete().eq('id', id)); },
     async topUpGoal(id, amount) { await rows(sb.rpc('top_up_goal', { p_id: id, p_amount: amount })); },
-    // Разовое действие периода: true — сделать его должен этот телефон, false — партнёр уже сделал
+    // Разовое действие периода: true — сделать его должен этот телефон, false — партнёр уже сделал.
+    // Пишем метку со случайным token и через секунду перечитываем: если оба телефона записали почти одновременно,
+    // уцелеет одна метка — продолжит только её владелец.
     async claim(hid, key, value) {
-      const [hh] = await rows(sb.from('households').select('settings').eq('id', hid).limit(1));
-      const cur = (hh && hh.settings) || {};
-      const claims = cur.claims || {};
-      if (claims[key] === value) return false;
-      await rows(sb.from('households').update({ settings: { ...cur, claims: { ...claims, [key]: value } } }).eq('id', hid));
-      return true;
+      const read = async () => {
+        const [hh] = await rows(sb.from('households').select('settings').eq('id', hid).limit(1));
+        return (hh && hh.settings) || {};
+      };
+      const cur = await read();
+      const was = (cur.claims || {})[key];
+      if (was && (was === value || was.value === value)) return false;
+      const token = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      const fresh = await read();
+      await rows(sb.from('households').update({ settings: { ...fresh, claims: { ...(fresh.claims || {}), [key]: { value, token } } } }).eq('id', hid));
+      await new Promise(r => setTimeout(r, 1200));
+      const after = ((await read()).claims || {})[key];
+      return !!after && after.token === token;
     },
     async clearData(hid) { for (const t of TABLES) await rows(sb.from(t).delete().eq('household_id', hid)); },
 

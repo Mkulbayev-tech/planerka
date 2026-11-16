@@ -389,7 +389,8 @@ export function derive(s, now = new Date()) {
   const sweepCfg = settings.sweep || {};
   const prevLeft = hasData(prevP) ? Math.max(0, periodIncome(prevP) - periodSpent(prevP) - topupsIn(prevP.startIso, prevP.endIso)) : 0;
   const sweepGoal = goals.find(g => g.id === sweepCfg.goalId) || null;
-  const sweptNow = (sweepCfg.last && sweepCfg.last.period === P.startIso) || (settings.claims && settings.claims.sweep === P.startIso);
+  const sweepClaim = settings.claims && settings.claims.sweep;
+  const sweptNow = (sweepCfg.last && sweepCfg.last.period === P.startIso) || (!!sweepClaim && (sweepClaim === P.startIso || sweepClaim.value === P.startIso));
   const sweep = {
     on: !!sweepCfg.on && !!sweepGoal, goalId: sweepGoal ? sweepGoal.id : null, goalName: sweepGoal ? sweepGoal.name : '',
     prevLeft, prevLeftFmt: fmt(prevLeft), prevMonth: MONTHS_NOM[prevP.start.getMonth()],

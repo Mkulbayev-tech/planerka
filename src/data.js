@@ -59,6 +59,14 @@ export const short = n =>
       ? Math.round(n / 1000) + '\u00A0тыс\u00A0₸'
       : fmt(n);
 
+// 1 трата, 3 траты, 5 трат
+export const plural = (n, one, few, many) => {
+  const a = Math.abs(n) % 100;
+  const b = a % 10;
+  return a > 10 && a < 20 ? many : b === 1 ? one : b >= 2 && b <= 4 ? few : many;
+};
+export const traty = n => `${n} ${plural(n, 'трата', 'траты', 'трат')}`;
+
 export const uid = () =>
   (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()

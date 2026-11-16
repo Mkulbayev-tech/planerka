@@ -46,10 +46,12 @@ export function createLocalBackend() {
     async insert(table, row) { change(db => { db[TABLES[table]].push({ ...row, created_at: new Date().toISOString() }); }); },
     // skipExisting — строки с уже существующим id пропускаются (регулярные платежи, повторный импорт)
     async insertMany(table, list, _hid, opts) {
+      let added = 0;
       change(db => {
         const have = new Set(db[TABLES[table]].map(r => r.id));
-        list.forEach(row => { if (!(opts && opts.skipExisting && have.has(row.id))) db[TABLES[table]].push({ ...row, created_at: new Date().toISOString() }); });
+        list.forEach(row => { if (!(opts && opts.skipExisting && have.has(row.id))) { db[TABLES[table]].push({ ...row, created_at: new Date().toISOString() }); added++; } });
       });
+      return added;
     },
     async update(table, id, patch) { change(db => { db[TABLES[table]] = db[TABLES[table]].map(r => (r.id === id ? { ...r, ...patch } : r)); }); },
     async remove(table, id) { change(db => { db[TABLES[table]] = db[TABLES[table]].filter(r => r.id !== id); }); },
@@ -68,9 +70,10 @@ export function createLocalBackend() {
       change(db => {
         const s = db.household.settings || {};
         const claims = s.claims || {};
-        if (claims[key] === value) return;
+        const was = claims[key];
+        if (was && (was === value || was.value === value)) return;
         mine = true;
-        db.household.settings = { ...s, claims: { ...claims, [key]: value } };
+        db.household.settings = { ...s, claims: { ...claims, [key]: { value, token: 'local' } } };
       });
       return mine;
     },

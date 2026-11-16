@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { CATS, DEFAULT_SETTINGS, GOAL_PALETTE, allCats, fmt, uid } from './data.js';
+import { CATS, DEFAULT_SETTINGS, GOAL_PALETTE, allCats, fmt, uid, traty } from './data.js';
 import { iso, addDays, parseIso } from './lib/dates.js';
 import { derive } from './model.js';
 import { guessCat } from './lib/autoplan.js';
@@ -289,7 +289,8 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
           return { data: { ...d, txs: [...d.txs, ...clean.filter(r => !have.has(r.id))] } };
         });
         try {
-          await backend.insertMany('transactions', clean, hid(), { skipExisting: true });
+          const written = await backend.insertMany('transactions', clean, hid(), { skipExisting: true });
+          if (written < clean.length) loadHousehold(); // часть уже внёс второй телефон
         } catch (e) { console.error(e); showToast('Не удалось внести платежи: ' + errText(e)); loadHousehold(); return; }
         const done = {};
         rows.forEach(r => { (done[r.billId] = done[r.billId] || []).push(r.date); });
@@ -314,7 +315,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
         const by = stateRef.current.user ? stateRef.current.user.id : null;
         update(st => {
           const hh = st.household;
-          return { household: { ...hh, settings: { ...hh.settings, claims: { ...((hh.settings && hh.settings.claims) || {}), sweep: period } } } };
+          return { household: { ...hh, settings: { ...hh.settings, claims: { ...((hh.settings && hh.settings.claims) || {}), sweep: { value: period } } } } };
         });
         mutate(
           d => ({ ...d, goals: d.goals.map(x => (x.id === goalId ? { ...x, saved: x.saved + add, topups: [...(x.topups || []), { date: todayIso(), amount: add, by }] } : x)) }),
@@ -342,19 +343,25 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       // Импорт выписки: траты и поступления; id из содержимого строки — повторный импорт не задвоит
       importRows: async rows => {
         const me = stateRef.current.user ? stateRef.current.user.id : null;
+        const cur = data();
+        const have = new Set([...cur.txs.map(t => t.id), ...cur.incomes.map(i => i.id)]);
+        rows = rows.filter(r => !have.has(r.id)); // eslint-disable-line no-param-reassign
         const txs = rows.filter(r => r.kind === 'tx').map(r => ({ id: r.id, title: r.title, cat: r.cat || 'other', amount: r.amount, method: 'card', date: r.date, created_by: me }));
         const incomes = rows.filter(r => r.kind === 'income').map(r => ({ id: r.id, title: r.title, amount: r.amount, date: r.date, method: 'card' }));
         update(st => {
           const d = st.data || EMPTY;
           return { data: { ...d, txs: [...d.txs, ...txs], incomes: [...d.incomes, ...incomes] } };
         });
+        let written = 0;
         try {
-          if (txs.length) await backend.insertMany('transactions', txs, hid(), { skipExisting: true });
-          if (incomes.length) await backend.insertMany('incomes', incomes, hid(), { skipExisting: true });
+          if (txs.length) written += await backend.insertMany('transactions', txs, hid(), { skipExisting: true });
+          if (incomes.length) written += await backend.insertMany('incomes', incomes, hid(), { skipExisting: true });
         } catch (e) { console.error(e); showToast('Не удалось импортировать: ' + errText(e)); loadHousehold(); return false; }
+        // Часть строк уже была на сервере (например, партнёр импортировал ту же выписку) — сверяемся с сервером
+        if (written < txs.length + incomes.length) { loadHousehold(); showToast(`Добавлено ${written} из ${txs.length + incomes.length} — остальные уже были`, 2600); return true; }
         success();
         const spentSum = txs.reduce((x, r) => x + r.amount, 0);
-        showToast(`Импортировано: ${txs.length} трат на ${fmt(spentSum)}${incomes.length ? ` и ${incomes.length} поступл.` : ''}`, 2600);
+        showToast(`Импортировано: ${traty(txs.length)} на ${fmt(spentSum)}${incomes.length ? ` и ${incomes.length} поступл.` : ''}`, 2600);
         return true;
       },
 
