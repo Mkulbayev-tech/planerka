@@ -2,6 +2,7 @@
 import { CATS, OTHER_CAT, allCats, TAGS, TAG_COLORS, THEMES, DEFAULT_SETTINGS, fmt, short, traty, mix, plural } from './data.js';
 import { SHOP_GROUPS, weekKey, shoppingFromMenu, creditView, utilitiesView } from './lib/family.js';
 import { validChores, occursOn, assigneeOf, stateOf, repeatLabel } from './lib/chores.js';
+import { validAccounts, ratesOf, accountIdOf, balances, money, signOf } from './lib/accounts.js';
 import {
   iso, startOfDay, addDays, daysBetween, inRange, parseIso, periodBounds, weekBounds,
   longLabel, dayMonth, dayLabel, shortDate, MONTHS_NOM, MONTHS_CAP, MONTHS_GEN, WEEKDAYS_SHORT, WEEKDAYS,
@@ -63,6 +64,15 @@ export function derive(s, now = new Date()) {
   const periodIncome = Pk => (Pk.startIso === P.startIso || hasData(Pk) ? salary : 0) + sum(data.incomes.filter(i => inRange(i.date, Pk.startIso, Pk.endIso) && (Pk.startIso !== P.startIso || i.date <= todayIso)), i => i.amount);
   const periodSpent = Pk => sum(data.txs.filter(t => inRange(t.date, Pk.startIso, Pk.endIso)), t => t.amount);
 
+  // Счета и валюты: method операции — id счёта (или старые «card» / «cash»); суммы в валюте — в settings.fx[id]
+  const accountsRaw = validAccounts(settings.accounts);
+  const rates = ratesOf(settings);
+  const fxMap = settings.fx && typeof settings.fx === 'object' ? settings.fx : {};
+  const accOf = method => { const id = accountIdOf(method, accountsRaw); return id ? accountsRaw.find(x => x.id === id) : null; };
+  const isCash = t => { const acc = accountsRaw.find(x => x.id === t.method); return acc ? acc.kind === 'cash' : t.method === 'cash'; };
+  const methodLabel = t => { const acc = accOf(t.method); return acc ? acc.name : t.method === 'cash' ? 'наличные' : 'карта'; };
+  const fxText = t => { const f = fxMap[t.id]; return f && f.c && f.c !== 'KZT' ? money(Number(f.a) || 0, f.c) : ''; };
+
   // Доходы
   const incomesP = inP(data.incomes).sort(byDate);
   const income = periodIncome(P);
@@ -78,7 +88,7 @@ export function derive(s, now = new Date()) {
     return {
       ...i, kind: 'income', who, letter: (i.title || 'Д').trim()[0].toUpperCase(), name: i.title,
       meta: `${who && nameOf(who) ? nameOf(who) + ' · ' : ''}${dayMonth(parseIso(i.date))}`,
-      sub: i.method === 'cash' ? 'наличные' : 'карта', amountFmt: fmt(i.amount),
+      sub: (fxText(i) ? '≈ ' + fmt(i.amount) + ' · ' : '') + methodLabel(i), amountFmt: fxText(i) || fmt(i.amount),
     };
   };
   const incomeRows = [
@@ -97,8 +107,8 @@ export function derive(s, now = new Date()) {
   const txsAll = [...data.txs].sort(byDate);
   const txs = inP(txsAll);
   const spent = sum(txs, t => t.amount);
-  const cashTx = txs.filter(t => t.method === 'cash');
-  const cardTx = txs.filter(t => t.method !== 'cash');
+  const cashTx = txs.filter(isCash);
+  const cardTx = txs.filter(t => !isCash(t));
   const cash = sum(cashTx, t => t.amount);
   const card = spent - cash;
   const cashPct = pct(cash, spent);
@@ -136,7 +146,7 @@ export function derive(s, now = new Date()) {
   const toTx = t => {
     const c = catOf(t.cat);
     const who = nameOf(t.created_by);
-    const methodName = t.method === 'cash' ? 'наличные' : 'карта';
+    const methodName = methodLabel(t) + (fxText(t) ? ' · ' + fxText(t) : '');
     const multi = members.length > 1;
     return {
       ...t, letter: c.letter, icon: c.icon, color: c.color, bg: c.bg, catName: c.name, amountFmt: fmt(t.amount), dateLabel: shortDate(t.date), methodName, author: who,
@@ -504,7 +514,7 @@ export function derive(s, now = new Date()) {
     range: `${dayMonth(VP.start)} – ${dayMonth(addDays(VP.end, -1))}`,
     canPrev: txsAll.some(t => t.date < VP.startIso) || data.incomes.some(i => i.date < VP.startIso), canNext: shift < 0,
     spent: vSpent, spentFmt: fmt(vSpent), count: vTxs.length, empty: vTxs.length === 0,
-    cashFmt: fmt(sum(vTxs.filter(t => t.method === 'cash'), t => t.amount)), cardFmt: fmt(sum(vTxs.filter(t => t.method !== 'cash'), t => t.amount)),
+    cashFmt: fmt(sum(vTxs.filter(isCash), t => t.amount)), cardFmt: fmt(sum(vTxs.filter(t => !isCash(t)), t => t.amount)),
     say: shift
       ? (vTxs.length ? `${traty(vTxs.length)}, в среднем ${fmt(vSpent / Math.max(1, daysBetween(VP.start, VP.end)))} в день` : '')
       : budgetTotal > 0
@@ -817,6 +827,23 @@ export function derive(s, now = new Date()) {
     }),
   ].sort((x, y) => (x.date < y.date ? 1 : -1)).slice(0, 30) : [];
 
+  // Счета: остатки, итог в тенге, курсы, переводы
+  const transfers = arr(settings.transfers).filter(x => x && x.id && x.from && x.to);
+  const salaryAcc = accountsRaw.some(x => x.id === settings.salaryAcc) ? settings.salaryAcc : (accountsRaw.find(x => x.kind === 'card' && x.cur === 'KZT') || {}).id || null;
+  const periodStarts = Array.from({ length: 24 }, (_, k) => periodBounds(now, startDay, -k).startIso);
+  const accountList = balances(accountsRaw, { txs: data.txs, incomes: data.incomes, transfers, fx: fxMap, rates, salary, salaryAcc, periodStarts, todayIso })
+    .map(x => ({ ...x, sign: signOf(x.cur), kindLabel: x.kind === 'cash' ? 'наличные' : x.kind === 'save' ? 'накопления' : 'карта' }));
+  const accName = id => (accountsRaw.find(x => x.id === id) || {}).name || '—';
+  const accounts = {
+    list: accountList, totalFmt: fmt(sum(accountList, x => x.kzt)), salaryAcc, rates,
+    rateRows: ['USD', 'EUR', 'RUB'].map(c => ({ id: c, sign: signOf(c), value: rates[c], used: accountsRaw.some(x => x.cur === c) })),
+    transfers: [...transfers].sort((x, y) => (x.date < y.date ? 1 : x.date > y.date ? -1 : (y.at || 0) - (x.at || 0))).slice(0, 8).map(x => ({
+      ...x, text: `${accName(x.from)} → ${accName(x.to)}`, dateLabel: shortDate(x.date),
+      amountFmt: money(x.amount, (accountsRaw.find(q => q.id === x.from) || {}).cur), gotFmt: money(x.got, (accountsRaw.find(q => q.id === x.to) || {}).cur),
+    })),
+    defaultId: (accOf(s.lastAcc) || accOf('card') || accountsRaw[0] || {}).id || null,
+  };
+
   // Экран добавления траты
   const amountNum = Number(s.amount || 0);
   const picked = visibleCats.find(c => c.id === s.cat) || catMap[CATS[0].id];
@@ -844,7 +871,7 @@ export function derive(s, now = new Date()) {
     budgetSpentPct: Math.min(100, budgetSpentPct), budgetBarColor: budgetSpentPct > 100 ? RED : budgetSpentPct >= 80 ? AMBER : ACCENT,
     spendCats, spendDays, spendCatName: spendCat ? catOf(spendCat).name : '', spendWho, spendQuery: s.spendQuery || '',
     shopping, menu, credits, utilities, calendar, review, debtsDetail,
-    pl, choreDefs: chores, choreLog, choreReminders,
+    pl, choreDefs: chores, choreLog, choreReminders, accounts,
     periodShare: daysElapsed / periodDays, analytics, goalCards, goalsMonthFmt: fmt(topupsIn(P.startIso, P.endIso)), billWeek, billsUntilLabel: dayMonth(addDays(P.end, -1)), memberAvatars,
     incomeExpected, incomeMembers, salaries, legacySalary, prevMonthName: MONTHS_NOM[prevP.start.getMonth()],
     incomeSay: (() => {

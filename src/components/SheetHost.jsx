@@ -4,6 +4,7 @@ import { useBudget } from '../store.jsx';
 import { CAT_PALETTE, CAT_SUGGEST, CAT_ICON_CHOICES, guessIcon, TAGS, TAG_COLORS, fmt, traty, uid } from '../data.js';
 import { SHOP_GROUPS, EVENT_TYPES } from '../lib/family.js';
 import { FREQS, WD } from '../lib/chores.js';
+import { CURRENCIES, ACC_KINDS, signOf } from '../lib/accounts.js';
 import { pinProblem } from '../auth-profiles.js';
 import { iso, shortDate } from '../lib/dates.js';
 import { Sheet, Field, Chips, PrimaryButton, DangerButton } from './Sheet.jsx';
@@ -36,6 +37,7 @@ export default function SheetHost() {
     case 'utilFixed': return <UtilFixedSheet item={sh.item} onClose={close} />;
     case 'event': return <EventSheet event={sh.event} date={sh.date} onClose={close} />;
     case 'loan': return <LoanSheet onClose={close} />;
+    case 'account': return <AccountSheet account={sh.account} onClose={close} />;
     case 'chore': return <ChoreSheet chore={sh.chore} date={sh.date} onClose={close} />;
     case 'choreSubs': return <ChoreSubsSheet choreId={sh.choreId} dateIso={sh.dateIso} onClose={close} />;
     case 'catFilter': return <CatFilterSheet onClose={close} />;
@@ -657,39 +659,93 @@ function SalarySheet({ who: whoInit, value, onClose }) {
   );
 }
 
-// Новая операция (макет шаг 2a): расход или доход, сумма, категория плиткой, кто, чем, дата, повтор каждый месяц
+// Новая операция (макет шаг 2a): расход, доход или перевод между счетами; сумма в ₸ $ € ₽, категория плиткой,
+// кто, счёт, дата, повтор каждый месяц
 function OpSheet({ kind: kindInit, amount: amountInit, title: titleInit, cat: catInit, onClose }) {
   const { s, a, d } = useBudget();
-  const [kind, setKind] = useState(kindInit === 'income' ? 'income' : 'tx');
+  const accs = d.accounts.list;
+  const [kind, setKind] = useState(['income', 'transfer'].includes(kindInit) ? kindInit : 'tx');
   const [amount, setAmount] = useState(amountInit ? String(Math.round(amountInit)) : '');
   const [title, setTitle] = useState(titleInit || '');
   const [cat, setCat] = useState(catInit || null);
   const [who, setWho] = useState(d.me);
   const [method, setMethod] = useState('card');
+  const [acc, setAcc] = useState(d.accounts.defaultId);
+  const [to, setTo] = useState((accs.find(x => x.id !== d.accounts.defaultId) || {}).id || null);
+  const accObj = accs.find(x => x.id === acc) || null;
+  const toObj = accs.find(x => x.id === to) || null;
+  const [cur, setCur] = useState(accObj ? accObj.cur : 'KZT');
+  const [rate, setRate] = useState('');
+  const [got, setGot] = useState('');
   const [date, setDate] = useState(d.todayIso);
   const [repeat, setRepeat] = useState(false);
   // Категорию подбираем по названию («Magnum» → Продукты), пока её не выбрали руками
   const guessed = useMemo(() => (title.trim() ? guessCat(title, (s.data && s.data.txs) || [], d.cats) : null), [title, s.data, d.cats]);
   const catV = cat || guessed || (d.cats[0] && d.cats[0].id);
-  const n = num(amount);
+  const n = Number(String(amount).replace(',', '.')) || 0;
   const multi = d.members.length > 1;
+  const rateV = Number(String(rate).replace(',', '.')) || d.accounts.rates[cur] || 0;
+  const kzt = cur === 'KZT' ? n : Math.round(n * rateV);
+  // перевод: сумма в валюте счёта «откуда»; «получено» считаем по курсу, если валюты разные
+  const autoGot = accObj && toObj ? Math.round(n * (d.accounts.rates[accObj.cur] || 1) / (d.accounts.rates[toObj.cur] || 1) * 100) / 100 : 0;
+  const gotV = got !== '' ? Number(String(got).replace(',', '.')) || 0 : autoGot;
+  const pickAcc = id => { setAcc(id); const x = accs.find(q => q.id === id); if (x) setCur(x.cur); if (id === to) setTo((accs.find(q => q.id !== id) || {}).id || null); };
   const save = () => {
     if (!n) return;
-    if (a.addOp({ kind, amount: n, title, cat: catV, who, method, date, repeat })) onClose();
+    if (kind === 'transfer') { if (a.addTransfer({ from: acc, to, amount: n, got: gotV, date })) onClose(); return; }
+    if (a.addOp({ kind, amount: n, cur, rate: rateV, title, cat: catV, who, method: acc || method, acc, date, repeat })) onClose();
   };
-  const fmtInput = v => { const digits = String(v).replace(/\D/g, '').slice(0, 9); return digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : ''; };
+  const sign = signOf(kind === 'transfer' && accObj ? accObj.cur : cur);
+  const shown = String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  const canSave = kind === 'transfer' ? n > 0 && acc && to && acc !== to && gotV > 0 : n > 0 && (cur === 'KZT' || rateV > 0);
   return (
     <Sheet title="Новая операция" onClose={onClose}>
       <div className="kind-seg" role="group" aria-label="Тип операции">
         <button type="button" data-kind="tx" aria-pressed={kind === 'tx' ? 'true' : 'false'} onClick={() => setKind('tx')}>Расход</button>
         <button type="button" data-kind="income" aria-pressed={kind === 'income' ? 'true' : 'false'} onClick={() => setKind('income')}>Доход</button>
+        <button type="button" data-kind="transfer" aria-pressed={kind === 'transfer' ? 'true' : 'false'} onClick={() => setKind('transfer')}>Перевод</button>
       </div>
       <label className="col" style={{ alignItems: 'center' }}>
         <span className="sr-only">Сумма</span>
-        <input className="op-amount" inputMode="numeric" autoFocus value={fmtInput(amount) ? fmtInput(amount) + ' ₸' : ''} placeholder="0 ₸"
-          onChange={e => setAmount(e.target.value.replace(/\D/g, '').slice(0, 9))} enterKeyHint="done" />
+        <input className="op-amount" inputMode="decimal" autoFocus value={shown ? `${shown} ${sign}` : ''} placeholder={`0 ${sign}`}
+          onChange={e => setAmount(e.target.value.replace(/[^\d.,]/g, '').replace(',', '.').slice(0, 10))} enterKeyHint="done" />
       </label>
-      <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder={kind === 'tx' ? 'Где или что — например, Magnum' : 'Откуда — например, аванс'} enterKeyHint="done" />
+      {kind !== 'transfer' && (
+        <div className="row" style={{ gap: 8, justifyContent: 'center' }} role="group" aria-label="Валюта">
+          {CURRENCIES.map(c => <button key={c.id} type="button" className="cur-chip" aria-pressed={cur === c.id ? 'true' : 'false'} onClick={() => { setCur(c.id); setRate(''); }} aria-label={c.label}>{c.sign}</button>)}
+        </div>
+      )}
+      {kind !== 'transfer' && cur !== 'KZT' && (
+        <div className="row-between t-meta" style={{ fontSize: 14 }}>
+          <span>≈ {fmt(kzt)} по курсу</span>
+          <input className="input" style={{ width: 96, padding: '8px 10px', textAlign: 'right' }} inputMode="decimal" value={rate !== '' ? rate : String(d.accounts.rates[cur] || '')} onChange={e => setRate(e.target.value)} aria-label="Курс к тенге" />
+        </div>
+      )}
+
+      {kind === 'transfer' && accs.length < 2 && (
+        <>
+          <div className="t-meta">Перевод — между своими счетами: с карты в наличные, в доллары, на накопления. Для него нужно хотя бы два счёта.</div>
+          <div className="soft-btn" onClick={() => a.go('accounts')}>Добавить счета</div>
+        </>
+      )}
+      {kind === 'transfer' && accs.length >= 2 && (
+        <div className="op-list">
+          <div className="op-list__row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+            <span className="muted">Откуда</span>
+            <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>{accs.map(x => <button key={x.id} type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={acc === x.id ? 'true' : 'false'} onClick={() => pickAcc(x.id)}>{x.name}</button>)}</div>
+          </div>
+          <div className="op-list__row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+            <span className="muted">Куда</span>
+            <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>{accs.filter(x => x.id !== acc).map(x => <button key={x.id} type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={to === x.id ? 'true' : 'false'} onClick={() => { setTo(x.id); setGot(''); }}>{x.name}</button>)}</div>
+          </div>
+          {accObj && toObj && accObj.cur !== toObj.cur && (
+            <label className="op-list__row"><span className="muted">Придёт, {toObj.sign}</span><input inputMode="decimal" value={got !== '' ? got : String(autoGot || '')} onChange={e => setGot(e.target.value)} aria-label="Сколько придёт" /></label>
+          )}
+          <label className="op-list__row"><span className="muted">Дата</span><input type="date" value={date} onChange={e => setDate(e.target.value || d.todayIso)} aria-label="Дата" /></label>
+        </div>
+      )}
+
+      {kind !== 'transfer' && <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder={kind === 'tx' ? 'Где или что — например, Magnum' : 'Откуда — например, аванс'} enterKeyHint="done" aria-label="Название" />}
 
       {kind === 'tx' && (
         <Field label={!cat && guessed ? 'Категория · подобрана по названию' : 'Категория'}>
@@ -707,38 +763,79 @@ function OpSheet({ kind: kindInit, amount: amountInit, title: titleInit, cat: ca
         </Field>
       )}
 
-      <div className="op-list">
-        {multi && (
-          <div className="op-list__row">
-            <span className="muted">Кто</span>
-            <div className="row" style={{ gap: 6 }}>
-              {d.members.map(m => (
-                <button key={m.id} type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={who === m.id ? 'true' : 'false'} onClick={() => setWho(m.id)}>{m.name}</button>
-              ))}
+      {kind !== 'transfer' && (
+        <div className="op-list">
+          {multi && (
+            <div className="op-list__row">
+              <span className="muted">Кто</span>
+              <div className="row" style={{ gap: 6 }}>
+                {d.members.map(m => (
+                  <button key={m.id} type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={who === m.id ? 'true' : 'false'} onClick={() => setWho(m.id)}>{m.name}</button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-        <div className="op-list__row">
-          <span className="muted">{kind === 'tx' ? 'Чем платили' : 'Куда пришло'}</span>
-          <div className="row" style={{ gap: 6 }}>
-            <button type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={method === 'card' ? 'true' : 'false'} onClick={() => setMethod('card')}>Карта</button>
-            <button type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={method === 'cash' ? 'true' : 'false'} onClick={() => setMethod('cash')}>Наличные</button>
-          </div>
+          )}
+          {accs.length > 0 ? (
+            <div className="op-list__row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>
+              <span className="muted">Счёт</span>
+              <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>{accs.map(x => <button key={x.id} type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={acc === x.id ? 'true' : 'false'} onClick={() => pickAcc(x.id)}>{x.name}</button>)}</div>
+            </div>
+          ) : (
+            <div className="op-list__row">
+              <span className="muted">{kind === 'tx' ? 'Чем платили' : 'Куда пришло'}</span>
+              <div className="row" style={{ gap: 6 }}>
+                <button type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={method === 'card' ? 'true' : 'false'} onClick={() => setMethod('card')}>Карта</button>
+                <button type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={method === 'cash' ? 'true' : 'false'} onClick={() => setMethod('cash')}>Наличные</button>
+              </div>
+            </div>
+          )}
+          <label className="op-list__row">
+            <span className="muted">Дата</span>
+            <input type="date" value={date} onChange={e => setDate(e.target.value || d.todayIso)} aria-label="Дата" />
+          </label>
+          {kind === 'tx' && (
+            <div className="op-list__row" style={{ cursor: 'pointer' }} onClick={() => setRepeat(r => !r)}>
+              <span className="muted">Повторять каждый месяц</span>
+              <Switch on={repeat} offBg="var(--off)" />
+            </div>
+          )}
         </div>
-        <label className="op-list__row">
-          <span className="muted">Дата</span>
-          <input type="date" value={date} onChange={e => setDate(e.target.value || d.todayIso)} aria-label="Дата" />
-        </label>
-        {kind === 'tx' && (
-          <div className="op-list__row" style={{ cursor: 'pointer' }} onClick={() => setRepeat(r => !r)}>
-            <span className="muted">Повторять каждый месяц</span>
-            <Switch on={repeat} offBg="var(--off)" />
-          </div>
-        )}
-      </div>
+      )}
       {repeat && kind === 'tx' && <div className="t-meta">Станет регулярным платежом: каждый месяц {Number(date.slice(8, 10))}-го числа трата внесётся сама.</div>}
 
-      <PrimaryButton disabled={!n} onClick={save}>{kind === 'tx' ? 'Добавить расход' : 'Добавить доход'}</PrimaryButton>
+      {!(kind === 'transfer' && accs.length < 2) && (
+        <PrimaryButton disabled={!canSave} onClick={save}>{kind === 'tx' ? 'Добавить расход' : kind === 'income' ? 'Добавить доход' : 'Перевести'}</PrimaryButton>
+      )}
+    </Sheet>
+  );
+}
+
+// Счёт: название, вид, валюта и остаток на сейчас
+function AccountSheet({ account, onClose }) {
+  const { a } = useBudget();
+  const x = account || {};
+  const [name, setName] = useState(x.name || '');
+  const [kind, setKind] = useState(x.kind || 'card');
+  const [cur, setCur] = useState(x.cur || 'KZT');
+  const [balance, setBalance] = useState(account ? String(Math.round(x.balance * 100) / 100) : '');
+  const ok = name.trim().length > 0;
+  const save = () => {
+    if (!ok) return;
+    const v = Number(String(balance).replace(/\s/g, '').replace(',', '.'));
+    const changed = !account || Math.abs((Number.isFinite(v) ? v : 0) - x.balance) > 0.004;
+    a.saveAccount({ name: name.trim(), kind, cur, balance: changed ? (Number.isFinite(v) ? v : 0) : undefined }, account && account.id);
+    onClose();
+  };
+  return (
+    <Sheet title={account ? 'Счёт' : 'Новый счёт'} onClose={onClose}>
+      <Field label="Название"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Kaspi Gold" autoFocus={!account} /></Field>
+      {!account && <Chips options={['Kaspi Gold', 'Halyk', 'Наличные', 'Доллары', 'Депозит'].map(q => ({ id: q, label: q }))} value={name} onChange={q => { setName(q); if (q === 'Наличные') setKind('cash'); if (q === 'Доллары') { setCur('USD'); setKind('save'); } if (q === 'Депозит') setKind('save'); }} />}
+      <Field label="Вид"><Chips options={ACC_KINDS} value={kind} onChange={setKind} /></Field>
+      <Field label="Валюта"><Chips options={CURRENCIES.map(c => ({ id: c.id, label: `${c.sign} ${c.label}` }))} value={cur} onChange={setCur} /></Field>
+      <Field label={`Сколько на счёте сейчас, ${signOf(cur)}`}><input className="input" inputMode="decimal" value={balance} onChange={e => setBalance(e.target.value)} placeholder="0" /></Field>
+      <div className="t-meta">Дальше остаток будет меняться сам: траты и доходы с этим счётом, переводы, зарплата. Если разойдётся с банком — просто введите верную сумму.</div>
+      <PrimaryButton disabled={!ok} onClick={save}>{account ? 'Сохранить' : 'Добавить счёт'}</PrimaryButton>
+      {account && <DangerButton onClick={() => { a.deleteAccount(account.id); onClose(); }}>Удалить счёт</DangerButton>}
     </Sheet>
   );
 }

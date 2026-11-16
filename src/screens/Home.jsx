@@ -39,6 +39,16 @@ export default function Home() {
         </div>
       </div>
 
+      {d.accounts.list.length > 0 && (
+        <div className="acc-row">
+          {d.accounts.list.map(x => (
+            <button key={x.id} type="button" className="acc-tile" onClick={() => a.go('accounts')}>
+              <span>{x.name}</span><span style={{ color: x.balance < 0 ? 'var(--red)' : undefined }}>{x.balanceFmt}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {d.limitAlerts.length > 0 && <LimitAlerts onOpen={() => a.openPlans('limits')} max={3} />}
 
       {d.nextBill && (

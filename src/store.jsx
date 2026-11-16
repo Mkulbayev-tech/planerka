@@ -292,6 +292,35 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
           });
         }
       },
+      // Счета: остаток задаётся на текущий момент (since / sinceAt) — дальше его двигают операции и переводы
+      saveAccount: (fields, id) => {
+        const row = { id: id || 'a' + uid().replace(/-/g, '').slice(0, 8), name: fields.name, kind: fields.kind, cur: fields.cur };
+        const setBalance = fields.balance !== undefined && fields.balance !== null;
+        patchSettings(curS => {
+          const list = Array.isArray(curS.accounts) ? curS.accounts : [];
+          const stamp = setBalance ? { start: Number(fields.balance) || 0, since: todayIso(), sinceAt: Date.now() } : {};
+          return { accounts: list.some(x => x.id === row.id) ? list.map(x => (x.id === row.id ? { ...x, ...row, ...stamp } : x)) : [...list, { start: 0, since: todayIso(), sinceAt: Date.now(), ...row, ...stamp }] };
+        });
+        showToast(id ? 'Счёт сохранён' : 'Счёт добавлен: ' + fields.name);
+      },
+      deleteAccount: id => {
+        patchSettings(curS => ({ accounts: (Array.isArray(curS.accounts) ? curS.accounts : []).filter(x => x.id !== id) }));
+        showToast('Счёт удалён — операции остались');
+      },
+      setRate: (cur, v) => { const n = Number(String(v).replace(',', '.')); if (n > 0) patchSettings(curS => ({ rates: { ...(curS.rates || {}), [cur]: n } })); },
+      // Перевод между своими счетами: не расход и не доход, меняет только остатки
+      addTransfer: x => {
+        const amount = Math.max(0, Number(x.amount) || 0);
+        const got = Math.max(0, Number(x.got) || 0);
+        if (!x.from || !x.to || x.from === x.to || !amount || !got) return false;
+        const by = stateRef.current.user ? stateRef.current.user.id : null;
+        const row = { id: uid(), date: /^\d{4}-\d{2}-\d{2}$/.test(x.date || '') ? x.date : todayIso(), at: Date.now(), from: x.from, to: x.to, amount, got, by };
+        patchSettings(curS => ({ transfers: [...(Array.isArray(curS.transfers) ? curS.transfers : []), row].slice(-200) }));
+        success();
+        showToast('Перевод записан');
+        return true;
+      },
+      deleteTransfer: id => patchSettings(curS => ({ transfers: (Array.isArray(curS.transfers) ? curS.transfers : []).filter(x => x.id !== id) })),
       // Зарплата: who — чья (settings.salaries[who]); без who — старая общая settings.salary
       setSalaryFor: (who, v) => {
         const amount = Math.max(0, Math.round(Number(v) || 0));
@@ -305,16 +334,26 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       // «Новая операция»: расход (трата, с «повторять каждый месяц» — ещё и регулярный платёж) или доход
       addOp: op => {
         const st = stateRef.current;
-        const amount = Math.max(0, Math.round(Number(op.amount) || 0));
+        // Сумма в валюте: в базе — тенге по курсу, исходная сумма — в settings.fx[id]
+        const cur = op.cur && op.cur !== 'KZT' ? op.cur : null;
+        const rate = cur ? Number(op.rate) || 0 : 1;
+        const original = Math.max(0, Number(op.amount) || 0);
+        const amount = Math.round(cur ? original * rate : original);
         if (!amount) return false;
         const date = /^\d{4}-\d{2}-\d{2}$/.test(op.date || '') ? op.date : todayIso();
+        const id = uid();
+        if (cur) patchSettings(curS => ({ fx: { ...(curS.fx || {}), [id]: { c: cur, a: original } }, rates: { ...(curS.rates || {}), [cur]: rate } }));
+        if (op.acc) update({ lastAcc: op.acc });
         if (op.kind === 'income') {
-          api.saveIncome({ title: (op.title || '').trim() || 'Доход', amount, date, method: op.method || 'card', who: op.who || null });
+          const row = { id, title: (op.title || '').trim() || 'Доход', amount, date, method: op.method || 'card' };
+          mutate(d => ({ ...d, incomes: [...d.incomes, row] }), () => backend.insert('incomes', row, hid()));
+          if (op.who) patchSettings(curS => ({ incomeBy: { ...(curS.incomeBy || {}), [id]: op.who } }));
           success();
+          showToast('Доход добавлен: ' + fmt(amount));
           return true;
         }
         const c = cats().find(x => x.id === op.cat && !x.hidden) || null;
-        const row = { id: uid(), title: (op.title || '').trim() || (c ? c.name : 'Трата'), cat: c ? c.id : 'other', amount, method: op.method || 'card', date, created_by: op.who || (st.user ? st.user.id : null) };
+        const row = { id, title: (op.title || '').trim() || (c ? c.name : 'Трата'), cat: c ? c.id : 'other', amount, method: op.method || 'card', date, created_by: op.who || (st.user ? st.user.id : null) };
         mutate(d => ({ ...d, txs: [...d.txs, row] }), () => backend.insert('transactions', row, hid()));
         if (op.repeat) api.saveBill({ title: row.title, amount, day: parseIso(date).getDate(), cat: row.cat, method: row.method, payer: op.who || null });
         success();
@@ -509,11 +548,13 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       },
       exportCsv: () => {
         const txs = [...data().txs].sort((x, y) => (x.date < y.date ? -1 : 1));
+        const accs = (stateRef.current.household && stateRef.current.household.settings && stateRef.current.household.settings.accounts) || [];
+        const methodOf = m => { const acc = accs.find(x => x.id === m); return acc ? acc.name : m === 'cash' ? 'Наличные' : 'Карта'; };
         const members = stateRef.current.members || [];
         const who = id => { const m = members.find(x => x.user_id === id); return (m && m.display_name) || ''; };
         const rows = [
           ['Дата', 'Название', 'Категория', 'Способ', 'Сумма', 'Кто'],
-          ...txs.map(t => [t.date, t.title, (cats().find(c => c.id === t.cat) || {}).name || 'Другое', t.method === 'cash' ? 'Наличные' : 'Карта', t.amount, who(t.created_by)]),
+          ...txs.map(t => [t.date, t.title, (cats().find(c => c.id === t.cat) || {}).name || 'Другое', methodOf(t.method), t.amount, who(t.created_by)]),
         ];
         const csv = '\uFEFF' + rows.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
         if (isNative) {

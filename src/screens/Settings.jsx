@@ -35,6 +35,7 @@ export default function Settings() {
         <MenuLink icon="chart" title="Аналитика" value="месяц, полгода, год" onClick={() => a.go('analytics')} />
         <MenuLink icon="users" title="Семья" value={d.membersCount > 1 ? `${d.membersCount} участника` : ''} onClick={() => a.go('family')} />
         <MenuLink icon="wallet" title="Доходы и зарплаты" value={d.incomeFmt} onClick={() => a.go('income')} />
+        <MenuLink icon="card" title="Счета" value={d.accounts.list.length ? '≈ ' + d.accounts.totalFmt : 'добавить'} onClick={() => a.go('accounts')} />
         <MenuLink icon="file" title="Импорт выписки Kaspi" onClick={() => a.openSheet('import')} />
       </div>
 

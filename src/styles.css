@@ -314,3 +314,10 @@ button{color:inherit}
 .day-pick{display:flex;gap:6px}
 .day-pick button{flex:1;height:40px;border-radius:50%;border:1px solid var(--bd);background:none;color:var(--mu);font:inherit;font-size:13px;font-weight:500;cursor:pointer;padding:0}
 .day-pick button[aria-pressed="true"]{background:var(--as);border-color:var(--accent);color:var(--accent-tx)}
+.cur-chip{width:40px;height:36px;border-radius:99px;border:1px solid var(--bd);background:none;color:var(--mu);font:inherit;font-size:15px;font-weight:600;cursor:pointer;padding:0}
+.cur-chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.kind-seg button[aria-pressed="true"][data-kind="transfer"]{background:var(--tx);color:var(--bg)}
+.acc-row{display:flex;gap:8px;overflow:auto;margin:0 -20px;padding:0 20px;flex:none}
+.acc-tile{flex:1 0 108px;background:var(--cd);border:1px solid var(--bd);border-radius:16px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;cursor:pointer;font:inherit;color:var(--tx);text-align:left;min-width:0}
+.acc-tile span:first-child{font-size:12px;color:var(--mu);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-tile span:last-child{font-size:15px;font-weight:600;white-space:nowrap}
