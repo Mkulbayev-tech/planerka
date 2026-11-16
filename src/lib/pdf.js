@@ -1,11 +1,13 @@
 // Текст PDF построчно (для выписки Kaspi). pdf.js грузится только при импорте — в основной бандл не попадает.
 // legacy-сборка — чтобы работало и на телефонах со старой iOS.
 export async function pdfLines(file) {
-  const [pdfjs, worker] = await Promise.all([
+  // ?worker — Vite собирает обработчик в обычный .js: встроенный сервер приложения на iPhone
+  // может отдать .mjs с неверным типом, и тогда воркер не запустится
+  const [pdfjs, { default: PdfWorker }] = await Promise.all([
     import('pdfjs-dist/legacy/build/pdf.mjs'),
-    import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'),
+    import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?worker'),
   ]);
-  pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+  if (!pdfjs.GlobalWorkerOptions.workerPort) pdfjs.GlobalWorkerOptions.workerPort = new PdfWorker();
   const data = new Uint8Array(await file.arrayBuffer());
   const task = pdfjs.getDocument({ data, isEvalSupported: false });
   const doc = await task.promise;
