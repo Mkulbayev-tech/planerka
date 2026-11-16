@@ -1,5 +1,6 @@
 // Производные значения для экранов и виджетов: всё считается от реальных дат и общих данных семьи.
-import { CATS, OTHER_CAT, allCats, TAGS, TAG_COLORS, THEMES, DEFAULT_SETTINGS, fmt, short, traty, mix } from './data.js';
+import { CATS, OTHER_CAT, allCats, TAGS, TAG_COLORS, THEMES, DEFAULT_SETTINGS, fmt, short, traty, mix, plural } from './data.js';
+import { SHOP_GROUPS, weekKey, shoppingFromMenu, creditView, utilitiesView } from './lib/family.js';
 import {
   iso, startOfDay, addDays, daysBetween, inRange, parseIso, periodBounds, weekBounds,
   longLabel, dayMonth, dayLabel, shortDate, MONTHS_NOM, MONTHS_CAP, MONTHS_GEN, WEEKDAYS_SHORT,
@@ -552,6 +553,151 @@ export function derive(s, now = new Date()) {
   });
   const memberAvatars = members.map(m => ({ id: m.user_id, letter: (m.display_name || '?').trim()[0].toUpperCase(), color: memberColor(m.user_id), name: m.display_name || '' }));
 
+  // ── Семейные разделы (макет, шаг 5): данные в settings ─────────────────────
+  const arr = x => (Array.isArray(x) ? x : []);
+  const obj = x => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
+  const me2 = s.user ? s.user.id : null;
+  const productsWord = n => plural(n, 'продукт', 'продукта', 'продуктов');
+  const num0 = x => Math.max(0, Number(x) || 0);
+  const MONTHS_DAT = ['январю', 'февралю', 'марту', 'апрелю', 'маю', 'июню', 'июлю', 'августу', 'сентябрю', 'октябрю', 'ноябрю', 'декабрю'];
+
+  // Покупки: список с группами; кто сейчас отмечает (последняя отметка за 15 минут)
+  const shop = obj(settings.shop);
+  const shopItems = arr(shop.items).filter(x => x && x.id && x.name);
+  const shopGroupsOrder = [...SHOP_GROUPS, ...[...new Set(shopItems.map(x => x.group || 'Другое'))].filter(g => !SHOP_GROUPS.includes(g))];
+  const shopGroups = shopGroupsOrder.map(g => ({
+    name: g,
+    items: shopItems.filter(x => (x.group || 'Другое') === g).map(x => ({
+      ...x, priceFmt: x.price ? (x.done ? '' : '≈ ') + fmt(x.price).replace('\u00A0₸', '') : '',
+      sub: [x.note, x.by && x.by !== me2 && nameOf(x.by) ? 'от ' + nameOf(x.by) : ''].filter(Boolean).join(' · '),
+    })),
+  })).filter(g => g.items.length);
+  const shopLast = obj(shop.last);
+  const shopping = {
+    groups: shopGroups, total: shopItems.length, done: shopItems.filter(x => x.done).length,
+    sumFmt: fmt(sum(shopItems, x => num0(x.price))), doneSum: sum(shopItems.filter(x => x.done), x => num0(x.price)),
+    presence: shopLast.by && shopLast.by !== me2 && now.getTime() - Number(shopLast.at || 0) < 15 * 60000 && nameOf(shopLast.by)
+      ? `${nameOf(shopLast.by)} сейчас отмечает покупки` : '',
+  };
+  shopping.pct = pct(shopping.done, shopping.total);
+  shopping.doneSumFmt = fmt(shopping.doneSum);
+
+  // Меню на неделю (ужины): блюдо, кто готовит, каких продуктов не хватает → «Собрать список покупок»
+  const menuAll = obj(settings.menu);
+  const menuWeekIso = /^\d{4}-\d{2}-\d{2}$/.test(s.menuWeek || '') ? s.menuWeek : weekKey(todayIso);
+  const menuWeek = obj(menuAll[menuWeekIso]);
+  const menuStart = parseIso(menuWeekIso);
+  const menuEnd = addDays(menuStart, 6);
+  const menuNeed = shoppingFromMenu(menuWeek, shopItems);
+  const foodCat = catStats.find(c => c.id === 'food');
+  const menuNeedSum = sum(menuNeed, x => x.price);
+  const menu = {
+    weekIso: menuWeekIso, isThisWeek: menuWeekIso === weekKey(todayIso),
+    label: menuStart.getMonth() === menuEnd.getMonth() ? `${menuStart.getDate()} – ${menuEnd.getDate()} ${MONTHS_GEN[menuEnd.getMonth()]}` : `${dayMonth(menuStart)} – ${dayMonth(menuEnd)}`,
+    people: Math.max(1, Number(obj(settings.menuPrefs).people) || Math.max(2, members.length)),
+    days: [0, 1, 2, 3, 4, 5, 6].map(i => {
+      const day = obj(menuWeek[i]);
+      const dIso = iso(addDays(menuStart, i));
+      const need = arr(day.need);
+      const cook = day.cook === 'together' ? 'вместе' : day.cook ? nameOf(day.cook) : '';
+      return {
+        idx: i, iso: dIso, wd: WEEKDAYS_SHORT[i].toUpperCase(), isToday: dIso === todayIso, dish: day.dish || '', cook: day.cook || null, need,
+        needCount: need.length,
+        sub: day.dish ? [cook ? (day.cook === 'together' ? 'вместе' : 'готовит ' + cook) : '', need.length ? `нужно ${need.length} ${productsWord(need.length)}` : 'всё есть'].filter(Boolean).join(' · ') : '',
+      };
+    }),
+    needCount: menuNeed.length, needSumFmt: fmt(menuNeedSum),
+    foodLeftText: !(foodCat && foodCat.limit) ? '' : (foodCat.limit - foodCat.spent - menuNeedSum >= 0
+      ? `лимит «Продукты» остаётся ${fmt(foodCat.limit - foodCat.spent - menuNeedSum)}`
+      : `лимит «Продукты» будет превышен на ${fmt(menuNeedSum + foodCat.spent - foodCat.limit)}`),
+  };
+
+  // Кредиты: сколько осталось, в месяц, переплата; подсказка про досрочный платёж
+  const creditList = arr(settings.credits).filter(c => c && c.id && c.name).map(c => creditView(c, todayIso)).map((c, i) => ({
+    ...c, color: [th.ac, th.gr, th.lv, th.bl][i % 4], leftFmt: fmt(c.left), monthlyFmt: fmt(c.monthly), overpayFmt: fmt(c.overpay),
+    nextLabel: dayMonth(parseIso(c.nextIso)), rateText: c.rate ? `${c.rate}% годовых` : '',
+  }));
+  const earlyOf = creditList.map(c => ({ c, e: c.early(100000) })).filter(x => x.e && x.e.saved > 0).sort((a, b) => b.e.saved - a.e.saved)[0] || null;
+  const credits = {
+    list: creditList, leftFmt: fmt(sum(creditList, c => c.left)), monthlyFmt: fmt(sum(creditList, c => c.monthly)), overpayFmt: fmt(sum(creditList, c => c.overpay)),
+    tip: earlyOf ? { id: earlyOf.c.id, amountFmt: fmt(earlyOf.e.amount), savedFmt: fmt(earlyOf.e.saved), months: earlyOf.e.months } : null,
+  };
+
+  // Коммуналка: счётчики, постоянные платежи, сумма к оплате и история по месяцам
+  const uv = utilitiesView(settings.utilities, todayIso);
+  const dueDate = (() => { const t = today; let d = new Date(t.getFullYear(), t.getMonth(), uv.due); if (iso(d) < todayIso) d = new Date(t.getFullYear(), t.getMonth() + 1, uv.due); return d; })();
+  const uMax = Math.max(1, ...uv.history.map(h => h.value), uv.total);
+  const utilities = {
+    ...uv, totalFmt: fmt(uv.total), dueLabel: dayMonth(dueDate), monthName: MONTHS_NOM[today.getMonth()],
+    deltaText: uv.deltaPct === null ? '' : `${uv.deltaPct > 0 ? '+' : uv.deltaPct < 0 ? '−' : ''}${Math.abs(uv.deltaPct)}% к прошлому месяцу`,
+    bars: uv.history.map((h, i) => ({ ...h, h: Math.max(8, Math.round((i === 5 ? (h.value || uv.total) : h.value) / uMax * 100)), current: i === 5 })),
+    meters: uv.meters.map((m, i) => ({ ...m, color: [th.at, th.bl, th.rd, th.gr][i % 4], valueFmt: m.value === null ? '—' : String(m.value).replace(/\B(?=(\d{3})+(?!\d))/g, ' '), costFmt: fmt(m.cost) })),
+    fixed: uv.fixed.map(f => ({ ...f, amountFmt: fmt(f.amount) })),
+  };
+
+  // Календарь: месяц сеткой (с понедельника), точки событий и дней платежей, ближайшие события
+  const events = arr(settings.events).filter(e => e && e.id && e.date && e.title);
+  const calMonth = /^\d{4}-\d{2}-01$/.test(s.calMonth || '') ? parseIso(s.calMonth) : new Date(today.getFullYear(), today.getMonth(), 1);
+  const calNext = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1);
+  const calDay = /^\d{4}-\d{2}-\d{2}$/.test(s.calDay || '') ? s.calDay : todayIso;
+  const EV_COLORS = { doctor: th.bl, holiday: th.lv, kids: th.ac, other: th.mu, bill: th.rd };
+  const billDays = new Set(bills.flatMap(b => billDates(b.day, iso(calMonth), iso(calNext))));
+  const lead = (calMonth.getDay() + 6) % 7;
+  const daysInM = daysBetween(calMonth, calNext);
+  const calCells = [...Array(lead).fill(null), ...Array.from({ length: daysInM }, (_, k) => {
+    const dIso = iso(addDays(calMonth, k));
+    const dots = [...new Set(events.filter(e => e.date === dIso).map(e => e.type || 'other'))].map(t => EV_COLORS[t] || th.mu);
+    if (billDays.has(dIso)) dots.push(EV_COLORS.bill);
+    return { iso: dIso, day: k + 1, isToday: dIso === todayIso, selected: dIso === calDay, dots: dots.slice(0, 3) };
+  })];
+  const evView = e => ({ ...e, day: parseIso(e.date).getDate(), wd: WEEKDAYS_SHORT[(parseIso(e.date).getDay() + 6) % 7].toLowerCase(), color: EV_COLORS[e.type] || th.mu, costFmt: e.cost ? fmt(e.cost) : '', meta: [e.time, e.who ? (e.who === 'together' ? 'вместе' : 'ведёт ' + nameOf(e.who)) : '', e.note].filter(Boolean).join(' · ') });
+  const calendar = {
+    monthIso: iso(calMonth),
+    monthTitle: MONTHS_NOM[calMonth.getMonth()].replace(/^./, x => x.toUpperCase()) + ' ' + calMonth.getFullYear(),
+    cells: calCells, selected: calDay, selectedLabel: dayLabel(parseIso(calDay), today),
+    dayEvents: events.filter(e => e.date === calDay).sort((a, b) => String(a.time || '').localeCompare(String(b.time || ''))).map(evView),
+    upcoming: events.filter(e => e.date >= (iso(calMonth) > todayIso ? iso(calMonth) : todayIso) && e.date < iso(addDays(calNext, 31))).sort((a, b) => (a.date + (a.time || '')).localeCompare(b.date + (b.time || ''))).slice(0, 8).map(evView),
+    legend: [['doctor', 'врачи'], ['holiday', 'праздники'], ['kids', 'садик'], ['bill', 'платежи']].map(([k, label]) => ({ label, color: EV_COLORS[k] })),
+  };
+
+  // Итог прошлого месяца: пришло / ушло / отложили, лимиты, лучшее и перерасход, дела, вопросы на семейный разбор
+  const ppP = periodBounds(now, startDay, -2);
+  const ppTxs = txsAll.filter(t => inRange(t.date, ppP.startIso, ppP.endIso));
+  const rvSpent = sum(prevTxs, t => t.amount);
+  const rvStats = buildCatStats(prevTxs, rvSpent).filter(c => c.id !== OTHER_ROW.id || c.spent > 0);
+  const rvBudget = sum(rvStats, c => c.limit);
+  const rvOver = rvStats.filter(c => c.limit && c.spent > c.limit).sort((a, b) => (b.spent - b.limit) - (a.spent - a.limit));
+  const rvBest = rvStats.map(c => { const p0 = catSum(ppTxs, c.id); return p0 && c.spent ? { c, d: Math.round((c.spent - p0) / p0 * 100) } : null; }).filter(Boolean).sort((a, b) => a.d - b.d)[0] || null;
+  const rvTasks = data.tasks.filter(t => inRange(t.date, prevP.startIso, prevP.endIso));
+  const rvAgenda = [
+    ...rvOver.slice(0, 2).map(c => ({ id: 'lim-' + c.id, text: `Поднять лимит на ${c.name.toLowerCase()} до ${fmt(Math.ceil(c.spent / 5000) * 5000)}?` })),
+    ...(credits.tip ? [{ id: 'early-' + credits.tip.id, text: `Внести ${credits.tip.amountFmt} в ${(creditList.find(c => c.id === credits.tip.id) || {}).name || 'кредит'} досрочно?` }] : []),
+    ...events.filter(e => e.date >= todayIso && e.date <= iso(addDays(today, 21)) && (e.cost || e.type === 'holiday')).slice(0, 2).map(e => ({ id: 'ev-' + e.id, text: `${e.title} — ${dayMonth(parseIso(e.date))}${e.cost ? ', заложить ' + fmt(e.cost) : ''}` })),
+  ];
+  const rvDone = new Set(arr(obj(settings.review)[prevP.startIso]));
+  const review = {
+    periodIso: prevP.startIso, title: `Итог ${MONTHS_GEN[prevP.start.getMonth()]}`, range: `${dayMonth(prevP.start)} – ${dayMonth(addDays(prevP.end, -1))}`,
+    incomeFmt: fmt(periodIncome(prevP)), spentFmt: fmt(rvSpent), savedFmt: fmt(topupsIn(prevP.startIso, prevP.endIso)), hasData: hasData(prevP),
+    budgetText: rvBudget ? (rvBudget >= rvSpent ? `Сэкономили ${fmt(rvBudget - rvSpent)} от бюджета.` : `Вышли за бюджет на ${fmt(rvSpent - rvBudget)}.`) : '',
+    overText: rvOver.length ? `Лимит не удержали ${rvOver.length === 1 ? 'только ' : ''}в ${rvOver.map(c => '«' + c.name + '»').join(', ')}.` : rvBudget ? 'Все лимиты удержали.' : '',
+    best: rvBest && rvBest.d < 0 ? { name: rvBest.c.name, text: `−${Math.abs(rvBest.d)}% к ${MONTHS_DAT[ppP.start.getMonth()]}` } : null,
+    worst: rvOver[0] ? { name: rvOver[0].name, text: '+' + fmt(rvOver[0].spent - rvOver[0].limit) } : null,
+    tasksDone: rvTasks.filter(t => t.done).length, tasksTotal: rvTasks.length,
+    tasksBy: members.map(m => `${m.display_name || '?'} ${rvTasks.filter(t => t.done && t.owner === m.user_id).length}`).join(' · '),
+    agenda: rvAgenda.map(x => ({ ...x, done: rvDone.has(x.id) })),
+  };
+
+  // Кто кому должен: из чего сложился расчёт — общие траты с долями и личные долги
+  const debtsDetail = st ? [
+    ...arr(settleLog).filter(x => x.kind === 'loan').map(x => ({ id: 'loan-' + x.date + x.amount, title: x.title || 'Личный долг', meta: `личный долг · ${dayMonth(parseIso(x.date))}`, who: nameOf(x.to), whoColor: memberColor(x.to), amountFmt: fmt(x.amount), share: '100%', date: x.date })),
+    ...data.txs.filter(t => t.date >= settleSince && membersById[t.created_by] !== undefined).map(t => {
+      const payerIsA = t.created_by === st.A.user_id;
+      const other = payerIsA ? st.B : st.A;
+      const share = payerIsA ? 1 - st.shareA : st.shareA;
+      return { id: t.id, title: t.title, meta: `оплата: ${nameOf(t.created_by)} · ${fmt(t.amount)}`, who: nameOf(other.user_id), whoColor: memberColor(other.user_id), amountFmt: fmt(Math.round(t.amount * share)), share: Math.round(share * 100) + '%', date: t.date };
+    }),
+  ].sort((x, y) => (x.date < y.date ? 1 : -1)).slice(0, 30) : [];
+
   // Экран добавления траты
   const amountNum = Number(s.amount || 0);
   const picked = visibleCats.find(c => c.id === s.cat) || catMap[CATS[0].id];
@@ -578,6 +724,7 @@ export function derive(s, now = new Date()) {
     budgetTotal, budgetTotalFmt: fmt(budgetTotal), budgetLeftFmt: fmt(budgetTotal - spent),
     budgetSpentPct: Math.min(100, budgetSpentPct), budgetBarColor: budgetSpentPct > 100 ? RED : budgetSpentPct >= 80 ? AMBER : ACCENT,
     spendCats, spendDays, spendCatName: spendCat ? catOf(spendCat).name : '', spendWho, spendQuery: s.spendQuery || '',
+    shopping, menu, credits, utilities, calendar, review, debtsDetail,
     periodShare: daysElapsed / periodDays, analytics, goalCards, goalsMonthFmt: fmt(topupsIn(P.startIso, P.endIso)), billWeek, billsUntilLabel: dayMonth(addDays(P.end, -1)), memberAvatars,
     incomeExpected, incomeMembers, salaries, legacySalary, prevMonthName: MONTHS_NOM[prevP.start.getMonth()],
     incomeSay: (() => {

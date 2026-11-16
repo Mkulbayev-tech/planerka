@@ -297,3 +297,12 @@ body{overscroll-behavior:none}
 .week-strip__dot{width:5px;height:5px;border-radius:50%;background:var(--red)}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 button{color:inherit}
+.shop-check{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--off);display:flex;align-items:center;justify-content:center;flex:none;color:var(--on-accent);font-size:13px;font-weight:700}
+.shop-check[data-on="true"]{background:var(--green);border-color:var(--green)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px 2px;flex:none}
+.cal-wd{text-align:center;font-size:12px;color:var(--mu);padding-bottom:4px}
+.cal-day{height:46px;border:1.5px solid transparent;border-radius:14px;background:none;color:var(--tx);font:inherit;font-size:16px;font-weight:500;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;padding:0}
+.cal-day[data-today="true"]{background:var(--accent);color:var(--on-accent)}
+.cal-day[data-on="true"]{border-color:var(--accent)}
+.cal-dots{display:flex;gap:2px;height:5px}
+.cal-dots i{width:5px;height:5px;border-radius:50%}

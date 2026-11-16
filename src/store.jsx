@@ -138,6 +138,11 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       })),
       setShift: shift => update({ shift: Math.min(0, shift), spendCat: null }),
       setSpendWho: spendWho => update({ spendWho }),
+      // Семейные разделы (меню, покупки, кредиты, коммуналка, календарь…): fn получает текущее значение settings[key]
+      // и возвращает новое; применяется и к свежим настройкам на сервере, поэтому правки двоих не затирают друг друга
+      setKey: (key, fn) => patchSettings(cur => ({ [key]: fn(cur[key]) })),
+      setView: patch => update(patch),
+      toast: msg => showToast(msg),
       setSpendQuery: spendQuery => update({ spendQuery }),
       setPlanTab: planTab => update({ planTab }),
       openPlans: planTab => update({ screen: 'plans', planTab, sheet: null }),

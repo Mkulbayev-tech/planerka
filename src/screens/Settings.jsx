@@ -39,10 +39,22 @@ export default function Settings() {
       </div>
 
       <div className="card card--menu">
+        <MenuLink icon="fork" title="Меню на неделю" onClick={() => a.go('menu')} />
+        <MenuLink icon="basket" title="Список покупок" value={d.shopping.total ? `${d.shopping.done} из ${d.shopping.total}` : ''} onClick={() => a.go('shopping')} />
+        <MenuLink icon="calendar" title="Календарь" value={d.calendar.upcoming.length ? String(d.calendar.upcoming.length) : ''} onClick={() => a.go('calendar')} />
+        <MenuLink icon="flag" title={d.review.title} onClick={() => a.go('review')} />
+      </div>
+
+      <div className="card card--menu">
+        {d.settleAvailable && <MenuLink icon="swap" title="Кто кому должен" value={d.settle && !d.settle.settled ? d.settle.amountFmt : d.settleOn ? 'ровно' : 'выключено'} onClick={() => a.go('debts')} />}
+        <MenuLink icon="card" title="Кредиты и рассрочки" value={d.credits.list.length ? d.credits.monthlyFmt + ' в мес.' : ''} onClick={() => a.go('credits')} />
+        <MenuLink icon="bulb" title="Коммуналка" value={d.utilities.total ? d.utilities.totalFmt : ''} onClick={() => a.go('utilities')} />
+      </div>
+
+      <div className="card card--menu">
         <MenuLink icon="pie" title="Автораспределение" value={d.autoOn ? 'включено' : 'выключено'} onClick={() => a.openSheet('autoplan')} />
         <MenuLink icon="target" title="Остаток месяца в цель" value={d.sweep.on ? 'включено' : 'выключено'} onClick={() => a.openSheet('sweep')} />
         <MenuLink icon="repeat" title="Регулярные платежи" value={d.billRows.length ? String(d.billRows.length) : 'нет'} onClick={() => a.openPlans('bills')} />
-        {d.settleAvailable && <MenuLink icon="swap" title="Кто кому должен" value={d.settleOn ? 'включено' : 'выключено'} onClick={() => a.openSheet('settle')} />}
       </div>
 
       <div className="card card--menu">

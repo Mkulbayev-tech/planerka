@@ -107,6 +107,13 @@ export async function disableReminder() {
   try { await LocalNotifications.cancel({ notifications: [{ id: REMINDER_ID }] }); } catch { /* ignore */ }
 }
 
+// Поделиться текстом (список покупок): системное окно на телефоне, в браузере — «Поделиться» или копирование
+export async function shareText(text) {
+  if (isNative) { try { await Share.share({ text }); return 'shared'; } catch { return 'cancel'; } }
+  if (navigator.share) { try { await navigator.share({ text }); return 'shared'; } catch { return 'cancel'; } }
+  try { await navigator.clipboard.writeText(text); return 'copied'; } catch { return 'fail'; }
+}
+
 // Напоминания о регулярных платежах: в день платежа в 10:00. list — [{ date: 'YYYY-MM-DD', title, body }].
 // Пустой список снимает все. Разрешение не запрашиваем — его спрашивает переключатель напоминаний.
 const BILL_IDS = Array.from({ length: 60 }, (_, i) => 100 + i);

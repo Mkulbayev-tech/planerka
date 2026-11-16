@@ -1,7 +1,8 @@
 // Формы: задача, цель, доход, детали траты, зарплата, лимит и своя категория, начало периода, пароль, автораспределение.
 import { useMemo, useRef, useState } from 'react';
 import { useBudget } from '../store.jsx';
-import { CAT_PALETTE, CAT_SUGGEST, CAT_ICON_CHOICES, guessIcon, TAGS, TAG_COLORS, fmt, traty } from '../data.js';
+import { CAT_PALETTE, CAT_SUGGEST, CAT_ICON_CHOICES, guessIcon, TAGS, TAG_COLORS, fmt, traty, uid } from '../data.js';
+import { SHOP_GROUPS, EVENT_TYPES } from '../lib/family.js';
 import { pinProblem } from '../auth-profiles.js';
 import { iso, shortDate } from '../lib/dates.js';
 import { Sheet, Field, Chips, PrimaryButton, DangerButton } from './Sheet.jsx';
@@ -24,7 +25,16 @@ export default function SheetHost() {
     case 'income': return <IncomeSheet income={sh.income} onClose={close} />;
     case 'tx': return <TxSheet tx={sh.tx} onClose={close} />;
     case 'salary': return <SalarySheet who={sh.who} value={sh.value} onClose={close} />;
-    case 'op': return <OpSheet kind={sh.kind} onClose={close} />;
+    case 'op': return <OpSheet kind={sh.kind} amount={sh.amount} title={sh.title} cat={sh.cat} onClose={close} />;
+    case 'dish': return <DishSheet week={sh.week} idx={sh.idx} onClose={close} />;
+    case 'menuPrefs': return <AmountSheet title="Сколько человек ужинает" label="Человек" value={d.menu.people} max={20} onSave={v => { a.setKey('menuPrefs', p => ({ ...(p || {}), people: v })); close(); }} onClose={close} />;
+    case 'shopItem': return <ShopItemSheet item={sh.item} onClose={close} />;
+    case 'credit': return <CreditSheet credit={sh.credit} onClose={close} />;
+    case 'reading': return <ReadingSheet meter={sh.meter} onClose={close} />;
+    case 'meter': return <MeterSheet meter={sh.meter} onClose={close} />;
+    case 'utilFixed': return <UtilFixedSheet item={sh.item} onClose={close} />;
+    case 'event': return <EventSheet event={sh.event} date={sh.date} onClose={close} />;
+    case 'loan': return <LoanSheet onClose={close} />;
     case 'catFilter': return <CatFilterSheet onClose={close} />;
     case 'limit': return <AmountSheet title={'Лимит: ' + sh.cat.name} label="Лимит на период, ₸" value={sh.cat.limit} onSave={v => { a.setLimit(sh.cat.id, v); close(); }} onClose={close} />;
     case 'cat': return <CategorySheet cat={sh.cat} pick={sh.pick} onClose={close} />;
@@ -645,12 +655,12 @@ function SalarySheet({ who: whoInit, value, onClose }) {
 }
 
 // Новая операция (макет шаг 2a): расход или доход, сумма, категория плиткой, кто, чем, дата, повтор каждый месяц
-function OpSheet({ kind: kindInit, onClose }) {
+function OpSheet({ kind: kindInit, amount: amountInit, title: titleInit, cat: catInit, onClose }) {
   const { s, a, d } = useBudget();
   const [kind, setKind] = useState(kindInit === 'income' ? 'income' : 'tx');
-  const [amount, setAmount] = useState('');
-  const [title, setTitle] = useState('');
-  const [cat, setCat] = useState(null);
+  const [amount, setAmount] = useState(amountInit ? String(Math.round(amountInit)) : '');
+  const [title, setTitle] = useState(titleInit || '');
+  const [cat, setCat] = useState(catInit || null);
   const [who, setWho] = useState(d.me);
   const [method, setMethod] = useState('card');
   const [date, setDate] = useState(d.todayIso);
@@ -745,6 +755,267 @@ function CatFilterSheet({ onClose }) {
           </div>
         ))}
       </div>
+    </Sheet>
+  );
+}
+
+// ── Семейные разделы: формы ────────────────────────────────────────────────
+const listOf = x => (Array.isArray(x) ? x : []);
+const objOf = x => (x && typeof x === 'object' && !Array.isArray(x) ? x : {});
+const upsert = (list, row) => (listOf(list).some(x => x.id === row.id) ? listOf(list).map(x => (x.id === row.id ? { ...x, ...row } : x)) : [...listOf(list), row]);
+
+// Блюдо дня: что готовим, кто готовит, каких продуктов нет (они уйдут в список покупок)
+function DishSheet({ week, idx, onClose }) {
+  const { a, d } = useBudget();
+  const day = (d.menu.weekIso === week ? d.menu.days[idx] : null) || {};
+  const [dish, setDish] = useState(day.dish || '');
+  const [cook, setCook] = useState(day.cook || null);
+  const [need, setNeed] = useState(listOf(day.need));
+  const [n, setN] = useState({ name: '', qty: '', price: '', group: 'Другое' });
+  const addNeed = () => { if (!n.name.trim()) return; setNeed(list => [...list, { name: n.name.trim(), qty: n.qty.trim(), price: num(n.price), group: n.group }]); setN({ name: '', qty: '', price: '', group: n.group }); };
+  const save = () => {
+    a.setKey('menu', m => { const all = objOf(m); const w = { ...objOf(all[week]) }; if (dish.trim()) w[idx] = { dish: dish.trim(), cook, need }; else delete w[idx]; return { ...all, [week]: w }; });
+    onClose();
+  };
+  return (
+    <Sheet title={`${['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'][idx]} · ужин`} onClose={onClose}>
+      <Field label="Блюдо"><input className="input" value={dish} onChange={e => setDish(e.target.value)} placeholder="Например, плов" autoFocus={!day.dish} /></Field>
+      {!day.dish && <Chips options={['Плов', 'Суп', 'Манты', 'Лагман', 'Бешбармак', 'Курица с рисом', 'Паста'].map(x => ({ id: x, label: x }))} value={dish} onChange={setDish} />}
+      {d.members.length > 1 && <Field label="Кто готовит"><Chips options={[...d.members.map(m => ({ id: m.id, label: m.name })), { id: 'together', label: 'Вместе' }]} value={cook} onChange={setCook} /></Field>}
+      <Field label={need.length ? `Нужно купить · ${need.length}` : 'Продукты, которых нет дома'}>
+        <div className="col" style={{ gap: 6 }}>
+          {need.map((x, i) => (
+            <div key={i} className="row-between" style={{ fontSize: 14, gap: 8 }}>
+              <span className="ellipsis">{x.name}{x.qty ? ' · ' + x.qty : ''}{x.price ? ' · ≈' + fmt(x.price) : ''}</span>
+              <span className="t-link" onClick={() => setNeed(list => list.filter((_, k) => k !== i))}>убрать</span>
+            </div>
+          ))}
+          <div className="row" style={{ gap: 6 }}>
+            <input className="input" style={{ flex: 2 }} value={n.name} onChange={e => setN({ ...n, name: e.target.value })} placeholder="Продукт" />
+            <input className="input" style={{ flex: 1 }} value={n.qty} onChange={e => setN({ ...n, qty: e.target.value })} placeholder="Сколько" />
+            <input className="input" style={{ flex: 1 }} inputMode="numeric" value={n.price} onChange={e => setN({ ...n, price: e.target.value })} placeholder="≈ ₸" />
+          </div>
+          <Chips options={SHOP_GROUPS.map(g => ({ id: g, label: g }))} value={n.group} onChange={g => setN({ ...n, group: g })} />
+          <div className="soft-btn" style={{ height: 44 }} onClick={addNeed}>+ Добавить продукт</div>
+        </div>
+      </Field>
+      <PrimaryButton disabled={false} onClick={save}>{dish.trim() ? 'Сохранить' : 'Убрать блюдо'}</PrimaryButton>
+    </Sheet>
+  );
+}
+
+// Продукт в списке покупок
+function ShopItemSheet({ item, onClose }) {
+  const { s, a } = useBudget();
+  const [name, setName] = useState(item ? item.name : '');
+  const [qty, setQty] = useState(item ? item.qty || '' : '');
+  const [price, setPrice] = useState(item && item.price ? String(item.price) : '');
+  const [group, setGroup] = useState(item ? item.group || 'Другое' : 'Другое');
+  const [note, setNote] = useState(item ? item.note || '' : '');
+  const ok = name.trim().length > 0;
+  const save = () => {
+    if (!ok) return;
+    const row = { id: item ? item.id : uid(), name: name.trim(), qty: qty.trim(), price: num(price), group, note: note.trim(), by: item ? item.by : (s.user ? s.user.id : null), done: item ? !!item.done : false };
+    a.setKey('shop', cur => ({ ...objOf(cur), items: upsert(objOf(cur).items, row) }));
+    onClose();
+  };
+  return (
+    <Sheet title={item ? 'Продукт' : 'Добавить продукт'} onClose={onClose}>
+      <Field label="Что купить"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Например, говядина" autoFocus={!item} /></Field>
+      <div className="row" style={{ gap: 10, alignItems: 'stretch' }}>
+        <Field label="Сколько" style={{ flex: 1 }}><input className="input" value={qty} onChange={e => setQty(e.target.value)} placeholder="1,5 кг" /></Field>
+        <Field label="Примерно, ₸" style={{ flex: 1 }}><input className="input" inputMode="numeric" value={price} onChange={e => setPrice(e.target.value)} placeholder="0" /></Field>
+      </div>
+      <Field label="Группа"><Chips options={SHOP_GROUPS.map(g => ({ id: g, label: g }))} value={group} onChange={setGroup} /></Field>
+      <Field label="Для чего"><input className="input" value={note} onChange={e => setNote(e.target.value)} placeholder="бешбармак, суп" /></Field>
+      <PrimaryButton disabled={!ok} onClick={save}>{item ? 'Сохранить' : 'Добавить'}</PrimaryButton>
+      {item && <DangerButton onClick={() => { a.setKey('shop', cur => ({ ...objOf(cur), items: listOf(objOf(cur).items).filter(x => x.id !== item.id) })); onClose(); }}>Удалить из списка</DangerButton>}
+    </Sheet>
+  );
+}
+
+// Кредит или рассрочка: остаток, ставка, платёж, сколько платежей всего и внесено, число списания
+function CreditSheet({ credit, onClose }) {
+  const { a } = useBudget();
+  const c = credit || {};
+  const [f, setF] = useState({ name: c.name || '', rate: c.rate ? String(c.rate) : '', left: c.left ? String(c.left) : '', monthly: c.monthly ? String(c.monthly) : '', total: c.total ? String(c.total) : '', paid: c.paid ? String(c.paid) : '', day: c.day ? String(c.day) : '' });
+  const set = k => e => setF({ ...f, [k]: e.target.value });
+  const ok = f.name.trim() && num(f.left) > 0 && num(f.monthly) > 0;
+  const row = () => ({ id: c.id || uid(), name: f.name.trim(), rate: Number(String(f.rate).replace(',', '.')) || 0, left: num(f.left), monthly: num(f.monthly), total: num(f.total) || Math.ceil(num(f.left) / Math.max(1, num(f.monthly))), paid: num(f.paid), day: Math.min(28, Math.max(1, num(f.day) || 10)) });
+  const save = () => { if (!ok) return; const r = row(); a.setKey('credits', list => upsert(list, r)); onClose(); };
+  // Внесён платёж: +1 к счётчику, основной долг уменьшается на платёж за вычетом процентов месяца
+  const pay = () => {
+    const r = row();
+    const interest = Math.round(r.left * r.rate / 12 / 100);
+    a.setKey('credits', list => upsert(list, { ...r, paid: Math.min(r.total, r.paid + 1), left: Math.max(0, r.left - Math.max(0, r.monthly - interest)) }));
+    onClose();
+  };
+  return (
+    <Sheet title={credit ? 'Кредит' : 'Новый кредит'} onClose={onClose}>
+      <Field label="Название"><input className="input" value={f.name} onChange={set('name')} placeholder="Автокредит · Halyk, Kaspi Red" autoFocus={!credit} /></Field>
+      <div className="row" style={{ gap: 10 }}>
+        <Field label="Осталось выплатить, ₸" style={{ flex: 1.4 }}><input className="input" inputMode="numeric" value={f.left} onChange={set('left')} placeholder="0" /></Field>
+        <Field label="% годовых" style={{ flex: 1 }}><input className="input" inputMode="decimal" value={f.rate} onChange={set('rate')} placeholder="0" /></Field>
+      </div>
+      <div className="row" style={{ gap: 10 }}>
+        <Field label="Платёж в месяц, ₸" style={{ flex: 1.4 }}><input className="input" inputMode="numeric" value={f.monthly} onChange={set('monthly')} placeholder="0" /></Field>
+        <Field label="Число" style={{ flex: 1 }}><input className="input" inputMode="numeric" value={f.day} onChange={set('day')} placeholder="10" /></Field>
+      </div>
+      <div className="row" style={{ gap: 10 }}>
+        <Field label="Платежей всего" style={{ flex: 1 }}><input className="input" inputMode="numeric" value={f.total} onChange={set('total')} placeholder="12" /></Field>
+        <Field label="Уже внесено" style={{ flex: 1 }}><input className="input" inputMode="numeric" value={f.paid} onChange={set('paid')} placeholder="0" /></Field>
+      </div>
+      <div className="t-meta">Рассрочка без процентов — оставьте 0% годовых. Платёж можно добавить и в «Платежи», чтобы трата вносилась сама.</div>
+      <PrimaryButton disabled={!ok} onClick={save}>{credit ? 'Сохранить' : 'Добавить'}</PrimaryButton>
+      {credit && <div className="soft-btn" onClick={pay}>Платёж внесён · {fmt(num(f.monthly))}</div>}
+      {credit && <DangerButton onClick={() => { a.setKey('credits', list => listOf(list).filter(x => x.id !== c.id)); onClose(); }}>Удалить кредит</DangerButton>}
+    </Sheet>
+  );
+}
+
+// Показания счётчика
+function ReadingSheet({ meter, onClose }) {
+  const { a, d } = useBudget();
+  const [v, setV] = useState('');
+  const [date, setDate] = useState(d.todayIso);
+  const value = Number(String(v).replace(',', '.'));
+  const ok = v !== '' && Number.isFinite(value) && (meter.value === null || value >= meter.value);
+  const save = () => {
+    if (!ok) return;
+    a.setKey('utilities', u => { const all = objOf(u); return { ...all, meters: listOf(all.meters).map(m => (m.id === meter.id ? { ...m, readings: [...listOf(m.readings).filter(r => r.date !== date), { date, value }] } : m)) }; });
+    onClose();
+  };
+  return (
+    <Sheet title={meter.name} onClose={onClose}>
+      <div className="t-meta">Прошлые показания: {meter.value === null ? 'нет' : `${meter.valueFmt} ${meter.unit || ''}`}. Тариф {fmt(meter.tariff || 0)} за {meter.unit || 'единицу'}.</div>
+      <div className="row" style={{ gap: 10 }}>
+        <Field label="Новые показания" style={{ flex: 1.3 }}><input className="input" inputMode="decimal" value={v} onChange={e => setV(e.target.value)} autoFocus placeholder={meter.value === null ? '0' : String(meter.value)} /></Field>
+        <Field label="Дата" style={{ flex: 1 }}><input className="input" type="date" value={date} onChange={e => setDate(e.target.value || d.todayIso)} /></Field>
+      </div>
+      {v !== '' && meter.value !== null && value < meter.value && <div className="t-meta" style={{ color: 'var(--red)' }}>Меньше прошлых показаний — проверьте цифры</div>}
+      {ok && meter.value !== null && <div className="t-meta">Расход {Math.round((value - meter.value) * 100) / 100} {meter.unit} ≈ {fmt((value - meter.value) * (meter.tariff || 0))}</div>}
+      <PrimaryButton disabled={!ok} onClick={save}>Сохранить показания</PrimaryButton>
+      <div className="t-link" style={{ textAlign: 'center' }} onClick={() => a.openSheet('meter', { meter })}>Изменить счётчик или тариф</div>
+    </Sheet>
+  );
+}
+
+// Счётчик: название, единица, тариф
+function MeterSheet({ meter, onClose }) {
+  const { a } = useBudget();
+  const m = meter || {};
+  const [name, setName] = useState(m.name || '');
+  const [unit, setUnit] = useState(m.unit || 'м³');
+  const [tariff, setTariff] = useState(m.tariff ? String(m.tariff) : '');
+  const ok = name.trim().length > 0;
+  const save = () => {
+    if (!ok) return;
+    const row = { id: m.id || uid(), name: name.trim(), unit, tariff: Number(String(tariff).replace(',', '.')) || 0, readings: listOf(m.readings) };
+    a.setKey('utilities', u => { const all = objOf(u); return { ...all, meters: upsert(all.meters, row) }; });
+    onClose();
+  };
+  return (
+    <Sheet title={meter ? 'Счётчик' : 'Новый счётчик'} onClose={onClose}>
+      <Field label="Что считает"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Свет, холодная вода" autoFocus={!meter} /></Field>
+      {!meter && <Chips options={['Свет', 'Холодная вода', 'Горячая вода', 'Газ'].map(x => ({ id: x, label: x }))} value={name} onChange={x => { setName(x); setUnit(x === 'Свет' ? 'кВт·ч' : 'м³'); }} />}
+      <div className="row" style={{ gap: 10 }}>
+        <Field label="Единица" style={{ flex: 1 }}><Chips options={['кВт·ч', 'м³'].map(x => ({ id: x, label: x }))} value={unit} onChange={setUnit} /></Field>
+        <Field label="Тариф, ₸" style={{ flex: 1 }}><input className="input" inputMode="decimal" value={tariff} onChange={e => setTariff(e.target.value)} placeholder="25" /></Field>
+      </div>
+      <PrimaryButton disabled={!ok} onClick={save}>{meter ? 'Сохранить' : 'Добавить счётчик'}</PrimaryButton>
+      {meter && <DangerButton onClick={() => { a.setKey('utilities', u => ({ ...objOf(u), meters: listOf(objOf(u).meters).filter(x => x.id !== m.id) })); onClose(); }}>Удалить счётчик</DangerButton>}
+    </Sheet>
+  );
+}
+
+// Постоянный коммунальный платёж (отопление, КСК, мусор) и число оплаты
+function UtilFixedSheet({ item, onClose }) {
+  const { a, d } = useBudget();
+  const [name, setName] = useState(item ? item.name : '');
+  const [amount, setAmount] = useState(item ? String(item.amount) : '');
+  const [due, setDue] = useState(String(d.utilities.due));
+  const ok = name.trim() && num(amount) > 0;
+  const save = () => {
+    a.setKey('utilities', u => {
+      const all = objOf(u);
+      const next = { ...all, due: Math.min(28, Math.max(1, num(due) || 25)) };
+      if (ok) next.fixed = upsert(all.fixed, { id: item ? item.id : uid(), name: name.trim(), amount: num(amount) });
+      return next;
+    });
+    onClose();
+  };
+  return (
+    <Sheet title={item ? item.name : 'Постоянный платёж'} onClose={onClose}>
+      <Field label="Название"><input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Отопление" autoFocus={!item} /></Field>
+      {!item && <Chips options={['Отопление', 'КСК', 'Вывоз мусора', 'Домофон', 'Интернет'].map(x => ({ id: x, label: x }))} value={name} onChange={setName} />}
+      <div className="row" style={{ gap: 10 }}>
+        <Field label="Сумма в месяц, ₸" style={{ flex: 1.4 }}><input className="input" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" /></Field>
+        <Field label="Оплатить до числа" style={{ flex: 1 }}><input className="input" inputMode="numeric" value={due} onChange={e => setDue(e.target.value)} /></Field>
+      </div>
+      <PrimaryButton disabled={!ok && !item} onClick={save}>Сохранить</PrimaryButton>
+      {item && <DangerButton onClick={() => { a.setKey('utilities', u => ({ ...objOf(u), fixed: listOf(objOf(u).fixed).filter(x => x.id !== item.id) })); onClose(); }}>Удалить</DangerButton>}
+    </Sheet>
+  );
+}
+
+// Событие семейного календаря: врач, праздник, садик; с суммой, если нужны деньги
+function EventSheet({ event, date, onClose }) {
+  const { a, d } = useBudget();
+  const e = event || {};
+  const [title, setTitle] = useState(e.title || '');
+  const [dateV, setDateV] = useState(e.date || date || d.todayIso);
+  const [time, setTime] = useState(e.time || '');
+  const [type, setType] = useState(e.type || 'doctor');
+  const [who, setWho] = useState(e.who || null);
+  const [cost, setCost] = useState(e.cost ? String(e.cost) : '');
+  const [note, setNote] = useState(e.note || '');
+  const ok = title.trim() && /^\d{4}-\d{2}-\d{2}$/.test(dateV);
+  const save = () => {
+    if (!ok) return;
+    a.setKey('events', list => upsert(list, { id: e.id || uid(), title: title.trim(), date: dateV, time, type, who, cost: num(cost), note: note.trim() }));
+    onClose();
+  };
+  return (
+    <Sheet title={event ? 'Событие' : 'Новое событие'} onClose={onClose}>
+      <Field label="Что"><input className="input" value={title} onChange={x => setTitle(x.target.value)} placeholder="Педиатр, день рождения, утренник" autoFocus={!event} /></Field>
+      <div className="row" style={{ gap: 10 }}>
+        <Field label="Дата" style={{ flex: 1.2 }}><input className="input" type="date" value={dateV} onChange={x => setDateV(x.target.value)} /></Field>
+        <Field label="Время" style={{ flex: 1 }}><input className="input" type="time" value={time} onChange={x => setTime(x.target.value)} /></Field>
+      </div>
+      <Field label="Тип"><Chips options={EVENT_TYPES.map(t => ({ id: t.id, label: t.label }))} value={type} onChange={setType} /></Field>
+      {d.members.length > 1 && <Field label="Кто ведёт"><Chips options={[...d.members.map(m => ({ id: m.id, label: m.name })), { id: 'together', label: 'Вместе' }]} value={who} onChange={setWho} /></Field>}
+      <div className="row" style={{ gap: 10 }}>
+        <Field label="Нужно денег, ₸" style={{ flex: 1 }}><input className="input" inputMode="numeric" value={cost} onChange={x => setCost(x.target.value)} placeholder="0" /></Field>
+        <Field label="Заметка" style={{ flex: 1.4 }}><input className="input" value={note} onChange={x => setNote(x.target.value)} placeholder="подарок, костюм" /></Field>
+      </div>
+      <PrimaryButton disabled={!ok} onClick={save}>{event ? 'Сохранить' : 'Добавить'}</PrimaryButton>
+      {event && <DangerButton onClick={() => { a.setKey('events', list => listOf(list).filter(x => x.id !== e.id)); onClose(); }}>Удалить событие</DangerButton>}
+    </Sheet>
+  );
+}
+
+// Личный долг между двумя: кто кому дал — попадает в расчёт «Кто кому должен» целиком (100%)
+function LoanSheet({ onClose }) {
+  const { s, a, d } = useBudget();
+  const [from, setFrom] = useState(d.me);
+  const [amount, setAmount] = useState('');
+  const [title, setTitle] = useState('');
+  const other = d.members.find(m => m.id !== from);
+  const ok = num(amount) > 0 && other;
+  const save = () => {
+    if (!ok) return;
+    a.setKey('settle', cur => { const st = objOf(cur); return { ...st, log: [...listOf(st.log), { date: d.todayIso, from, to: other.id, amount: num(amount), kind: 'loan', title: title.trim() || 'Личный долг', by: s.user ? s.user.id : null }] }; });
+    onClose();
+  };
+  return (
+    <Sheet title="Личный долг" onClose={onClose}>
+      <Field label="Кто дал в долг"><Chips options={d.members.map(m => ({ id: m.id, label: m.id === d.me ? 'Я' : m.name }))} value={from} onChange={setFrom} /></Field>
+      <div className="row" style={{ gap: 10 }}>
+        <Field label="Сумма, ₸" style={{ flex: 1 }}><input className="input" inputMode="numeric" value={amount} onChange={e => setAmount(e.target.value)} autoFocus placeholder="0" /></Field>
+        <Field label="На что" style={{ flex: 1.4 }}><input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="на бензин" /></Field>
+      </div>
+      {other && <div className="t-meta">{other.name} вернёт эту сумму целиком — она добавится в расчёт.</div>}
+      <PrimaryButton disabled={!ok} onClick={save}>Записать долг</PrimaryButton>
     </Sheet>
   );
 }

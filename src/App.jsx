@@ -16,6 +16,9 @@ import Settings from './screens/Settings.jsx';
 import Bills from './screens/Bills.jsx';
 import Analytics from './screens/Analytics.jsx';
 import Family from './screens/Family.jsx';
+import { Menu, Shopping } from './screens/Food.jsx';
+import { Debts, Credits, Utilities } from './screens/Money.jsx';
+import { Calendar, Review } from './screens/Life.jsx';
 import WidgetsBoard from './widgets/WidgetsBoard.jsx';
 
 // Вкладки: home — «Аналитика», plans — «Планы» (задачи и цели), spend — «Расходы», settings — «Ещё».
@@ -23,6 +26,7 @@ import WidgetsBoard from './widgets/WidgetsBoard.jsx';
 const SCREENS = {
   home: Home, plans: Plans, spend: Spend, settings: Settings,
   add: Add, budget: Budget, income: Income, bills: Bills, analytics: Analytics, family: Family,
+  menu: Menu, shopping: Shopping, debts: Debts, credits: Credits, utilities: Utilities, calendar: Calendar, review: Review,
   stats: Home, cats: Spend, goals: Plans,
 };
 

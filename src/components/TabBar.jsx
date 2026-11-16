@@ -5,7 +5,7 @@ const TABS = {
   home: ['home', 'stats'],
   plans: ['plans', 'goals', 'budget', 'bills'],
   spend: ['spend', 'cats'],
-  settings: ['settings', 'analytics', 'family', 'income'],
+  settings: ['settings', 'analytics', 'family', 'income', 'menu', 'shopping', 'debts', 'credits', 'utilities', 'calendar', 'review'],
 };
 
 export default function TabBar() {
