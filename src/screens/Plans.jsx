@@ -1,9 +1,16 @@
 import { useBudget } from '../store.jsx';
 import { useLongPress } from '../hooks.js';
-import { Checkbox, ProgressBar } from '../components/ui.jsx';
+import { Checkbox, ProgressBar, Ring } from '../components/ui.jsx';
+import { iso, addDays, parseIso } from '../lib/dates.js';
+import { plural } from '../data.js';
 import { LimitsPanel } from './Budget.jsx';
 import { BillsPanel } from './Bills.jsx';
 
+const VIEWS = [
+  { id: 'day', label: 'День' },
+  { id: 'week', label: 'Неделя' },
+  { id: 'month', label: 'Месяц' },
+];
 const TABS = [
   { id: 'planner', label: 'Планёрка' },
   { id: 'limits', label: 'Лимиты' },
@@ -14,10 +21,9 @@ const TABS = [
 // Планы (макет «Семейный бюджет», шаги 2b и 3a): дела по дому, лимиты, цели накоплений и регулярные платежи.
 export default function Plans() {
   const { s, d, a } = useBudget();
-  const p = d.plan;
   const tab = TABS.some(t => t.id === s.planTab) ? s.planTab : 'planner';
   const add = {
-    planner: () => a.openSheet('task', { date: p.dateIso, owner: p.ownerDefault }),
+    planner: () => a.openSheet('chore', { date: d.pl.dateIso }),
     limits: () => a.openSheet('cat'),
     goals: () => a.openSheet('goal'),
     bills: () => a.openSheet('bill'),
@@ -43,49 +49,114 @@ export default function Plans() {
   );
 }
 
-// Планёрка: дела на выбранный день, неделя, чьи дела
+// Планёрка (макет, шаг 3): дела по дому на день, неделю и месяц
 function Planner() {
   const { d, a } = useBudget();
-  const p = d.plan;
-  const seg = id => ({ background: p.ownerId === id ? 'var(--accent)' : 'transparent', color: p.ownerId === id ? 'var(--on-accent)' : 'var(--mu)' });
+  const p = d.pl;
+  const shiftDay = n => a.setPlanDate(iso(addDays(parseIso(p.dateIso), n)));
   return (
     <>
-      {p.owners.length > 0 && (
-        <div className="seg">
-          {p.owners.map(o => <div key={o.id} className="seg__item" style={seg(o.id)} onClick={() => a.setPlanOwner(o.id)}>{o.name}</div>)}
+      <div className="row-between" style={{ gap: 8 }}>
+        <div className="row" style={{ gap: 8 }}>
+          {VIEWS.map(v => (
+            <button key={v.id} type="button" className="filter-chip" aria-pressed={p.view === v.id ? 'true' : 'false'} onClick={() => a.setPlanView(v.id)}>{v.label}</button>
+          ))}
+        </div>
+        {!p.isToday && p.view !== 'month' && <div className="t-link" onClick={a.planToday}>Сегодня</div>}
+      </div>
+
+      {p.empty && (
+        <div className="card" style={{ gap: 10 }}>
+          <div style={{ fontSize: 15, fontWeight: 500 }}>Здесь будут дела по дому: посуда, садик, уборка, показания счётчиков.</div>
+          <div className="t-meta">Добавьте дело один раз — оно будет появляться в свой день само. Можно назначить исполнителя или чередовать по неделям.</div>
+          <div className="soft-btn" onClick={() => a.openSheet('chore', { date: p.dateIso })}>+ Добавить дело</div>
         </div>
       )}
 
-      <div className="card" style={{ gap: 10, padding: '12px 10px 10px' }}>
-        <div className="row-between" style={{ padding: '0 4px' }}>
-          <div className="strip-nav" onClick={() => a.shiftPlanWeek(-1)}>‹</div>
-          <div style={{ fontSize: 13, fontWeight: 600 }}>{p.weekLabel}</div>
-          <div className="strip-nav" onClick={() => a.shiftPlanWeek(1)}>›</div>
-        </div>
-        <div className="strip">
-          {p.weekPlan.map(dd => (
-            <div key={dd.iso} className="strip__day" data-on={dd.selected ? 'true' : 'false'} data-today={dd.isToday ? 'true' : 'false'} onClick={() => a.setPlanDate(dd.iso)}>
-              <div className="strip__wd">{dd.label}</div>
-              <div className="strip__num">{dd.day}</div>
-              <div className="strip__count">{dd.total ? `${dd.done}/${dd.total}` : '·'}</div>
+      {p.view === 'day' && !p.empty && (
+        <>
+          <div className="col" style={{ gap: 8 }}>
+            <div className="row-between">
+              <div className="row" style={{ gap: 6 }}>
+                <button type="button" className="strip-nav" aria-label="Предыдущий день" onClick={() => shiftDay(-1)}>‹</button>
+                <span className="t-meta" style={{ fontSize: 14 }}>{p.day.label}</span>
+                <button type="button" className="strip-nav" aria-label="Следующий день" onClick={() => shiftDay(1)}>›</button>
+              </div>
             </div>
-          ))}
-        </div>
-        {!p.isToday && <div className="t-link" style={{ textAlign: 'center' }} onClick={a.planToday}>Вернуться к сегодня</div>}
-      </div>
+            <div className="row-between" style={{ alignItems: 'baseline' }}>
+              <div className="t-num" style={{ fontSize: 20 }}>{p.day.total ? `${p.day.done} из ${p.day.total} готово` : 'Дел нет'}</div>
+              <div className="t-meta">{p.day.people}</div>
+            </div>
+            {p.day.total > 0 && (
+              <div className="seg-bar" aria-hidden="true">{p.day.segments.map((on, i) => <span key={i} data-on={on ? 'true' : 'false'} />)}</div>
+            )}
+          </div>
+          {p.day.rows.length > 0 && <div className="card card--list">{p.day.rows.map(r => <ChoreRow key={r.key} r={r} timeRight />)}</div>}
+          {p.day.note && (
+            <div className="card" style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start', background: 'var(--as)', padding: 16 }}>
+              <span className="dot9" style={{ background: 'var(--accent)', marginTop: 6 }} />
+              <div style={{ fontSize: 14, fontWeight: 500 }}>{p.day.note}</div>
+            </div>
+          )}
+        </>
+      )}
 
-      <div className="section-head">
-        <div className="t-card">Задачи на {p.isToday ? 'сегодня' : p.dateShort}</div>
-        {p.total > 0 && <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)', whiteSpace: 'nowrap' }}>{p.done} из {p.total}</div>}
-      </div>
-      <div className="card card--list">
-        {p.total > 0 && <div style={{ padding: '12px 0 6px' }}><ProgressBar height={6} pct={p.pct} color="var(--green)" transition /></div>}
-        {p.tasks.length === 0 && <div className="empty" style={{ padding: '16px 0' }}>На этот день задач нет. Нажмите +, чтобы добавить.</div>}
-        {p.tasks.map(t => <TaskRow key={t.id} t={t} showOwner={p.showOwner} />)}
-        {p.hasCost && <div className="t-meta" style={{ padding: '12px 0' }}>Затраты по плану {p.costFmt} · осталось {p.leftFmt}</div>}
-      </div>
-      {p.tasks.length > 0 && <div className="t-meta" style={{ textAlign: 'center', marginTop: -6 }}>Тап — отметить, удержать — изменить</div>}
+      {p.view === 'week' && !p.empty && (
+        <>
+          <div className="col" style={{ gap: 8 }}>
+            <div className="row" style={{ gap: 6 }}>
+              <button type="button" className="strip-nav" aria-label="Прошлая неделя" onClick={() => a.shiftPlanWeek(-1)}>‹</button>
+              <span className="t-meta" style={{ fontSize: 14 }}>{p.week.label}</span>
+              <button type="button" className="strip-nav" aria-label="Следующая неделя" onClick={() => a.shiftPlanWeek(1)}>›</button>
+            </div>
+            <div className="row-between" style={{ alignItems: 'baseline' }}>
+              <div className="t-num" style={{ fontSize: 20 }}>{p.week.total} {plural(p.week.total, 'дело', 'дела', 'дел')}</div>
+              <div className="t-meta">сделано {p.week.done}</div>
+            </div>
+          </div>
+          <div className="week-strip">
+            {p.week.strip.map(x => (
+              <button key={x.iso} type="button" className="week-strip__day week-strip__day--btn" data-today={x.isToday ? 'true' : 'false'} data-on={x.selected ? 'true' : 'false'} onClick={() => a.openPlanDay(x.iso)}>
+                <span className="week-strip__wd">{x.wd}</span>
+                <span className="week-strip__num">{x.day}</span>
+                <span className="cal-dots">{x.dots.map((c, i) => <i key={i} style={{ background: x.isToday ? 'var(--on-accent)' : c }} />)}</span>
+              </button>
+            ))}
+          </div>
+          <div className="section-head"><div className="t-card">На неделю</div></div>
+          <div className="card card--list">
+            {p.week.rows.length === 0 && <div className="empty" style={{ padding: '16px 0' }}>На эту неделю дел нет</div>}
+            {p.week.rows.map(r => <ChoreRow key={r.key} r={r} />)}
+          </div>
+        </>
+      )}
 
+      {p.view === 'month' && !p.empty && (
+        <>
+          <div className="card" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div className="col" style={{ gap: 4, minWidth: 0 }}>
+              <div className="t-meta">{p.month.label}</div>
+              <div className="t-num" style={{ fontSize: 20 }}>{p.month.total ? `${p.month.done} из ${p.month.total} готово` : 'Дел на месяц нет'}</div>
+              <div className="t-meta">{p.month.people}</div>
+            </div>
+            {p.month.total > 0 && (
+              <Ring size={64} r={26} width={6} pct={p.month.pct} track="var(--ln)" color="var(--accent)"><span style={{ fontSize: 14, fontWeight: 600 }}>{p.month.pct}%</span></Ring>
+            )}
+          </div>
+          <div className="section-head"><div className="t-card">Осталось</div><div className="t-meta">{p.month.left.length}</div></div>
+          <div className="card card--list">
+            {p.month.left.length === 0 && <div className="empty" style={{ padding: '16px 0' }}>Всё сделано</div>}
+            {p.month.left.map(r => <ChoreRow key={r.key} r={r} />)}
+          </div>
+          {p.month.finished.length > 0 && (
+            <>
+              <div className="section-head"><div className="t-card">Готово</div><div className="t-meta">{p.month.finished.length}</div></div>
+              <div className="card card--list">{p.month.finished.map(r => <ChoreRow key={r.key} r={r} />)}</div>
+            </>
+          )}
+        </>
+      )}
+      {!p.empty && <div className="t-meta" style={{ textAlign: 'center' }}>Тап — отметить, удержать — изменить</div>}
     </>
   );
 }
@@ -135,20 +206,25 @@ function GoalsPanel() {
   );
 }
 
-function TaskRow({ t, showOwner }) {
-  const { a } = useBudget();
-  const press = useLongPress(() => a.openSheet('task', { task: t }), () => a.toggleTask(t.id));
+// Строка дела: тап — отметить (у дела с подзадачами — открыть их), удержание — изменить
+function ChoreRow({ r, timeRight = false }) {
+  const { d, a } = useBudget();
+  const edit = () => (r.choreId ? a.openSheet('chore', { chore: d.choreDefs.find(c => c.id === r.choreId) }) : a.openSheet('task', { task: r.raw }));
+  const tapRow = () => {
+    if (!r.choreId) { a.toggleTask(r.taskId); return; }
+    if (r.hasSubs) a.openSheet('choreSubs', { choreId: r.choreId, dateIso: r.dateIso });
+    else a.toggleChore(r.choreId, r.dateIso);
+  };
+  const press = useLongPress(edit, tapRow);
   return (
-    <div className="list-row list-row--tap pressable" {...press}>
-      <Checkbox size={24} radius={8} icon={13} done={t.done} border={t.boxBorder} />
-      <div className="col" style={{ flex: 1, gap: 3, minWidth: 0 }}>
-        <div className="ellipsis" style={{ fontSize: 15, fontWeight: 500, textDecoration: t.titleStyle, color: t.titleColor }}>{t.name}</div>
-        <div className="row" style={{ gap: 6 }}>
-          <div className="tag" style={{ background: t.bg, color: t.color }}>{t.tag}</div>
-          <div className="t-meta" style={{ whiteSpace: 'nowrap' }}>{t.time}{showOwner && t.ownerName ? ' · ' + t.ownerName : ''}{showOwner && !t.owner ? ' · общая' : ''}</div>
-        </div>
+    <div className="list-row list-row--tap pressable" {...press} style={{ flexWrap: 'wrap' }}>
+      <Checkbox size={24} radius={8} icon={13} done={r.done} border={r.hot ? 'var(--red)' : 'var(--off)'} />
+      <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
+        <div style={{ fontSize: 16, fontWeight: 600, textDecoration: r.done ? 'line-through' : 'none', color: r.done ? 'var(--mu)' : 'var(--tx)' }}>{r.name}</div>
+        {r.sub && <div className="t-meta ellipsis" style={{ color: r.hot && !timeRight ? 'var(--red)' : undefined }}>{r.sub}</div>}
       </div>
-      <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', color: t.costColor }}>{t.costFmt}</div>
+      <div style={{ fontSize: 14, fontWeight: 500, whiteSpace: 'nowrap', color: r.hot && timeRight ? 'var(--accent-tx)' : 'var(--mu)' }}>{r.right}</div>
+      {typeof r.pct === 'number' && <div style={{ flexBasis: '100%', paddingLeft: 36 }}><ProgressBar height={3} pct={r.pct} color="var(--green)" track="var(--ln)" /></div>}
     </div>
   );
 }

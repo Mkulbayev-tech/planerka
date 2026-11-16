@@ -1,9 +1,10 @@
 // Производные значения для экранов и виджетов: всё считается от реальных дат и общих данных семьи.
 import { CATS, OTHER_CAT, allCats, TAGS, TAG_COLORS, THEMES, DEFAULT_SETTINGS, fmt, short, traty, mix, plural } from './data.js';
 import { SHOP_GROUPS, weekKey, shoppingFromMenu, creditView, utilitiesView } from './lib/family.js';
+import { validChores, occursOn, assigneeOf, stateOf, repeatLabel } from './lib/chores.js';
 import {
   iso, startOfDay, addDays, daysBetween, inRange, parseIso, periodBounds, weekBounds,
-  longLabel, dayMonth, dayLabel, shortDate, MONTHS_NOM, MONTHS_CAP, MONTHS_GEN, WEEKDAYS_SHORT,
+  longLabel, dayMonth, dayLabel, shortDate, MONTHS_NOM, MONTHS_CAP, MONTHS_GEN, WEEKDAYS_SHORT, WEEKDAYS,
 } from './lib/dates.js';
 import { planBudget } from './lib/autoplan.js';
 import { validBills, billDates, billTxId, dueBills, upcomingBills } from './lib/bills.js';
@@ -229,8 +230,30 @@ export function derive(s, now = new Date()) {
   };
   const byTime = (a, b) => String(a.time || '').localeCompare(String(b.time || '')) || String(a.created_at || '').localeCompare(String(b.created_at || ''));
   const forOwner = (list, ownerId) => (ownerId === 'all' ? list : list.filter(t => !t.owner || t.owner === ownerId));
-  const tasksByDate = {};
-  data.tasks.forEach(t => { (tasksByDate[t.date] = tasksByDate[t.date] || []).push(t); });
+  // Планёрка: дела из settings.chores превращаются во «вхождения» по датам и считаются вместе с задачами из таблицы
+  const chores = validChores(settings.chores);
+  const choreLog = settings.choreLog && typeof settings.choreLog === 'object' ? settings.choreLog : {};
+  const memberIds = members.map(m => m.user_id).sort();
+  const occOf = (c, dIso) => {
+    const st0 = stateOf(c, choreLog, dIso);
+    const whoId = assigneeOf(c, dIso, memberIds);
+    return {
+      id: `ch:${c.id}:${dIso}`, chore: c, choreId: c.id, name: c.name, date: dIso, time: c.time, done: st0.done, subsDone: st0.subsDone,
+      owner: whoId && whoId !== 'together' && membersById[whoId] !== undefined ? whoId : null, together: whoId === 'together',
+      where: c.where || '', freq: c.freq, tag: '', cost: 0, cat: null,
+    };
+  };
+  const occRange = (fromIso, toIso, pick) => { // [from, to)
+    const out = [];
+    for (let dte = parseIso(fromIso); iso(dte) < toIso; dte = addDays(dte, 1)) {
+      const dIso = iso(dte);
+      chores.forEach(c => { if ((!pick || pick(c)) && occursOn(c, dIso)) out.push(occOf(c, dIso)); });
+    }
+    return out;
+  };
+  const winFrom = [prevP.startIso, iso(addDays(today, -62))].sort()[0];
+  const winTo = [P.endIso, iso(addDays(today, 36))].sort()[1];
+  const allTasks = chores.length ? [...data.tasks, ...occRange(winFrom, winTo)] : data.tasks;
 
   // Статистика списка задач: неделя WB (с выделенным днём) и текущий период
   const planStats = (list, WB, selectedIso) => {
@@ -279,7 +302,7 @@ export function derive(s, now = new Date()) {
   };
 
   // Сегодня, мои задачи — главная, дашборд, виджеты
-  const myTasks = forOwner(data.tasks, me);
+  const myTasks = forOwner(allTasks, me);
   const todayMine = myTasks.filter(t => t.date === todayIso).sort(byTime);
   const tasks = todayMine.map(viewTask);
   const doneCount = todayMine.filter(t => t.done).length;
@@ -294,7 +317,7 @@ export function derive(s, now = new Date()) {
   const planDate = parseIso(planDateIso);
   const rawOwner = s.planOwner || 'me';
   const ownerId = rawOwner === 'me' || rawOwner === 'all' || membersById[rawOwner] !== undefined ? rawOwner : 'me';
-  const ownerTasks = forOwner(data.tasks, ownerId === 'me' ? me : ownerId);
+  const ownerTasks = forOwner(allTasks, ownerId === 'me' ? me : ownerId);
   const PW = weekBounds(planDate);
   const dayTasks = ownerTasks.filter(t => t.date === planDateIso).sort(byTime);
   const planDone = dayTasks.filter(t => t.done).length;
@@ -315,6 +338,102 @@ export function derive(s, now = new Date()) {
     hasCost: planCost > 0,
     ...planStats(ownerTasks, PW, planDateIso),
   };
+
+  // Экран «Планёрка» (макет, шаг 3): день, неделя, месяц
+  const whoName = t => (t.together ? 'Вместе' : t.owner ? (membersById[t.owner] || '') : '');
+  const nowHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const timedSort = (x, y) => (x.time ? 0 : 1) - (y.time ? 0 : 1) || byTime(x, y);
+  const dayItemsOf = dIso => [...data.tasks.filter(t => t.date === dIso), ...chores.filter(c => occursOn(c, dIso)).map(c => occOf(c, dIso))].sort(timedSort);
+  const perPerson = list => members.map(m => ({ name: m.display_name || '?', n: list.filter(t => t.owner === m.user_id).length })).filter(x => x.n > 0).map(x => `${x.name} ${x.n}`).join(' · ');
+  const lowerFirst = x => (x ? x[0].toLowerCase() + x.slice(1) : x);
+  const planView = s.planView === 'week' || s.planView === 'month' ? s.planView : 'day';
+  const wdOf = dIso => WEEKDAYS_SHORT[(parseIso(dIso).getDay() + 6) % 7].toLowerCase();
+  const refOf = t => ({ choreId: t.choreId || null, taskId: t.chore ? null : t.id, dateIso: t.date, hasSubs: !!(t.chore && t.chore.subs.length), raw: t.chore ? null : t });
+
+  const dayItems = dayItemsOf(planDateIso);
+  let hotGiven = false;
+  const dayRows = dayItems.map(t => {
+    const hot = !t.done && planDateIso === todayIso && !!t.time && t.time >= nowHM && !hotGiven;
+    if (hot) hotGiven = true;
+    return {
+      key: t.id, name: t.name, done: !!t.done, ...refOf(t), hot,
+      sub: [whoName(t), t.chore ? (t.where || repeatLabel(t.chore)) : (t.tag || '')].filter(Boolean).join(' · '),
+      right: t.chore && t.chore.subs.length ? `${t.subsDone.length} из ${t.chore.subs.length}` : (t.time || (t.cost ? fmt(t.cost) : '—')),
+    };
+  });
+  const tomorrowIso = iso(addDays(planDate, 1));
+  const tmr = chores.filter(c => c.freq !== 'day' && occursOn(c, tomorrowIso)).map(c => occOf(c, tomorrowIso)).sort((x, y) => (y.chore.rotate ? 1 : 0) - (x.chore.rotate ? 1 : 0))[0] || null;
+  const dayDone = dayItems.filter(t => t.done).length;
+
+  // «На неделю» — без ежедневной рутины (каждый день и по будням): она живёт на вкладке «День»
+  const routine = t => !!t.chore && (t.freq === 'day' || (t.freq === 'week' && t.chore.days.length >= 5));
+  const weekOcc = [0, 1, 2, 3, 4, 5, 6].map(i => dayItemsOf(iso(addDays(PW.start, i))).filter(t => !routine(t)));
+  const weekFlat = weekOcc.flat();
+  const weekRows = [];
+  const seenChore = new Set();
+  weekFlat.forEach(t => {
+    if (t.chore && t.freq === 'week') {
+      if (seenChore.has(t.choreId)) return;
+      seenChore.add(t.choreId);
+      const c = t.chore;
+      const occs = weekFlat.filter(x => x.choreId === t.choreId);
+      const doneN = occs.filter(x => x.done).length;
+      const next = occs.find(x => !x.done) || occs[occs.length - 1];
+      weekRows.push({
+        key: 'c' + c.id, name: c.name, done: c.subs.length ? t.done : doneN === occs.length, ...refOf(next),
+        sub: [repeatLabel(c), whoName(next), c.where].filter(Boolean).join(' · '),
+        right: c.subs.length ? `${t.subsDone.length} из ${c.subs.length}` : occs.length > 1 ? `${doneN} из ${occs.length}` : wdOf(next.date),
+        pct: c.subs.length ? pct(t.subsDone.length, c.subs.length) : occs.length > 1 ? pct(doneN, occs.length) : null,
+      });
+    } else {
+      weekRows.push({ key: t.id, name: t.name, done: !!t.done, ...refOf(t), sub: [t.time, whoName(t), t.where].filter(Boolean).join(' · '), right: wdOf(t.date), pct: null });
+    }
+  });
+
+  const monthItems = [...inP(data.tasks), ...occRange(P.startIso, P.endIso, c => c.freq === 'month' || c.freq === 'once')].sort(byDate);
+  const monthRows = monthItems.map(t => {
+    const dte = parseIso(t.date);
+    const diff = daysBetween(today, dte);
+    const base = (t.chore && t.freq === 'month' ? 'до ' : '') + dayMonth(dte) + (t.chore && t.freq === 'month' ? '' : ', ' + WEEKDAYS[dte.getDay()].toLowerCase());
+    const soon = !t.done && diff <= 5;
+    const tail = t.done ? '' : diff < 0 ? ' · просрочено' : diff === 0 ? ' · сегодня' : diff === 1 ? ' · завтра' : diff <= 5 ? ` · через ${diff} ${plural(diff, 'день', 'дня', 'дней')}` : '';
+    return { key: t.id, name: t.name, done: !!t.done, ...refOf(t), sub: base + tail, hot: soon, right: whoName(t) };
+  });
+  const monthDoneN = monthItems.filter(t => t.done).length;
+  const pl = {
+    view: planView, dateIso: planDateIso, isToday: planDateIso === todayIso, empty: chores.length === 0 && data.tasks.length === 0,
+    day: {
+      label: longLabel(planDate), rows: dayRows, done: dayDone, total: dayItems.length, people: perPerson(dayItems),
+      segments: dayItems.map((_, i) => i < dayDone),
+      note: tmr ? `${planDateIso === todayIso ? 'Завтра' : dayMonth(addDays(planDate, 1))} — ${lowerFirst(tmr.name)}. ${tmr.together ? 'Делаете вместе' : whoName(tmr) ? (tmr.chore.rotate ? 'Очередь: ' : 'Делает ') + whoName(tmr) : 'Кто свободен'}.` : '',
+    },
+    week: {
+      label: PW.start.getMonth() === pwEnd.getMonth() ? `${PW.start.getDate()} – ${pwEnd.getDate()} ${MONTHS_GEN[pwEnd.getMonth()]}` : `${dayMonth(PW.start)} – ${dayMonth(pwEnd)}`,
+      total: weekFlat.length, done: weekFlat.filter(t => t.done).length, rows: weekRows,
+      strip: weekOcc.map((list, i) => {
+        const dIso = iso(addDays(PW.start, i));
+        return { iso: dIso, wd: WEEKDAYS_SHORT[i].toLowerCase(), day: parseIso(dIso).getDate(), isToday: dIso === todayIso, selected: dIso === planDateIso, dots: list.slice(0, 3).map(t => (t.done ? th.gr : th.ac)) };
+      }),
+    },
+    month: {
+      label: `${MONTHS_NOM[P.start.getMonth()].replace(/^./, x => x.toUpperCase())} · ${dayMonth(P.start)} – ${dayMonth(addDays(P.end, -1))}`,
+      done: monthDoneN, total: monthItems.length, pct: pct(monthDoneN, monthItems.length), people: perPerson(monthItems),
+      left: monthRows.filter(r => !r.done), finished: monthRows.filter(r => r.done),
+    },
+  };
+  // Напоминания о делах: ближайшие 14 дней, мои и общие, с указанным временем
+  const choreReminders = [];
+  if (chores.some(c => c.time)) {
+    for (let i = 0; i < 14; i++) {
+      const dIso = iso(addDays(today, i));
+      chores.forEach(c => {
+        if (!c.time || !occursOn(c, dIso)) return;
+        const o = occOf(c, dIso);
+        if (o.done || (o.owner && o.owner !== me)) return;
+        choreReminders.push({ date: dIso, time: c.time, title: 'Планёрка', body: c.name + (c.where ? ' · ' + c.where : '') });
+      });
+    }
+  }
 
   // Кто сколько потратил (по участникам семьи)
   const byMember = list => {
@@ -668,7 +787,7 @@ export function derive(s, now = new Date()) {
   const rvBudget = sum(rvStats, c => c.limit);
   const rvOver = rvStats.filter(c => c.limit && c.spent > c.limit).sort((a, b) => (b.spent - b.limit) - (a.spent - a.limit));
   const rvBest = rvStats.map(c => { const p0 = catSum(ppTxs, c.id); return p0 && c.spent ? { c, d: Math.round((c.spent - p0) / p0 * 100) } : null; }).filter(Boolean).sort((a, b) => a.d - b.d)[0] || null;
-  const rvTasks = data.tasks.filter(t => inRange(t.date, prevP.startIso, prevP.endIso));
+  const rvTasks = allTasks.filter(t => inRange(t.date, prevP.startIso, prevP.endIso));
   const rvAgenda = [
     ...rvOver.slice(0, 2).map(c => ({ id: 'lim-' + c.id, text: `Поднять лимит на ${c.name.toLowerCase()} до ${fmt(Math.ceil(c.spent / 5000) * 5000)}?` })),
     ...(credits.tip ? [{ id: 'early-' + credits.tip.id, text: `Внести ${credits.tip.amountFmt} в ${(creditList.find(c => c.id === credits.tip.id) || {}).name || 'кредит'} досрочно?` }] : []),
@@ -725,6 +844,7 @@ export function derive(s, now = new Date()) {
     budgetSpentPct: Math.min(100, budgetSpentPct), budgetBarColor: budgetSpentPct > 100 ? RED : budgetSpentPct >= 80 ? AMBER : ACCENT,
     spendCats, spendDays, spendCatName: spendCat ? catOf(spendCat).name : '', spendWho, spendQuery: s.spendQuery || '',
     shopping, menu, credits, utilities, calendar, review, debtsDetail,
+    pl, choreDefs: chores, choreLog, choreReminders,
     periodShare: daysElapsed / periodDays, analytics, goalCards, goalsMonthFmt: fmt(topupsIn(P.startIso, P.endIso)), billWeek, billsUntilLabel: dayMonth(addDays(P.end, -1)), memberAvatars,
     incomeExpected, incomeMembers, salaries, legacySalary, prevMonthName: MONTHS_NOM[prevP.start.getMonth()],
     incomeSay: (() => {

@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useBudget } from '../store.jsx';
 import { CAT_PALETTE, CAT_SUGGEST, CAT_ICON_CHOICES, guessIcon, TAGS, TAG_COLORS, fmt, traty, uid } from '../data.js';
 import { SHOP_GROUPS, EVENT_TYPES } from '../lib/family.js';
+import { FREQS, WD } from '../lib/chores.js';
 import { pinProblem } from '../auth-profiles.js';
 import { iso, shortDate } from '../lib/dates.js';
 import { Sheet, Field, Chips, PrimaryButton, DangerButton } from './Sheet.jsx';
@@ -35,6 +36,8 @@ export default function SheetHost() {
     case 'utilFixed': return <UtilFixedSheet item={sh.item} onClose={close} />;
     case 'event': return <EventSheet event={sh.event} date={sh.date} onClose={close} />;
     case 'loan': return <LoanSheet onClose={close} />;
+    case 'chore': return <ChoreSheet chore={sh.chore} date={sh.date} onClose={close} />;
+    case 'choreSubs': return <ChoreSubsSheet choreId={sh.choreId} dateIso={sh.dateIso} onClose={close} />;
     case 'catFilter': return <CatFilterSheet onClose={close} />;
     case 'limit': return <AmountSheet title={'Лимит: ' + sh.cat.name} label="Лимит на период, ₸" value={sh.cat.limit} onSave={v => { a.setLimit(sh.cat.id, v); close(); }} onClose={close} />;
     case 'cat': return <CategorySheet cat={sh.cat} pick={sh.pick} onClose={close} />;
@@ -1019,3 +1022,94 @@ function LoanSheet({ onClose }) {
     </Sheet>
   );
 }
+
+// Новое дело (макет, шаг 3): как часто, по каким дням, где, подзадачи, кто, напоминание, очередь исполнителей
+function ChoreSheet({ chore, date, onClose }) {
+  const { a, d } = useBudget();
+  const c = chore || {};
+  const [name, setName] = useState(c.name || '');
+  const [freq, setFreq] = useState(c.freq || 'once');
+  const [days, setDays] = useState(c.days && c.days.length ? c.days : [(new Date((date || d.todayIso) + 'T12:00:00').getDay() + 6) % 7]);
+  const [dateV, setDateV] = useState(c.date || date || d.todayIso);
+  const [day, setDay] = useState(String(c.day || Number((date || d.todayIso).slice(8, 10))));
+  const [where, setWhere] = useState(c.where || '');
+  const [subs, setSubs] = useState((c.subs || []).join(', '));
+  const [who, setWho] = useState(c.who !== undefined ? c.who : d.me);
+  const [time, setTime] = useState(c.time || '');
+  const [rotate, setRotate] = useState(!!c.rotate);
+  const multi = d.members.length > 1;
+  const subList = subs.split(',').map(x => x.trim()).filter(Boolean);
+  const ok = name.trim().length > 0 && (freq !== 'week' || days.length > 0) && (freq !== 'once' || /^\d{4}-\d{2}-\d{2}$/.test(dateV)) && (freq !== 'month' || (num(day) >= 1 && num(day) <= 31));
+  const canRotate = multi && freq !== 'once' && who !== 'together';
+  const save = () => {
+    if (!ok) return;
+    a.saveChore({
+      name: name.trim(), freq, days: freq === 'week' ? [...days].sort((x, y) => x - y) : [], date: freq === 'once' ? dateV : null, day: freq === 'month' ? num(day) : null,
+      where: where.trim(), subs: subList, who: who || null, time, rotate: canRotate && rotate,
+    }, chore && chore.id);
+    onClose();
+  };
+  const toggleDay = i => setDays(list => (list.includes(i) ? list.filter(x => x !== i) : [...list, i]));
+  return (
+    <Sheet title={chore ? 'Дело' : 'Новое дело'} onClose={onClose}>
+      <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Например, уборка квартиры" autoFocus={!chore} aria-label="Название дела" />
+      <Field label="Как часто"><Chips options={FREQS} value={freq} onChange={setFreq} /></Field>
+      {freq === 'week' && (
+        <Field label="По каким дням">
+          <div className="day-pick">{WD.map((w, i) => <button key={w} type="button" aria-pressed={days.includes(i) ? 'true' : 'false'} onClick={() => toggleDay(i)}>{w}</button>)}</div>
+        </Field>
+      )}
+      <div className="op-list">
+        {freq === 'once' && <label className="op-list__row"><span className="muted">Когда</span><input type="date" value={dateV} onChange={e => setDateV(e.target.value)} aria-label="Дата" /></label>}
+        {freq === 'month' && <label className="op-list__row"><span className="muted">Число месяца</span><input inputMode="numeric" value={day} onChange={e => setDay(e.target.value)} aria-label="Число месяца" /></label>}
+        <label className="op-list__row"><span className="muted">Где</span><input value={where} onChange={e => setWhere(e.target.value)} placeholder="Вся квартира" aria-label="Где" /></label>
+        <label className="op-list__row"><span className="muted">Подзадачи</span><input value={subs} onChange={e => setSubs(e.target.value)} placeholder="кухня, зал, спальня" aria-label="Подзадачи через запятую" /></label>
+        {multi && (
+          <div className="op-list__row">
+            <span className="muted">Кто</span>
+            <div className="row" style={{ gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {d.members.map(m => <button key={m.id} type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={who === m.id ? 'true' : 'false'} onClick={() => setWho(m.id)}>{m.name}</button>)}
+              <button type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={who === 'together' ? 'true' : 'false'} onClick={() => setWho('together')}>Вместе</button>
+            </div>
+          </div>
+        )}
+        <label className="op-list__row"><span className="muted">Напомнить в</span><input type="time" value={time} onChange={e => setTime(e.target.value)} aria-label="Время напоминания" /></label>
+        {canRotate && (
+          <div className="op-list__row" style={{ cursor: 'pointer' }} onClick={() => setRotate(r => !r)}>
+            <span className="muted">Чередовать исполнителей</span><Switch on={rotate} offBg="var(--off)" />
+          </div>
+        )}
+      </div>
+      {subList.length > 1 && <div className="t-meta">Подзадач: {subList.length}{freq === 'week' ? ' — отмечаются в течение недели' : ''}.</div>}
+      {canRotate && rotate && <div className="t-meta">{freq === 'month' ? 'Каждый месяц' : 'Каждую неделю'} дело переходит к следующему участнику.</div>}
+      <PrimaryButton disabled={!ok} onClick={save}>{chore ? 'Сохранить' : 'Добавить дело'}</PrimaryButton>
+      {chore && <DangerButton onClick={() => { a.deleteChore(chore.id); onClose(); }}>Удалить дело</DangerButton>}
+    </Sheet>
+  );
+}
+
+// Подзадачи дела: отмечаются по одной, дело готово, когда отмечены все
+function ChoreSubsSheet({ choreId, dateIso, onClose }) {
+  const { a, d } = useBudget();
+  const c = d.choreDefs.find(x => x.id === choreId);
+  if (!c) return null;
+  const key = c.freq === 'week' && c.subs.length ? 'w:' + weekStart(dateIso) : dateIso;
+  const e = ((d.choreLog[choreId] || {})[key]) || {};
+  const done = new Set(Array.isArray(e.s) ? e.s : []);
+  return (
+    <Sheet title={c.name} onClose={onClose}>
+      <div className="t-meta">{done.size} из {c.subs.length}{c.where ? ' · ' + c.where : ''}</div>
+      <div className="col">
+        {c.subs.map((x, i) => (
+          <div key={i} className="list-row list-row--tap" onClick={() => a.toggleChore(choreId, dateIso, i)}>
+            <span className="shop-check" data-on={done.has(i) ? 'true' : 'false'}>{done.has(i) ? '✓' : ''}</span>
+            <span style={{ flex: 1, fontSize: 16, fontWeight: 500, textDecoration: done.has(i) ? 'line-through' : 'none', color: done.has(i) ? 'var(--mu)' : 'var(--tx)' }}>{x}</span>
+          </div>
+        ))}
+      </div>
+      <div className="soft-btn" onClick={() => { a.toggleChore(choreId, dateIso); }}>{done.size === c.subs.length ? 'Снять все отметки' : 'Отметить всё'}</div>
+      <PrimaryButton disabled={false} onClick={onClose}>Готово</PrimaryButton>
+    </Sheet>
+  );
+}
+const weekStart = dateIso => { const dt = new Date(dateIso + 'T12:00:00'); dt.setDate(dt.getDate() - ((dt.getDay() + 6) % 7)); return iso(dt); };

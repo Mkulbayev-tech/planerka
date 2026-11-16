@@ -306,3 +306,11 @@ button{color:inherit}
 .cal-day[data-on="true"]{border-color:var(--accent)}
 .cal-dots{display:flex;gap:2px;height:5px}
 .cal-dots i{width:5px;height:5px;border-radius:50%}
+.seg-bar{display:flex;gap:4px;height:4px}
+.seg-bar span{flex:1;border-radius:99px;background:var(--ln)}
+.seg-bar span[data-on="true"]{background:var(--accent)}
+.week-strip__day--btn{border:1.5px solid transparent;background:none;color:var(--tx);font:inherit;cursor:pointer}
+.week-strip__day--btn[data-on="true"]{border-color:var(--accent)}
+.day-pick{display:flex;gap:6px}
+.day-pick button{flex:1;height:40px;border-radius:50%;border:1px solid var(--bd);background:none;color:var(--mu);font:inherit;font-size:13px;font-weight:500;cursor:pointer;padding:0}
+.day-pick button[aria-pressed="true"]{background:var(--as);border-color:var(--accent);color:var(--accent-tx)}

@@ -128,10 +128,30 @@ export async function scheduleBillReminders(list) {
     const notifications = list
       .map(x => { const [y, m, d] = x.date.split('-').map(Number); return { ...x, at: new Date(y, m - 1, d, 10, 0) }; })
       .filter(x => x.at.getTime() > now)
-      .slice(0, BILL_IDS.length)
+      .slice(0, 20) // iOS держит не больше 64 запланированных уведомлений на приложение: 20 платежам, 36 делам, 1 ежедневное
       .map((x, i) => ({ id: BILL_IDS[i], title: x.title, body: x.body, schedule: { at: x.at, allowWhileIdle: true } }));
     if (notifications.length) await LocalNotifications.schedule({ notifications });
   } catch (e) { console.warn('bills:', e && e.message); }
+}
+
+// Напоминания о делах Планёрки: list — [{ date: 'YYYY-MM-DD', time: 'HH:MM', title, body }], ближайшие 36
+const CHORE_IDS = Array.from({ length: 36 }, (_, i) => 200 + i);
+export async function scheduleChoreReminders(list) {
+  if (!isNative) return;
+  try {
+    await LocalNotifications.cancel({ notifications: CHORE_IDS.map(id => ({ id })) });
+    if (!list.length) return;
+    const perm = await LocalNotifications.checkPermissions();
+    if (perm.display !== 'granted') return;
+    const now = Date.now();
+    const notifications = list
+      .map(x => { const [y, m, d] = x.date.split('-').map(Number); const [hh, mm] = x.time.split(':').map(Number); return { ...x, at: new Date(y, m - 1, d, hh, mm) }; })
+      .filter(x => x.at.getTime() > now)
+      .sort((a, b) => a.at - b.at)
+      .slice(0, CHORE_IDS.length)
+      .map((x, i) => ({ id: CHORE_IDS[i], title: x.title, body: x.body, schedule: { at: x.at, allowWhileIdle: true } }));
+    if (notifications.length) await LocalNotifications.schedule({ notifications });
+  } catch (e) { console.warn('chores:', e && e.message); }
 }
 
 // Виджеты iOS: приложение передаёт сводку, расширение WidgetKit её рисует

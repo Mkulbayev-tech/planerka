@@ -3,9 +3,10 @@ import { CATS, DEFAULT_SETTINGS, GOAL_PALETTE, allCats, fmt, uid, traty } from '
 import { iso, addDays, parseIso } from './lib/dates.js';
 import { derive } from './model.js';
 import { guessCat } from './lib/autoplan.js';
+import { validChores, unitKey, toggled, pruneLog } from './lib/chores.js';
 import { backend } from './backend/index.js';
 import { useNow } from './hooks.js';
-import { tap, success, warn, onAppUrlOpen, getLaunchUrl, enableReminder, disableReminder, syncReminder, shareTextFile, updateWidgets, scheduleBillReminders, isNative } from './native.js';
+import { tap, success, warn, onAppUrlOpen, getLaunchUrl, enableReminder, disableReminder, syncReminder, shareTextFile, updateWidgets, scheduleBillReminders, scheduleChoreReminders, isNative } from './native.js';
 
 const PREFS_KEY = 'planerka.prefs';
 const EMPTY = { txs: [], tasks: [], goals: [], incomes: [] };
@@ -145,6 +146,46 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       toast: msg => showToast(msg),
       setSpendQuery: spendQuery => update({ spendQuery }),
       setPlanTab: planTab => update({ planTab }),
+      setPlanView: planView => update({ planView }),
+      openPlanDay: dateIso => update({ planDate: dateIso, planView: 'day' }),
+      // Планёрка: отметить дело (sub — номер подзадачи), сохранить, удалить
+      toggleChore: (choreId, dateIso, sub) => {
+        const st = stateRef.current;
+        const by = st.user ? st.user.id : null;
+        const find = settings => validChores(settings && settings.chores).find(c => c.id === choreId);
+        const before = find(st.household && st.household.settings);
+        if (!before) return;
+        const wasEntry = (((st.household.settings.choreLog || {})[choreId]) || {})[unitKey(before, dateIso)];
+        const next = toggled(before, wasEntry, sub, by);
+        patchSettings(cur => {
+          const c = find(cur);
+          if (!c) return {};
+          const log = { ...(cur.choreLog && typeof cur.choreLog === 'object' ? cur.choreLog : {}) };
+          const mine = { ...(log[choreId] || {}) };
+          const key = unitKey(c, dateIso);
+          const e = toggled(c, mine[key], sub, by);
+          if (e) mine[key] = e; else delete mine[key];
+          log[choreId] = pruneLog(mine, todayIso());
+          return { choreLog: log };
+        });
+        if (next && next.d && !(wasEntry && wasEntry.d)) { tap(); showToast('Готово: ' + before.name); }
+      },
+      saveChore: (fields, id) => {
+        const row = { ...fields, id: id || 'd' + uid().replace(/-/g, '').slice(0, 10) };
+        patchSettings(cur => {
+          const list = Array.isArray(cur.chores) ? cur.chores : [];
+          return { chores: id ? list.map(c => (c.id === id ? { ...c, ...row } : c)) : [...list, { since: todayIso(), ...row }] };
+        });
+        showToast(id ? 'Дело сохранено' : 'Дело добавлено');
+      },
+      deleteChore: id => {
+        patchSettings(cur => {
+          const log = { ...(cur.choreLog || {}) };
+          delete log[id];
+          return { chores: (Array.isArray(cur.chores) ? cur.chores : []).filter(c => c.id !== id), choreLog: log };
+        });
+        showToast('Дело удалено');
+      },
       openPlans: planTab => update({ screen: 'plans', planTab, sheet: null }),
       setAnRange: anRange => update({ anRange }),
       openPeriod: shift => update({ screen: 'spend', shift: Math.min(0, shift), spendCat: null, sheet: null }),
@@ -589,6 +630,15 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     billKeyRef.current = billKey;
     scheduleBillReminders(s.notif ? d.billReminders : []);
   }, [ready, billKey, s.notif, d.billReminders]);
+
+  // Напоминания о делах Планёрки в указанное время (мои и общие)
+  const choreKey = JSON.stringify([s.notif, d.choreReminders]);
+  const choreKeyRef = useRef('');
+  useEffect(() => {
+    if (!ready || choreKeyRef.current === choreKey) return;
+    choreKeyRef.current = choreKey;
+    scheduleChoreReminders(s.notif ? d.choreReminders : []);
+  }, [ready, choreKey, s.notif, d.choreReminders]);
 
   // Предупреждение, когда категория дошла до 80% или превысила лимит — своей тратой, тратой партнёра или импортом
   const levelsRef = useRef(null);
