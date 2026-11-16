@@ -23,7 +23,9 @@ export default function SheetHost() {
     case 'topup': return <TopUpSheet goal={sh.goal} onClose={close} />;
     case 'income': return <IncomeSheet income={sh.income} onClose={close} />;
     case 'tx': return <TxSheet tx={sh.tx} onClose={close} />;
-    case 'salary': return <AmountSheet title="Зарплата в месяц" label="Сумма, ₸" value={sh.value} hint="Зачисляется в начале каждого периода" onSave={v => { a.setSalary(v); close(); }} onClose={close} />;
+    case 'salary': return <SalarySheet who={sh.who} value={sh.value} onClose={close} />;
+    case 'op': return <OpSheet kind={sh.kind} onClose={close} />;
+    case 'catFilter': return <CatFilterSheet onClose={close} />;
     case 'limit': return <AmountSheet title={'Лимит: ' + sh.cat.name} label="Лимит на период, ₸" value={sh.cat.limit} onSave={v => { a.setLimit(sh.cat.id, v); close(); }} onClose={close} />;
     case 'cat': return <CategorySheet cat={sh.cat} pick={sh.pick} onClose={close} />;
     case 'pin': return <PinSheet onClose={close} />;
@@ -112,13 +114,14 @@ function GoalSheet({ goal, onClose }) {
 }
 
 function IncomeSheet({ income, onClose }) {
-  const { a } = useBudget();
+  const { a, d } = useBudget();
+  const [who, setWho] = useState(income ? income.who || null : d.me);
   const [title, setTitle] = useState(income ? income.title : '');
   const [amount, setAmount] = useState(income ? String(income.amount) : '');
   const [date, setDate] = useState(income ? income.date : iso(new Date()));
   const [method, setMethod] = useState(income ? income.method || 'card' : 'card');
   const ok = title.trim().length > 0 && num(amount) > 0 && /^\d{4}-\d{2}-\d{2}$/.test(date);
-  const save = () => { if (!ok) return; a.saveIncome({ title: title.trim(), amount: num(amount), date, method }, income && income.id); onClose(); };
+  const save = () => { if (!ok) return; a.saveIncome({ title: title.trim(), amount: num(amount), date, method, ...(d.members.length > 1 ? { who } : {}) }, income && income.id); onClose(); };
   return (
     <Sheet title={income ? 'Доход' : 'Новый доход'} onClose={onClose}>
       <Field label="Откуда"><input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например, подработка" autoFocus={!income} enterKeyHint="next" /></Field>
@@ -129,6 +132,11 @@ function IncomeSheet({ income, onClose }) {
       <Field label="Куда пришло">
         <Chips options={[{ id: 'card', label: 'Карта' }, { id: 'cash', label: 'Наличные' }]} value={method} onChange={setMethod} />
       </Field>
+      {d.members.length > 1 && (
+        <Field label="Кто получил">
+          <Chips options={[...d.members.map(m => ({ id: m.id, label: m.id === d.me ? 'Я' : m.name })), { id: null, label: 'Общий' }]} value={who} onChange={setWho} />
+        </Field>
+      )}
       <PrimaryButton disabled={!ok} onClick={save}>{income ? 'Сохранить' : 'Добавить доход'}</PrimaryButton>
       {income && <DangerButton onClick={() => { a.deleteIncome(income.id); onClose(); }}>Удалить доход</DangerButton>}
     </Sheet>
@@ -211,6 +219,8 @@ function CategorySheet({ cat, pick, onClose }) {
     if (!ok) return;
     const id = a.saveCategory({ name: name.trim(), color: color[0], bg: color[1], limit: num(limit), icon: icon || null }, cat && cat.id);
     if (pick) a.pickCat(id);
+    // открыли из «Новой операции» — вернуться в неё, новая категория уже в сетке
+    if (pick === 'op') { a.openSheet('op', { kind: 'tx' }); return; }
     onClose();
   };
   return (
@@ -608,6 +618,133 @@ function SettleSheet({ onClose }) {
         </div>
       )}
       <div className="t-link" style={{ textAlign: 'center', color: 'var(--mu)' }} onClick={() => { a.setSettle(false); onClose(); }}>Выключить расчёт</div>
+    </Sheet>
+  );
+}
+
+// Зарплата: сумма и чья (у каждого своя; «Общая» — прежняя одна на семью). Приходит в начале каждого периода.
+function SalarySheet({ who: whoInit, value, onClose }) {
+  const { a, d } = useBudget();
+  const multi = d.members.length > 1;
+  const [who, setWho] = useState(multi ? (whoInit === undefined ? d.me : whoInit) : null);
+  const current = who ? (d.salaries[who] || '') : (d.legacySalary || '');
+  const [v, setV] = useState(value !== undefined && value !== '' ? String(value) : String(current || ''));
+  const pick = id => { setWho(id); setV(String((id ? d.salaries[id] : d.legacySalary) || '')); };
+  return (
+    <Sheet title="Зарплата" onClose={onClose}>
+      {multi && (
+        <Field label="Чья">
+          <Chips options={[...d.members.map(m => ({ id: m.id, label: m.id === d.me ? 'Моя' : m.name })), { id: null, label: 'Общая' }]} value={who} onChange={pick} />
+        </Field>
+      )}
+      <Field label="Сумма в месяц, ₸"><input className="input" type="number" inputMode="numeric" min="0" step="1000" value={v} onChange={e => setV(e.target.value)} autoFocus placeholder="0" /></Field>
+      <div className="t-meta">Приходит {d.monthStartDay}-го числа — в начале вашего месяца. 0 — убрать.</div>
+      <PrimaryButton onClick={() => { a.setSalaryFor(who, num(v)); onClose(); }}>Сохранить</PrimaryButton>
+    </Sheet>
+  );
+}
+
+// Новая операция (макет шаг 2a): расход или доход, сумма, категория плиткой, кто, чем, дата, повтор каждый месяц
+function OpSheet({ kind: kindInit, onClose }) {
+  const { s, a, d } = useBudget();
+  const [kind, setKind] = useState(kindInit === 'income' ? 'income' : 'tx');
+  const [amount, setAmount] = useState('');
+  const [title, setTitle] = useState('');
+  const [cat, setCat] = useState(null);
+  const [who, setWho] = useState(d.me);
+  const [method, setMethod] = useState('card');
+  const [date, setDate] = useState(d.todayIso);
+  const [repeat, setRepeat] = useState(false);
+  // Категорию подбираем по названию («Magnum» → Продукты), пока её не выбрали руками
+  const guessed = useMemo(() => (title.trim() ? guessCat(title, (s.data && s.data.txs) || [], d.cats) : null), [title, s.data, d.cats]);
+  const catV = cat || guessed || (d.cats[0] && d.cats[0].id);
+  const n = num(amount);
+  const multi = d.members.length > 1;
+  const save = () => {
+    if (!n) return;
+    if (a.addOp({ kind, amount: n, title, cat: catV, who, method, date, repeat })) onClose();
+  };
+  const fmtInput = v => { const digits = String(v).replace(/\D/g, '').slice(0, 9); return digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : ''; };
+  return (
+    <Sheet title="Новая операция" onClose={onClose}>
+      <div className="kind-seg" role="group" aria-label="Тип операции">
+        <button type="button" data-kind="tx" aria-pressed={kind === 'tx' ? 'true' : 'false'} onClick={() => setKind('tx')}>Расход</button>
+        <button type="button" data-kind="income" aria-pressed={kind === 'income' ? 'true' : 'false'} onClick={() => setKind('income')}>Доход</button>
+      </div>
+      <label className="col" style={{ alignItems: 'center' }}>
+        <span className="sr-only">Сумма</span>
+        <input className="op-amount" inputMode="numeric" autoFocus value={fmtInput(amount) ? fmtInput(amount) + ' ₸' : ''} placeholder="0 ₸"
+          onChange={e => setAmount(e.target.value.replace(/\D/g, '').slice(0, 9))} enterKeyHint="done" />
+      </label>
+      <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder={kind === 'tx' ? 'Где или что — например, Magnum' : 'Откуда — например, аванс'} enterKeyHint="done" />
+
+      {kind === 'tx' && (
+        <Field label={!cat && guessed ? 'Категория · подобрана по названию' : 'Категория'}>
+          <div className="op-grid">
+            {d.cats.map(c => (
+              <button key={c.id} type="button" className="op-cat" aria-pressed={catV === c.id ? 'true' : 'false'} onClick={() => setCat(c.id)}>
+                <span style={{ color: c.color, display: 'flex' }}><Icon name={c.icon || 'box'} size={20} /></span>
+                <span>{c.name}</span>
+              </button>
+            ))}
+            <button type="button" className="op-cat" onClick={() => a.openSheet('cat', { pick: 'op' })}>
+              <span style={{ color: 'var(--mu)', fontSize: 18, lineHeight: '20px' }}>+</span><span>Своя</span>
+            </button>
+          </div>
+        </Field>
+      )}
+
+      <div className="op-list">
+        {multi && (
+          <div className="op-list__row">
+            <span className="muted">Кто</span>
+            <div className="row" style={{ gap: 6 }}>
+              {d.members.map(m => (
+                <button key={m.id} type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={who === m.id ? 'true' : 'false'} onClick={() => setWho(m.id)}>{m.name}</button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="op-list__row">
+          <span className="muted">{kind === 'tx' ? 'Чем платили' : 'Куда пришло'}</span>
+          <div className="row" style={{ gap: 6 }}>
+            <button type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={method === 'card' ? 'true' : 'false'} onClick={() => setMethod('card')}>Карта</button>
+            <button type="button" className="filter-chip" style={{ height: 32 }} aria-pressed={method === 'cash' ? 'true' : 'false'} onClick={() => setMethod('cash')}>Наличные</button>
+          </div>
+        </div>
+        <label className="op-list__row">
+          <span className="muted">Дата</span>
+          <input type="date" value={date} onChange={e => setDate(e.target.value || d.todayIso)} aria-label="Дата" />
+        </label>
+        {kind === 'tx' && (
+          <div className="op-list__row" style={{ cursor: 'pointer' }} onClick={() => setRepeat(r => !r)}>
+            <span className="muted">Повторять каждый месяц</span>
+            <Switch on={repeat} offBg="var(--off)" />
+          </div>
+        )}
+      </div>
+      {repeat && kind === 'tx' && <div className="t-meta">Станет регулярным платежом: каждый месяц {Number(date.slice(8, 10))}-го числа трата внесётся сама.</div>}
+
+      <PrimaryButton disabled={!n} onClick={save}>{kind === 'tx' ? 'Добавить расход' : 'Добавить доход'}</PrimaryButton>
+    </Sheet>
+  );
+}
+
+// Фильтр «Расходов» по категории: категории месяца с суммами
+function CatFilterSheet({ onClose }) {
+  const { a, d } = useBudget();
+  return (
+    <Sheet title="Категории" onClose={onClose}>
+      <div className="col">
+        {d.spendCats.length === 0 && <div className="empty">В этом месяце трат нет</div>}
+        {d.spendCats.map(c => (
+          <div key={c.id} className="list-row list-row--tap" onClick={() => { a.setSpendCat(c.id); onClose(); }}>
+            <CatIcon size={38} icon={c.icon} letter={c.letter} color={c.color} />
+            <div className="ellipsis" style={{ flex: 1, fontSize: 15, fontWeight: 500 }}>{c.name}</div>
+            <div style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap' }}>{c.spentFmt}</div>
+          </div>
+        ))}
+      </div>
     </Sheet>
   );
 }

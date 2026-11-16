@@ -152,6 +152,18 @@ const ICON_PATHS = {
   pie: <><path d="M12 3v9h9" /><circle cx="12" cy="12" r="9" /></>,
   inbox: <><path d="M4 13l2.2-7.4A1 1 0 0 1 7.2 5h9.6a1 1 0 0 1 1 .6L20 13v6H4z" /><path d="M4 13h5l1 2h4l1-2h5" /></>,
   alert: <><path d="M12 4l9 16H3z" /><path d="M12 10v4M12 17.5h.01" /></>,
+  search: <><circle cx="11" cy="11" r="6" /><path d="M20 20l-4.3-4.3" /></>,
+  close: <path d="M6 6l12 12M18 6L6 18" />,
+  chart: <path d="M5 20V12M12 20V5M19 20v-6" />,
+  users: <><circle cx="9" cy="8" r="3.5" /><path d="M3 20c.8-3.4 3.2-5.5 6-5.5s5.2 2.1 6 5.5" /><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.6.8 2.6 2.5 3 5.2" /></>,
+  wallet: <><rect x="3" y="6" width="18" height="14" rx="3" /><path d="M3 10h18M16 15h2" /><path d="M7 6V5a2 2 0 0 1 2-2h8" /></>,
+  target: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r=".5" /></>,
+  bell: <><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 21h4" /></>,
+  download: <><path d="M12 4v11M7 10l5 5 5-5" /><path d="M5 20h14" /></>,
+  lock: <><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></>,
+  logout: <><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" /><path d="M10 16l-4-4 4-4M6 12h10" /></>,
+  moon: <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" />,
+  swap: <><path d="M7 4L3 8l4 4M3 8h14" /><path d="M17 20l4-4-4-4M21 16H7" /></>,
 };
 export const hasIcon = name => !!(name && ICON_PATHS[name]);
 export function Icon({ name, size = 20, stroke = 1.8 }) {

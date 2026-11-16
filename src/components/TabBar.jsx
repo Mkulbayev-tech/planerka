@@ -2,10 +2,10 @@ import { useBudget } from '../store.jsx';
 
 // Вкладка подсвечена и на своих вложенных экранах (доходы, лимиты).
 const TABS = {
-  home: ['home', 'income', 'stats'],
-  plans: ['plans', 'goals'],
-  spend: ['spend', 'budget', 'cats', 'bills'],
-  settings: ['settings'],
+  home: ['home', 'stats'],
+  plans: ['plans', 'goals', 'budget', 'bills'],
+  spend: ['spend', 'cats'],
+  settings: ['settings', 'analytics', 'family', 'income'],
 };
 
 export default function TabBar() {
@@ -17,7 +17,7 @@ export default function TabBar() {
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
           <path d="M5 20V12M12 20V4M19 20v-6" />
         </svg>
-        <div className="tab__label">Аналитика</div>
+        <div className="tab__label">Главная</div>
       </div>
       <div className="tab" style={{ color: color('plans') }} onClick={() => a.go('plans')}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

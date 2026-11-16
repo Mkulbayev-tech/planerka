@@ -14,13 +14,15 @@ import Income from './screens/Income.jsx';
 import Plans from './screens/Plans.jsx';
 import Settings from './screens/Settings.jsx';
 import Bills from './screens/Bills.jsx';
+import Analytics from './screens/Analytics.jsx';
+import Family from './screens/Family.jsx';
 import WidgetsBoard from './widgets/WidgetsBoard.jsx';
 
 // Вкладки: home — «Аналитика», plans — «Планы» (задачи и цели), spend — «Расходы», settings — «Ещё».
 // Старые адреса (stats, cats, goals) ведут в новые вкладки.
 const SCREENS = {
   home: Home, plans: Plans, spend: Spend, settings: Settings,
-  add: Add, budget: Budget, income: Income, bills: Bills,
+  add: Add, budget: Budget, income: Income, bills: Bills, analytics: Analytics, family: Family,
   stats: Home, cats: Spend, goals: Plans,
 };
 
@@ -28,6 +30,7 @@ export const themeVars = th => ({
   '--bg': th.bg, '--cd': th.cd, '--tx': th.tx, '--mu': th.mu,
   '--ln': th.ln, '--as': th.as, '--ip': th.ip, '--sh': th.sh, '--bd': th.bd, '--bar': th.bar, '--off': th.off,
   '--accent': th.ac, '--accent-tx': th.at, '--on-accent': th.on, '--green': th.gr, '--red': th.rd, '--amber': th.am,
+  '--lav': th.lv, '--blue': th.bl, '--gr-bg': th.grBg, '--rd-bg': th.rdBg,
 });
 
 export function Phone({ mobile = false }) {
@@ -37,7 +40,7 @@ export function Phone({ mobile = false }) {
   // Пароль ещё простой (совпадает с номером профиля) — сначала сменить
   const needPin = ready && !!s.user && s.user.pinSet === false;
   return (
-    <div className={'phone' + (mobile ? ' phone--mobile' : '')} style={themeVars(d.th)}>
+    <div className={'phone' + (mobile ? ' phone--mobile' : '')} style={{ ...themeVars(d.th), colorScheme: d.dark ? 'dark' : 'light' }}>
       <Screen />
       {ready && s.screen !== 'add' && <TabBar />}
       {ready && !needPin && s.sheet && <SheetHost />}

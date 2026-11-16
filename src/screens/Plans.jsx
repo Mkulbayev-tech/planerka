@@ -1,22 +1,55 @@
 import { useBudget } from '../store.jsx';
 import { useLongPress } from '../hooks.js';
-import { Letter, Checkbox, ProgressBar } from '../components/ui.jsx';
+import { Checkbox, ProgressBar } from '../components/ui.jsx';
+import { LimitsPanel } from './Budget.jsx';
+import { BillsPanel } from './Bills.jsx';
 
-// Планы и цели: задачи на выбранный день и накопления — всё, что семья собирается сделать.
+const TABS = [
+  { id: 'planner', label: 'Планёрка' },
+  { id: 'limits', label: 'Лимиты' },
+  { id: 'goals', label: 'Цели' },
+  { id: 'bills', label: 'Платежи' },
+];
+
+// Планы (макет «Семейный бюджет», шаги 2b и 3a): дела по дому, лимиты, цели накоплений и регулярные платежи.
 export default function Plans() {
+  const { s, d, a } = useBudget();
+  const p = d.plan;
+  const tab = TABS.some(t => t.id === s.planTab) ? s.planTab : 'planner';
+  const add = {
+    planner: () => a.openSheet('task', { date: p.dateIso, owner: p.ownerDefault }),
+    limits: () => a.openSheet('cat'),
+    goals: () => a.openSheet('goal'),
+    bills: () => a.openSheet('bill'),
+  }[tab];
+  return (
+    <div className="screen">
+      <div className="row-between">
+        <div className="t-title">Планы</div>
+        <div className="round-add" onClick={add} aria-label="Добавить">+</div>
+      </div>
+
+      <div className="tabs-seg" role="tablist" aria-label="Разделы планов">
+        {TABS.map(t => (
+          <button key={t.id} type="button" role="tab" aria-pressed={tab === t.id ? 'true' : 'false'} aria-selected={tab === t.id} onClick={() => a.setPlanTab(t.id)}>{t.label}</button>
+        ))}
+      </div>
+
+      {tab === 'planner' && <Planner />}
+      {tab === 'limits' && <LimitsPanel />}
+      {tab === 'goals' && <GoalsPanel />}
+      {tab === 'bills' && <BillsPanel />}
+    </div>
+  );
+}
+
+// Планёрка: дела на выбранный день, неделя, чьи дела
+function Planner() {
   const { d, a } = useBudget();
   const p = d.plan;
   const seg = id => ({ background: p.ownerId === id ? 'var(--accent)' : 'transparent', color: p.ownerId === id ? 'var(--on-accent)' : 'var(--mu)' });
   return (
-    <div className="screen">
-      <div className="row-between">
-        <div className="col" style={{ gap: 2 }}>
-          <div className="t-eyebrow">{p.dateLabel}</div>
-          <div className="t-title">Планы</div>
-        </div>
-        <div className="round-add" onClick={() => a.openSheet('task', { date: p.dateIso, owner: p.ownerDefault })}>+</div>
-      </div>
-
+    <>
       {p.owners.length > 0 && (
         <div className="seg">
           {p.owners.map(o => <div key={o.id} className="seg__item" style={seg(o.id)} onClick={() => a.setPlanOwner(o.id)}>{o.name}</div>)}
@@ -53,17 +86,25 @@ export default function Plans() {
       </div>
       {p.tasks.length > 0 && <div className="t-meta" style={{ textAlign: 'center', marginTop: -6 }}>Тап — отметить, удержать — изменить</div>}
 
-      <div className="section-head" style={{ marginTop: 6 }}>
-        <div className="col" style={{ gap: 1 }}>
-          <div className="t-card">Цели накоплений</div>
-          <div className="t-meta">Накоплено {d.savedTotalFmt}{d.goals.length ? ' · в месяц ' + d.perMonthFmt : ''}</div>
-        </div>
-        <div className="round-add round-add--soft" onClick={() => a.openSheet('goal')}>+</div>
+    </>
+  );
+}
+
+// Цели: сколько отложено всего и в этом месяце, у каждой — идёт ли по графику
+function GoalsPanel() {
+  const { d, a } = useBudget();
+  return (
+    <>
+      <div className="col" style={{ gap: 4 }}>
+        <div className="t-meta" style={{ fontSize: 14 }}>Отложено на все цели</div>
+        <div className="t-num" style={{ fontSize: 34, lineHeight: 1.1, color: 'var(--accent-tx)' }}>{d.savedTotalFmt}</div>
+        <div style={{ fontSize: 15, fontWeight: 500 }}>В этом месяце +{d.goalsMonthFmt}</div>
       </div>
+
       {d.goals.length > 0 && (
         <div className="card list-row--tap" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: '14px 16px' }} onClick={() => a.openSheet('sweep')}>
           <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>Остаток месяца {d.sweep.on ? '→ ' + d.sweep.goalName : 'в цель'}</div>
+            <div style={{ fontSize: 15, fontWeight: 600 }}>Остаток месяца {d.sweep.on ? '→ ' + d.sweep.goalName : 'в цель'}</div>
             <div className="t-meta ellipsis">{d.sweep.on
               ? (d.sweep.last ? `Последний раз ${d.sweep.lastFmt}` : `Каждое ${d.monthStartDay}-е число — то, что не потратили`)
               : 'Что не потратили за месяц — само уйдёт в цель'}</div>
@@ -74,24 +115,23 @@ export default function Plans() {
       {d.goals.length === 0 && (
         <div className="card"><div className="empty">Пока нет целей. Нажмите +, чтобы добавить первую.</div></div>
       )}
-      {d.goals.map(g => (
+      {d.goalCards.map(g => (
         <div key={g.id} className="card" style={{ gap: 10 }}>
-          <div className="row list-row--tap" style={{ gap: 12 }} onClick={() => a.openSheet('goal', { goal: g })}>
-            <Letter size={40} radius={13} bg={g.bg} color={g.color} fontSize={15}>{g.letter}</Letter>
-            <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-              <div className="ellipsis" style={{ fontSize: 15, fontWeight: 600 }}>{g.name}</div>
-              <div className="t-meta">{g.savedFmt} из {g.targetFmt}</div>
+          <div className="row-between list-row--tap" style={{ gap: 12, alignItems: 'flex-start' }} onClick={() => a.openSheet('goal', { goal: g })}>
+            <div className="col" style={{ gap: 4, minWidth: 0 }}>
+              <div className="ellipsis" style={{ fontSize: 17, fontWeight: 600 }}>{g.name}</div>
+              <div style={{ fontSize: 15 }}><b style={{ fontWeight: 600 }}>{g.savedFmt}</b> <span className="t-meta">из {g.targetFmt}</span></div>
             </div>
-            <div style={{ fontSize: 17, fontWeight: 600, color: g.color }}>{g.pct}%</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--accent-tx)' }}>{g.pct}%</div>
           </div>
-          <ProgressBar height={8} pct={g.pct} color={g.color} transition />
+          <ProgressBar height={6} pct={g.pct} color={g.color} track="var(--ln)" transition />
           <div className="row-between" style={{ gap: 10 }}>
-            <div className="t-meta ellipsis">{g.eta}</div>
-            <div className="pill" style={{ padding: '7px 12px', fontWeight: 600, background: g.bg, color: g.color, whiteSpace: 'nowrap', flex: 'none' }} onClick={() => a.openSheet('topup', { goal: g })}>+ Пополнить</div>
+            <div className="t-meta ellipsis" style={{ color: g.planColor }}>{g.planText}</div>
+            <button type="button" className="filter-chip" style={{ height: 34 }} onClick={() => a.openSheet('topup', { goal: g })}>Пополнить</button>
           </div>
         </div>
       ))}
-    </div>
+    </>
   );
 }
 

@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useBudget } from '../store.jsx';
 import { widgetCount } from '../native.js';
-import { Letter, Switch } from '../components/ui.jsx';
+import { Letter, Switch, Icon } from '../components/ui.jsx';
 
 const widgetsText = n => (n === 0 ? 'не добавлены' : n % 10 === 1 && n % 100 !== 11 ? `${n} активный` : `${n} активных`);
 
+// Ещё: все разделы, которых нет на нижней панели, и настройки
 export default function Settings() {
   const { s, d, a, mode } = useBudget();
-  const offBg = 'var(--off)';
   // Число виджетов спрашиваем у iOS; в браузере и на Android строку не показываем
   const [widgets, setWidgets] = useState(null);
   useEffect(() => {
@@ -22,67 +22,48 @@ export default function Settings() {
     <div className="screen">
       <div className="t-title">Ещё</div>
 
-      <div className="card card--profile">
+      <div className="card card--profile list-row--tap" onClick={() => a.go('family')}>
         <Letter size={52} radius="50%" bg="var(--accent)" color="var(--on-accent)" fontSize={20}>{d.greetingName[0].toUpperCase()}</Letter>
-        <div className="col" style={{ gap: 2, minWidth: 0 }}>
+        <div className="col" style={{ gap: 2, minWidth: 0, flex: 1 }}>
           <div className="t-card ellipsis">{d.greetingName}</div>
-          <div className="t-sub ellipsis" style={{ fontWeight: 600 }}>{d.householdName || 'Личный бюджет'} · ₸ KZT</div>
+          <div className="t-meta ellipsis">{d.householdName || 'Личный бюджет'} · {d.membersCount > 1 ? `${d.membersCount} участника` : 'один участник'}</div>
         </div>
+        <span className="menu-row__chev">›</span>
       </div>
 
-      {mode === 'supabase' && (
-        <div className="card card--menu">
-          <div className="menu-row menu-row--link" onClick={a.copyInvite}>
-            <span className="menu-row__title">Код приглашения</span>
-            <span className="menu-row__value" style={{ color: 'var(--accent-tx)', letterSpacing: 2 }}>{d.inviteCode || '—'}</span>
-          </div>
-          <div className="menu-row"><span className="menu-row__title">Участники</span><span className="menu-row__value">{d.membersCount}</span></div>
-        </div>
-      )}
+      <div className="card card--menu">
+        <MenuLink icon="chart" title="Аналитика" value="месяц, полгода, год" onClick={() => a.go('analytics')} />
+        <MenuLink icon="users" title="Семья" value={d.membersCount > 1 ? `${d.membersCount} участника` : ''} onClick={() => a.go('family')} />
+        <MenuLink icon="wallet" title="Доходы и зарплаты" value={d.incomeFmt} onClick={() => a.go('income')} />
+        <MenuLink icon="file" title="Импорт выписки Kaspi" onClick={() => a.openSheet('import')} />
+      </div>
 
       <div className="card card--menu">
-        <MenuLink title="Доходы и зарплата" onClick={() => a.go('income')} />
-        <MenuLink title="Лимиты и категории" onClick={() => a.go('budget')} />
-        <div className="menu-row menu-row--link" onClick={() => a.openSheet('autoplan')}>
-          <span className="menu-row__title">Автораспределение</span><span className="menu-row__value">{d.autoOn ? 'включено ›' : 'выключено ›'}</span>
-        </div>
-        <div className="menu-row menu-row--link" onClick={() => a.go('bills')}>
-          <span className="menu-row__title">Регулярные платежи</span><span className="menu-row__value">{d.billRows.length || 'нет'} ›</span>
-        </div>
-        <div className="menu-row menu-row--link" onClick={() => a.openSheet('sweep')}>
-          <span className="menu-row__title">Остаток месяца в цель</span><span className="menu-row__value">{d.sweep.on ? 'включено ›' : 'выключено ›'}</span>
-        </div>
-        {d.settleAvailable && (
-          <div className="menu-row menu-row--link" onClick={() => a.openSheet('settle')}>
-            <span className="menu-row__title">Расчёт между нами</span><span className="menu-row__value">{d.settleOn ? 'включён ›' : 'выключен ›'}</span>
-          </div>
-        )}
-        <MenuLink title="Импорт выписки Kaspi" onClick={() => a.openSheet('import')} />
+        <MenuLink icon="pie" title="Автораспределение" value={d.autoOn ? 'включено' : 'выключено'} onClick={() => a.openSheet('autoplan')} />
+        <MenuLink icon="target" title="Остаток месяца в цель" value={d.sweep.on ? 'включено' : 'выключено'} onClick={() => a.openSheet('sweep')} />
+        <MenuLink icon="repeat" title="Регулярные платежи" value={d.billRows.length ? String(d.billRows.length) : 'нет'} onClick={() => a.openPlans('bills')} />
+        {d.settleAvailable && <MenuLink icon="swap" title="Кто кому должен" value={d.settleOn ? 'включено' : 'выключено'} onClick={() => a.openSheet('settle')} />}
       </div>
 
       <div className="card card--menu">
         <div className="menu-row">
-          <span className="menu-row__title">Тема</span>
+          <span className="menu-row__title row" style={{ gap: 12 }}><MenuIcon name="moon" />Тема</span>
           <div className="theme-seg" role="group" aria-label="Тема">
             <button type="button" aria-pressed={d.dark ? 'true' : 'false'} onClick={() => a.setTheme('dark')}>Тёмная</button>
             <button type="button" aria-pressed={d.dark ? 'false' : 'true'} onClick={() => a.setTheme('light')}>Светлая</button>
           </div>
         </div>
         <div className="menu-row menu-row--switch" onClick={a.toggleNotif}>
-          <span className="menu-row__title">Напоминать вносить траты</span>
-          <Switch on={s.notif} offBg={offBg} />
+          <span className="menu-row__title row" style={{ gap: 12 }}><MenuIcon name="bell" />Напоминать вносить траты</span>
+          <Switch on={s.notif} offBg="var(--off)" />
         </div>
-        {widgets !== null && <div className="menu-row"><span className="menu-row__title">Виджеты на экране</span><span className="menu-row__value">{widgetsText(widgets)}</span></div>}
-        <div className="menu-row"><span className="menu-row__title">Валюта</span><span className="menu-row__value">₸ Тенге</span></div>
-        <div className="menu-row menu-row--link" onClick={() => a.openSheet('monthStart', { value: d.monthStartDay })}>
-          <span className="menu-row__title">Начало месяца</span><span className="menu-row__value">{d.monthStartDay}-е число ›</span>
-        </div>
+        {widgets !== null && <div className="menu-row"><span className="menu-row__title row" style={{ gap: 12 }}><MenuIcon name="phone" />Виджеты на экране</span><span className="menu-row__value">{widgetsText(widgets)}</span></div>}
       </div>
 
       <div className="card card--menu">
-        <MenuLink title="Экспорт в Excel" onClick={a.exportCsv} />
-        {mode === 'supabase' && <MenuLink title="Сменить пароль" onClick={() => a.openSheet('pin')} />}
-        {mode === 'supabase' && <MenuLink title="Выйти из аккаунта" onClick={a.signOut} />}
+        <MenuLink icon="download" title="Экспорт в Excel" onClick={a.exportCsv} />
+        {mode === 'supabase' && <MenuLink icon="lock" title="Сменить пароль" onClick={() => a.openSheet('pin')} />}
+        {mode === 'supabase' && <MenuLink icon="logout" title="Выйти из аккаунта" onClick={a.signOut} />}
         <div className="menu-row menu-row--link" onClick={a.resetData}>
           <span className="menu-row__title" style={{ color: 'var(--red)' }}>{mode === 'local' ? 'Сбросить данные' : 'Удалить все данные семьи'}</span>
         </div>
@@ -91,11 +72,15 @@ export default function Settings() {
   );
 }
 
-function MenuLink({ title, onClick }) {
+function MenuIcon({ name }) {
+  return <span style={{ color: 'var(--mu)', display: 'flex' }}><Icon name={name} size={20} /></span>;
+}
+
+function MenuLink({ icon, title, value, onClick }) {
   return (
     <div className="menu-row menu-row--link" onClick={onClick}>
-      <span className="menu-row__title">{title}</span>
-      <span className="menu-row__chev">›</span>
+      <span className="menu-row__title row" style={{ gap: 12, minWidth: 0 }}>{icon && <MenuIcon name={icon} />}<span className="ellipsis">{title}</span></span>
+      <span className="menu-row__value" style={{ whiteSpace: 'nowrap' }}>{value ? value + ' ' : ''}›</span>
     </div>
   );
 }

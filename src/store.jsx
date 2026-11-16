@@ -127,15 +127,21 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     const data = () => stateRef.current.data || EMPTY;
     const cats = () => allCats(stateRef.current.household && stateRef.current.household.settings);
     const busy = async fn => { update({ busy: true }); try { await fn(); } finally { update({ busy: false }); } };
-    return {
+    const api = {
       // prev — вкладка, с которой открыли «+»: после траты возвращаемся туда же
-      go: screen => update(st => ({
-        screen, sheet: null, prev: screen === 'add' ? st.screen : st.prev,
+      // «+» открывает шторку «Новая операция» поверх текущего экрана (как в макете), а не отдельный экран
+      go: screen => update(st => (screen === 'add' ? { sheet: { kind: 'op' } } : {
+        screen, sheet: null, prev: st.prev,
         ...(screen === 'add' ? { catPicked: false, catAuto: false } : {}),
         // вкладка «Расходы» (в том числе повторное нажатие) — текущий месяц; назад из лимитов и платежей — тот, что смотрели
         ...(screen === 'spend' && !['budget', 'bills'].includes(st.screen) ? { shift: 0, spendCat: null } : {}),
       })),
       setShift: shift => update({ shift: Math.min(0, shift), spendCat: null }),
+      setSpendWho: spendWho => update({ spendWho }),
+      setSpendQuery: spendQuery => update({ spendQuery }),
+      setPlanTab: planTab => update({ planTab }),
+      openPlans: planTab => update({ screen: 'plans', planTab, sheet: null }),
+      setAnRange: anRange => update({ anRange }),
       openPeriod: shift => update({ screen: 'spend', shift: Math.min(0, shift), spendCat: null, sheet: null }),
       // Аппаратная кнопка «назад»: закрыть шторку, вернуться на главную, иначе выйти
       back: () => {
@@ -221,14 +227,53 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       deleteGoal: id => mutate(d => ({ ...d, goals: d.goals.filter(x => x.id !== id) }), () => backend.remove('goals', id)),
 
       // Доходы
+      // who — кто получил: в таблице доходов нет такого поля, поэтому он хранится в settings.incomeBy[id]
       saveIncome: (fields, id) => {
+        const { who, ...f } = fields;
+        const incomeId = id || uid();
         if (id) {
-          mutate(d => ({ ...d, incomes: d.incomes.map(x => (x.id === id ? { ...x, ...fields } : x)) }), () => backend.update('incomes', id, fields));
+          mutate(d => ({ ...d, incomes: d.incomes.map(x => (x.id === id ? { ...x, ...f } : x)) }), () => backend.update('incomes', id, f));
         } else {
-          const row = { id: uid(), ...fields };
+          const row = { id: incomeId, ...f };
           mutate(d => ({ ...d, incomes: [...d.incomes, row] }), () => backend.insert('incomes', row, hid()));
-          showToast('Доход добавлен: ' + fmt(fields.amount));
+          showToast('Доход добавлен: ' + fmt(f.amount));
         }
+        if (who !== undefined) {
+          patchSettings(cur => {
+            const map = { ...((cur.incomeBy && typeof cur.incomeBy === 'object') ? cur.incomeBy : {}) };
+            if (who) map[incomeId] = who; else delete map[incomeId];
+            return { incomeBy: map };
+          });
+        }
+      },
+      // Зарплата: who — чья (settings.salaries[who]); без who — старая общая settings.salary
+      setSalaryFor: (who, v) => {
+        const amount = Math.max(0, Math.round(Number(v) || 0));
+        if (!who) { patchSettings({ salary: amount }); return; }
+        patchSettings(cur => {
+          const map = { ...((cur.salaries && typeof cur.salaries === 'object') ? cur.salaries : {}) };
+          if (amount) map[who] = amount; else delete map[who];
+          return { salaries: map };
+        });
+      },
+      // «Новая операция»: расход (трата, с «повторять каждый месяц» — ещё и регулярный платёж) или доход
+      addOp: op => {
+        const st = stateRef.current;
+        const amount = Math.max(0, Math.round(Number(op.amount) || 0));
+        if (!amount) return false;
+        const date = /^\d{4}-\d{2}-\d{2}$/.test(op.date || '') ? op.date : todayIso();
+        if (op.kind === 'income') {
+          api.saveIncome({ title: (op.title || '').trim() || 'Доход', amount, date, method: op.method || 'card', who: op.who || null });
+          success();
+          return true;
+        }
+        const c = cats().find(x => x.id === op.cat && !x.hidden) || null;
+        const row = { id: uid(), title: (op.title || '').trim() || (c ? c.name : 'Трата'), cat: c ? c.id : 'other', amount, method: op.method || 'card', date, created_by: op.who || (st.user ? st.user.id : null) };
+        mutate(d => ({ ...d, txs: [...d.txs, row] }), () => backend.insert('transactions', row, hid()));
+        if (op.repeat) api.saveBill({ title: row.title, amount, day: parseIso(date).getDate(), cat: row.cat, method: row.method, payer: op.who || null });
+        success();
+        showToast('Добавлено −' + fmt(amount));
+        return true;
       },
       deleteIncome: id => mutate(d => ({ ...d, incomes: d.incomes.filter(x => x.id !== id) }), () => backend.remove('incomes', id)),
 
@@ -484,6 +529,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
         update({ auth: 'out', user: null, household: undefined, members: [], me: null, data: null, screen: 'home', sheet: null });
       },
     };
+    return api;
   }, [update, showToast, mutate, patchSettings, loadHousehold]);
 
   const d = useMemo(() => derive(s, now), [s, now]);

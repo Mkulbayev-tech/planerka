@@ -11,12 +11,12 @@ export const DEFAULT_SETTINGS = { salary: 600000, monthStartDay: 5, limits: {} }
 
 export const CATS = [
 // Цвета категорий — для светлой темы; в тёмной модель осветляет их (mix с белым)
-  { id: 'food', name: 'Продукты', icon: 'cart', color: '#3E9B6E', bg: '#E6F3EC', limit: 80000 },
-  { id: 'cafe', name: 'Кафе', icon: 'cup', color: '#D9774F', bg: '#FAEAE2', limit: 20000 },
-  { id: 'home', name: 'Жильё', icon: 'home', color: '#B48A35', bg: '#F6EEDC', limit: 45000 },
-  { id: 'transport', name: 'Транспорт', icon: 'bus', color: '#5C8FD6', bg: '#E7EFFA', limit: 25000 },
-  { id: 'fun', name: 'Развлечения', icon: 'film', color: '#9277CF', bg: '#EFEAF8', limit: 20000 },
-  { id: 'health', name: 'Здоровье', icon: 'pulse', color: '#2E95A3', bg: '#E1F1F3', limit: 15000 },
+  { id: 'food', name: 'Продукты', icon: 'cart', color: '#2F8A55', dark: '#8FCBA3', bg: '#E6F3EC', limit: 80000 },
+  { id: 'cafe', name: 'Кафе', icon: 'cup', color: '#6B5BC2', dark: '#B4A7EC', bg: '#EEEAFB', limit: 20000 },
+  { id: 'home', name: 'Жильё', icon: 'home', color: '#B4862A', dark: '#E8B85A', bg: '#FBF1DC', limit: 45000 },
+  { id: 'transport', name: 'Транспорт', icon: 'bus', color: '#3474B8', dark: '#7FB2E5', bg: '#E7EFFA', limit: 25000 },
+  { id: 'fun', name: 'Развлечения', icon: 'film', color: '#CF5536', dark: '#EE8669', bg: '#FBE7E1', limit: 20000 },
+  { id: 'health', name: 'Здоровье', icon: 'heart', color: '#2E8C86', dark: '#7FD1C7', bg: '#E1F1F3', limit: 15000 },
 ];
 export const CAT_BY_ID = Object.fromEntries(CATS.map(c => [c.id, c]));
 
@@ -28,7 +28,7 @@ export const CAT_PALETTE = [
 ];
 export const CAT_SUGGEST = ['Кредит', 'Рассрочка', 'Связь', 'Дети', 'Одежда', 'Подарки'];
 // Трата с неизвестной категорией (например, стёртой вручную) попадает сюда, а не в «Продукты».
-export const OTHER_CAT = { id: 'other', name: 'Другое', icon: 'box', color: '#8E887C', bg: '#EFEDE8', limit: 0 };
+export const OTHER_CAT = { id: 'other', name: 'Другое', icon: 'box', color: '#77726A', dark: '#9C9890', bg: '#EFEDE8', limit: 0 };
 
 // Иконка своей категории (линейная, из components/ui.jsx): выбранная вручную или подобранная по названию;
 // без неё — первая буква. Старые значения-эмодзи игнорируются.
@@ -65,13 +65,16 @@ export const GOAL_PALETTE = [
 // Темы: «Вечер» (тёмная, по умолчанию) и «Белая». ac — заливка акцента, at — акцентный текст (контраст ≥ 4.5),
 // on — текст на акцентной заливке, bd — рамки карточек, bar — нижняя панель, gr/rd/am — приход, расход/превышение, внимание.
 export const THEMES = {
+  // значения — из макета Claude Design «Семейный бюджет» (тёмная и светлая версии)
   dark: {
-    bg: '#151413', cd: '#201E1C', tx: '#F2EDE4', mu: '#A39C90', ln: '#2E2B28', bd: '#2E2B28', as: '#2E2817', ip: '#2A2724', sh: 'none',
-    ac: '#E3B65C', at: '#E3B65C', on: '#151413', gr: '#8FC9A3', rd: '#F08A6C', am: '#E9A25F', bar: '#1B1A18', off: '#3A3631',
+    bg: '#131313', cd: '#1C1C1C', tx: '#F3F1EC', mu: '#9C9890', ln: '#262626', bd: '#2A2A2A', as: '#2A2416', ip: '#242424', sh: 'none',
+    ac: '#E8B85A', at: '#E8B85A', on: '#131313', gr: '#8FCBA3', rd: '#EE8669', am: '#E8B85A', bar: '#161616', off: '#3A3A3A',
+    lv: '#B4A7EC', bl: '#7FB2E5', grBg: '#1C2A20', rdBg: '#2E1E19',
   },
   light: {
-    bg: '#FAFAF8', cd: '#FFFFFF', tx: '#1C1A17', mu: '#6E675C', ln: '#EFEBE4', bd: '#E8E4DC', as: '#F7EDD6', ip: '#F2EFE9', sh: 'none',
-    ac: '#D9A645', at: '#8A6420', on: '#1C1A17', gr: '#2F7D52', rd: '#C2492B', am: '#A65C14', bar: '#FFFFFF', off: '#DCD6CB',
+    bg: '#F6F4EF', cd: '#FFFFFF', tx: '#1A1814', mu: '#77726A', ln: '#ECE8E0', bd: '#ECE8E0', as: '#FBF1DC', ip: '#F0ECE4', sh: 'none',
+    ac: '#E8B85A', at: '#A87A1E', on: '#1A1814', gr: '#2F8A55', rd: '#CF5536', am: '#A87A1E', bar: '#FFFFFF', off: '#D9D4CA',
+    lv: '#6B5BC2', bl: '#3474B8', grBg: '#E5F3EA', rdBg: '#FBE7E1',
   },
 };
 // Смешать цвет с белым (доля t): в тёмной теме цвета категорий светлее, чтобы читались на тёмном

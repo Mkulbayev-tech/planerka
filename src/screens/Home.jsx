@@ -1,12 +1,13 @@
 import { useBudget } from '../store.jsx';
-import { PairBars, Letter, ProgressBar } from '../components/ui.jsx';
+import { ProgressBar } from '../components/ui.jsx';
 import { LimitAlerts } from './Spend.jsx';
 
-// Аналитика: сколько можно тратить до зарплаты и куда уходят деньги за выбранный период.
+// Главная (макет «Семейный бюджет», шаг 2a): сколько можно тратить до зарплаты, куда уходят деньги, кто сколько потратил.
+// Графики и сравнения — в «Ещё» → «Аналитика».
 export default function Home() {
-  const { s, d, a } = useBudget();
-  const seg = p => ({ background: s.period === p ? 'var(--accent)' : 'transparent', color: s.period === p ? 'var(--on-accent)' : 'var(--mu)' });
+  const { d, a } = useBudget();
   const top = d.periodCats[0];
+  const showMembers = d.memberStats.length > 1 && d.memberStats.some(m => m.spent > 0);
   return (
     <div className="screen">
       <div className="row-between" style={{ gap: 12 }}>
@@ -14,7 +15,11 @@ export default function Home() {
           <div className="t-eyebrow ellipsis">{d.todayLabel}</div>
           <div className="t-title ellipsis">Наш бюджет</div>
         </div>
-        <div className="avatar-btn" style={{ flex: 'none' }} onClick={() => a.go('settings')}>{d.greetingName[0].toUpperCase()}</div>
+        <button type="button" className="avatar-stack" onClick={() => a.go(d.memberAvatars.length > 1 ? 'family' : 'settings')} aria-label="Семья">
+          {(d.memberAvatars.length ? d.memberAvatars : [{ id: 'me', letter: d.greetingName[0].toUpperCase(), color: 'var(--accent-tx)' }]).slice(0, 3).map(m => (
+            <span key={m.id} className="avatar-stack__item" style={{ color: m.color }}>{m.letter}</span>
+          ))}
+        </button>
       </div>
 
       <div className="hero">
@@ -34,8 +39,10 @@ export default function Home() {
         </div>
       </div>
 
+      {d.limitAlerts.length > 0 && <LimitAlerts onOpen={() => a.openPlans('limits')} max={3} />}
+
       {d.nextBill && (
-        <div className="card list-row--tap" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px' }} onClick={() => a.go('bills')}>
+        <div className="card list-row--tap" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px' }} onClick={() => a.openPlans('bills')}>
           <div className="col" style={{ gap: 2, minWidth: 0 }}>
             <span className="t-meta">Скоро платёж, {d.nextBill.date}</span>
             <span className="ellipsis" style={{ fontSize: 15, fontWeight: 600 }}>{d.nextBill.title}</span>
@@ -44,46 +51,18 @@ export default function Home() {
         </div>
       )}
 
-      {d.limitAlerts.length > 0 && <LimitAlerts onOpen={() => a.go('spend')} max={3} />}
-
-      <div className="seg">
-        <div className="seg__item" style={seg('week')} onClick={() => a.setPeriod('week')}>Неделя</div>
-        <div className="seg__item" style={seg('month')} onClick={() => a.setPeriod('month')}>Месяц</div>
-        <div className="seg__item" style={seg('year')} onClick={() => a.setPeriod('year')}>Год</div>
-      </div>
-
-      <div className="card" style={{ gap: 14 }}>
-        <div className="row-between">
-          <div className="t-card">Доходы и расходы</div>
-          <div className="legend">
-            <span><i style={{ background: 'var(--green)' }} />Доход</span>
-            <span><i style={{ background: 'var(--accent)' }} />Расход</span>
-          </div>
-        </div>
-        <PairBars items={d.pairBars} height={120} onPick={s.period === 'month' ? i => a.openPeriod(i - (d.pairBars.length - 1)) : undefined} />
-        {s.period === 'month' && <div className="t-meta" style={{ marginTop: -6 }}>Нажмите на месяц, чтобы открыть его траты</div>}
-        <div className="col">
-          <KpiRow label="Расходы" value={d.chartTotalFmt} sub={d.deltaText} color={d.deltaColor} />
-          <KpiRow label="Доходы" value={d.kpiIncomeFmt} sub={d.kpiIncomeDeltaText} color={d.kpiIncomeDeltaColor} />
-          <KpiRow label="Отложено в цели" value={d.kpiSavedFmt} sub={d.saveRate + '% от дохода'} />
-        </div>
-      </div>
-
       <div className="card">
         <div className="row-between">
-          <div className="col" style={{ gap: 1 }}>
-            <div className="t-card">Куда уходят деньги</div>
-            <div className="t-meta">{d.periodWord}</div>
-          </div>
-          <div className="t-link" onClick={() => a.go('spend')}>Все траты</div>
+          <div className="t-card">Куда уходят деньги</div>
+          <div className="t-link" onClick={() => a.go('analytics')}>Аналитика</div>
         </div>
-        {!top && s.period === 'month' && d.homeLastHint && (
+        {!top && d.homeLastHint && (
           <div className="col" style={{ gap: 8, alignItems: 'flex-start' }}>
             <div className="t-meta">В этом месяце трат пока нет. Последние были {d.homeLastHint.date}.</div>
             <div className="t-link" onClick={() => a.openPeriod(d.homeLastHint.shift)}>Открыть {d.homeLastHint.month}</div>
           </div>
         )}
-        {!top && !(s.period === 'month' && d.homeLastHint) && <div className="empty">Трат за этот период нет</div>}
+        {!top && !d.homeLastHint && <div className="empty">Трат за этот месяц нет</div>}
         {top && (
           <div className="col" style={{ gap: 12 }}>
             <div className="bar-split" aria-hidden="true">
@@ -103,21 +82,17 @@ export default function Home() {
         )}
       </div>
 
-      {!(d.memberStatsPeriod.length > 1 && d.memberStatsPeriod.some(m => m.spent > 0)) && d.settle && (
-        <div className="card"><SettleRow first /></div>
-      )}
-
-      {d.memberStatsPeriod.length > 1 && d.memberStatsPeriod.some(m => m.spent > 0) && (
+      {showMembers && (
         <div className="card">
-          <div className="row-between"><div className="t-card">Кто сколько потратил</div><div className="t-meta">{d.periodWord}</div></div>
-          <div style={{ display: 'flex', height: 10, borderRadius: 99, overflow: 'hidden', gap: 3 }}>
-            {d.memberStatsPeriod.map(m => <div key={m.id} style={{ flex: Math.max(m.spent, 1), background: m.color, borderRadius: 99 }} />)}
+          <div className="t-card">Кто сколько потратил</div>
+          <div className="bar-split" aria-hidden="true">
+            {d.memberStats.map(m => <div key={m.id} style={{ flex: Math.max(m.spent, 1), background: m.color }} />)}
           </div>
-          {d.memberStatsPeriod.map(m => (
+          {d.memberStats.map(m => (
             <div key={m.id} className="row" style={{ gap: 12 }}>
-              <Letter size={36} radius="50%" bg={m.bg} color={m.color} fontSize={14}>{m.letter}</Letter>
+              <span className="cat-ico" style={{ width: 36, height: 36, color: m.color, fontWeight: 600, fontSize: 14 }}>{m.letter}</span>
               <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>{m.name}</div>
+                <div style={{ fontSize: 15, fontWeight: 500 }}>{m.name}{m.isMe ? ' · вы' : ''}</div>
                 <div className="t-meta">{m.count} операций · {m.share}%</div>
               </div>
               <div style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap' }}>{m.spentFmt}</div>
@@ -126,26 +101,15 @@ export default function Home() {
           {d.settle && <SettleRow />}
         </div>
       )}
+      {!showMembers && d.settle && <div className="card"><SettleRow first /></div>}
 
-      <div className="card list-row--tap" onClick={() => a.go('plans')}>
-        <div className="row-between"><div className="t-card">Планы</div><div className="t-link">Открыть →</div></div>
+      <div className="card list-row--tap" onClick={() => a.openPlans('planner')}>
+        <div className="row-between"><div className="t-card">Дела на сегодня</div><div className="t-link">Планёрка</div></div>
         <div className="row" style={{ gap: 10, alignItems: 'stretch' }}>
           <Stat label="Сегодня" value={d.taskRatio} />
           <Stat label="За неделю" value={d.weekPlanPct + '%'} />
           <Stat label="Серия" value={d.streak + ' дн'} />
         </div>
-      </div>
-    </div>
-  );
-}
-
-function KpiRow({ label, value, sub, color }) {
-  return (
-    <div className="kpi-row">
-      <div className="t-sub">{label}</div>
-      <div className="col" style={{ alignItems: 'flex-end', gap: 1 }}>
-        <div style={{ fontSize: 16, fontWeight: 600, whiteSpace: 'nowrap' }}>{value}</div>
-        <div style={{ fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap', color: color || 'var(--mu)' }}>{sub}</div>
       </div>
     </div>
   );
@@ -167,7 +131,7 @@ function SettleRow({ first = false }) {
   return (
     <div className="row-between list-row--tap" style={first ? { gap: 10 } : { borderTop: '1px solid var(--ln)', paddingTop: 12, gap: 10 }} onClick={() => a.openSheet('settle')}>
       <div className="col" style={{ gap: 2, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 500 }}>{t.settled ? 'Расчёт: всё ровно' : `${t.fromName} → ${t.toName}`}</div>
+        <div style={{ fontSize: 15, fontWeight: 500 }}>{t.settled ? 'Расчёт: всё ровно' : `${t.fromName} → ${t.toName}`}</div>
         <div className="t-meta">С {t.sinceLabel}, делим {t.splitLabel}</div>
       </div>
       <div className="row" style={{ gap: 6 }}>
@@ -177,3 +141,4 @@ function SettleRow({ first = false }) {
     </div>
   );
 }
+
