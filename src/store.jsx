@@ -12,7 +12,12 @@ const PREFS_KEY = 'planerka.prefs';
 const EMPTY = { txs: [], tasks: [], goals: [], incomes: [] };
 const loadPrefs = () => { try { const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}'); return { dark: !!p.dark, notif: p.notif !== false }; } catch { return { dark: false, notif: true }; } };
 const savePrefs = p => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* ignore */ } };
-const errText = e => (e && (e.message || e.error_description || e.msg)) || 'что-то пошло не так';
+// «Load failed» (iPhone), «Failed to fetch» (браузер) — до сервера не достучались: интернет или сервер на паузе
+const NET_RE = /load failed|failed to fetch|networkerror|network request failed|fetch failed/i;
+const errText = e => {
+  const m = (e && (e.message || e.error_description || e.msg)) || 'что-то пошло не так';
+  return NET_RE.test(m) ? 'нет связи с сервером' : m;
+};
 const todayIso = () => iso(new Date());
 
 const Ctx = createContext(null);
