@@ -84,6 +84,9 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     });
     // Ссылка из письма открыла приложение — завершаем вход
     const handleUrl = async url => {
+      // Кнопки и нажатия в виджетах: planerka://open/expense, income, chore, report, plans, bills, goals, home
+      const m = /^planerka:\/\/open\/([a-z]+)/i.exec(url || '');
+      if (m) { update({ pendingOpen: m[1].toLowerCase() }); return; }
       try { if (await backend.handleAuthUrl(url)) showToast('Вход выполнен'); }
       catch (e) { console.error(e); showToast('Ссылка устарела, запросите новую'); }
     };
@@ -626,7 +629,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
   useEffect(() => {
     if (!ready) return undefined;
     const t = setTimeout(() => updateWidgets({
-      updatedAt: Date.now(),
+      updatedAt: Date.now(), ...d.widget,
       balance: d.balanceFmt, spentPct: Math.min(100, d.spentPct), spent: d.spentFmt, daysLeft: d.daysLeft, perDay: d.perDayLeftFmt,
       // виджеты всегда тёмные («Вечер»): плашки категорий — тёмные при любой теме приложения
       cats: d.widgetCats.map(c => ({ letter: c.letter, name: c.name, spent: c.spentShort, color: c.color, bg: '#2A2724' })),
@@ -652,6 +655,21 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       : { limits: { ...(cur.limits || {}), ...limits }, autoPlan: { ...(cur.autoPlan || {}), period } }));
     showToast('Бюджет на новый период распределён');
   }, [ready, d, patchSettings, showToast]);
+
+  // Переход из виджета: выполняем, когда данные загружены
+  useEffect(() => {
+    if (!ready || !s.pendingOpen) return;
+    const t = s.pendingOpen;
+    update({ pendingOpen: null });
+    if (t === 'expense') a.openSheet('op', { kind: 'tx' });
+    else if (t === 'income') a.openSheet('op', { kind: 'income' });
+    else if (t === 'chore') { a.openPlans('planner'); a.openSheet('chore', { date: d.todayIso }); }
+    else if (t === 'report') a.go('analytics');
+    else if (t === 'plans') { a.planToday(); a.openPlans('planner'); a.setPlanView('day'); }
+    else if (t === 'bills') a.openPlans('bills');
+    else if (t === 'goals') a.openPlans('goals');
+    else a.go('home');
+  }, [ready, s.pendingOpen, a, update, d.todayIso]);
 
   // Регулярные платежи: в свой день сами становятся тратой (один раз на набор дат)
   const billsRunning = useRef('');

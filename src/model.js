@@ -844,6 +844,37 @@ export function derive(s, now = new Date()) {
     defaultId: (accOf(s.lastAcc) || accOf('card') || accountsRaw[0] || {}).id || null,
   };
 
+  // Виджеты iPhone (макет, шаг 4): всегда в тёмных цветах; дела — на сегодня и два дня вперёд, виджет сам берёт нужный день
+  const plain = n => fmt(n).replace('\u00A0₸', '');
+  const wColor = c => c.dark || (dark ? c.color : mix(c.color, 0.4));
+  const wDay = dIso => {
+    const items = dayItemsOf(dIso);
+    let hotW = false;
+    const tm = iso(addDays(parseIso(dIso), 1));
+    const t2 = chores.filter(c => c.freq !== 'day' && occursOn(c, tm)).map(c => occOf(c, tm))[0] || null;
+    return {
+      label: `${wdOf(dIso)}, ${dayMonth(parseIso(dIso))}`, done: items.filter(t => t.done).length, total: items.length,
+      rows: items.slice(0, 7).map(t => {
+        const hot = !t.done && !!t.time && (dIso !== todayIso || t.time >= nowHM) && !hotW;
+        if (hot) hotW = true;
+        return { name: t.name, done: !!t.done, time: t.time || '', who: whoName(t), hot };
+      }),
+      note: t2 ? `Завтра: ${lowerFirst(t2.name)}${whoName(t2) ? ' · ' + whoName(t2) : ''}` : '',
+    };
+  };
+  const nextBillRow = billRows.filter(x => x.date && !x.paid && x.status !== 'со следующего периода').sort((p, q) => (p.date < q.date ? -1 : 1))[0] || null;
+  const widget = {
+    monthName: capFirst(MONTHS_NOM[P.start.getMonth()]), budgetTotal: fmt(budgetTotal), hasBudget: budgetTotal > 0, budgetPct: Math.min(100, budgetSpentPct),
+    split: catStats.filter(c => c.spent > 0).slice(0, 5).map(c => ({ color: wColor(c), v: c.spent })),
+    income: '+' + plain(income), out: '−' + plain(spent), left: plain(balance), perDayPlain: plain(balance / daysLeft),
+    periodStart: P.startIso, periodDays,
+    monthRatio: `${pl.month.done}/${pl.month.total}`,
+    monthItems: pl.month.left.slice(0, 3).map(r => ({ name: r.name, date: shortDate(r.dateIso) })),
+    billsLeft: fmt(billsLeft),
+    planner: Object.fromEntries([0, 1, 2].map(i => { const dIso = iso(addDays(today, i)); return [dIso, wDay(dIso)]; })),
+    bill: nextBillRow ? { title: nextBillRow.title, amount: nextBillRow.amountFmt, dateIso: nextBillRow.date, dateLabel: shortDate(nextBillRow.date) } : null,
+  };
+
   // Экран добавления траты
   const amountNum = Number(s.amount || 0);
   const picked = visibleCats.find(c => c.id === s.cat) || catMap[CATS[0].id];
@@ -871,7 +902,7 @@ export function derive(s, now = new Date()) {
     budgetSpentPct: Math.min(100, budgetSpentPct), budgetBarColor: budgetSpentPct > 100 ? RED : budgetSpentPct >= 80 ? AMBER : ACCENT,
     spendCats, spendDays, spendCatName: spendCat ? catOf(spendCat).name : '', spendWho, spendQuery: s.spendQuery || '',
     shopping, menu, credits, utilities, calendar, review, debtsDetail,
-    pl, choreDefs: chores, choreLog, choreReminders, accounts,
+    pl, choreDefs: chores, choreLog, choreReminders, accounts, widget,
     periodShare: daysElapsed / periodDays, analytics, goalCards, goalsMonthFmt: fmt(topupsIn(P.startIso, P.endIso)), billWeek, billsUntilLabel: dayMonth(addDays(P.end, -1)), memberAvatars,
     incomeExpected, incomeMembers, salaries, legacySalary, prevMonthName: MONTHS_NOM[prevP.start.getMonth()],
     incomeSay: (() => {
