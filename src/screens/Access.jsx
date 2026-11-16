@@ -12,15 +12,15 @@ export default function Access() {
   const [hhName, setHhName] = useState('');
   const [invite, setInvite] = useState('');
   const loading = s.auth === 'loading' || (s.auth === 'in' && s.household === undefined && !s.loadError);
-  const btn = disabled => ({ background: disabled ? 'var(--ip)' : 'var(--accent)', color: disabled ? 'var(--mu)' : '#fff', height: 54 });
+  const btn = disabled => ({ background: disabled ? 'var(--ip)' : 'var(--accent)', color: disabled ? 'var(--mu)' : 'var(--on-accent)', height: 54 });
   const submit = () => { if (!s.busy && login) a.signIn(login, pin); };
 
   return (
     <div className="screen screen--add">
-      <div className="hero hero--purple" style={{ gap: 8, marginTop: 8 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.8, letterSpacing: 1.2 }}>БЮДЖЕТ СЕМЬИ</div>
-        <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, lineHeight: 1.1 }}>Один бюджет на двоих</div>
-        <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.85 }}>Траты, планы и цели видны обоим сразу.</div>
+      <div className="col" style={{ gap: 8, marginTop: 8, padding: '8px 0 6px' }}>
+        <div className="t-eyebrow">Бюджет семьи</div>
+        <div className="t-num" style={{ fontSize: 28, lineHeight: 1.15, color: 'var(--accent-tx)' }}>Один бюджет на двоих</div>
+        <div style={{ fontSize: 15, color: 'var(--mu)' }}>Траты, планы и цели видны обоим сразу.</div>
       </div>
 
       {loading && <div className="empty">Загрузка…</div>}
@@ -40,8 +40,8 @@ export default function Access() {
               const on = login === p.login;
               return (
                 <div key={p.login} className="profile-pick" data-on={on ? 'true' : 'false'} onClick={() => setLogin(p.login)}>
-                  <Letter size={46} radius="50%" bg={on ? 'var(--accent)' : 'var(--as)'} color={on ? '#fff' : 'var(--accent)'} fontSize={19}>{p.letter}</Letter>
-                  <div style={{ fontSize: 15, fontWeight: 800 }}>{p.name}</div>
+                  <Letter size={46} radius="50%" bg={on ? 'var(--accent)' : 'var(--ip)'} color={on ? 'var(--on-accent)' : 'var(--accent-tx)'} fontSize={19}>{p.letter}</Letter>
+                  <div style={{ fontSize: 15, fontWeight: 600 }}>{p.name}</div>
                   <div className="t-meta">№ {p.login}</div>
                 </div>
               );

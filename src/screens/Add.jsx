@@ -1,7 +1,7 @@
 import { useBudget } from '../store.jsx';
 import { KEYS } from '../data.js';
 import { useLongPress } from '../hooks.js';
-import { Letter } from '../components/ui.jsx';
+import { Letter, CatIcon } from '../components/ui.jsx';
 
 export default function Add() {
   const { s, d, a } = useBudget();
@@ -9,7 +9,7 @@ export default function Add() {
     <div className="screen screen--add">
       <div className="row-between">
         <div className="t-link" style={{ fontSize: 15 }} onClick={() => a.go(s.prev || 'home')}>Отмена</div>
-        <div style={{ fontSize: 17, fontWeight: 800 }}>Новая трата</div>
+        <div style={{ fontSize: 17, fontWeight: 600 }}>Новая трата</div>
         <div style={{ width: 52 }} />
       </div>
 
@@ -19,15 +19,15 @@ export default function Add() {
       </div>
 
       <div className="col" style={{ textAlign: 'center', padding: '14px 0 4px', gap: 6 }}>
-        <div style={{ fontSize: 52, fontWeight: 800, letterSpacing: -2, lineHeight: 1, color: d.amountColor }}>{d.amountDisplay}</div>
+        <div className="t-num" style={{ fontSize: 44, lineHeight: 1.05, color: d.amountColor }}>{d.amountDisplay}</div>
         <div className="t-eyebrow">{d.pickedCatName}{d.catAuto ? ' · подобрано' : ''} · {d.methodName}</div>
       </div>
 
       <div className="chips" style={{ padding: '2px 20px', flex: 'none' }}>
         {d.cats.map(c => <CatChip key={c.id} c={c} />)}
         <div className="chip chip--pick chip--new" onClick={() => a.openSheet('cat', { pick: true })}>
-          <Letter size={26} radius="50%" bg="var(--as)" color="var(--accent)" fontSize={16}>+</Letter>
-          <div style={{ fontSize: 13, fontWeight: 700 }}>Своя</div>
+          <Letter size={28} radius="50%" bg="var(--as)" color="var(--accent-tx)" fontSize={16}>+</Letter>
+          <div style={{ fontSize: 13, fontWeight: 500 }}>Своя</div>
         </div>
       </div>
 
@@ -45,7 +45,7 @@ export default function Add() {
           <div key={k} className="key" onClick={() => a.pressKey(k)}>{k}</div>
         ))}
       </div>
-      <div className="submit" style={{ background: d.submitBg }} onClick={a.submitTx}>Добавить трату</div>
+      <div className="submit" style={{ background: d.submitBg, color: d.submitFg }} onClick={a.submitTx}>Добавить трату</div>
     </div>
   );
 }
@@ -56,8 +56,8 @@ function CatChip({ c }) {
   const press = useLongPress(() => { if (c.custom) a.openSheet('cat', { cat: c }); }, () => a.pickCat(c.id));
   return (
     <div className="chip chip--pick pressable" style={{ background: c.pickBg, borderColor: c.pickBorder }} {...press}>
-      <Letter size={26} radius="50%" bg={c.bg} color={c.color} fontSize={12}>{c.letter}</Letter>
-      <div style={{ fontSize: 13, fontWeight: 700 }}>{c.name}</div>
+      <CatIcon size={28} icon={c.icon} letter={c.letter} color={c.color} />
+      <div style={{ fontSize: 13, fontWeight: 500 }}>{c.name}</div>
     </div>
   );
 }

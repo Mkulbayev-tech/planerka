@@ -1,50 +1,55 @@
 // Константы макета budget-planner-v2, форматирование сумм и демо-данные для локального режима.
 import { iso, startOfDay, addDays, daysBetween, periodBounds } from './lib/dates.js';
 
-export const ACCENT = '#7A4AE0';
-export const GREEN = '#2FA66F';
-export const RED = '#E0553F';
-export const AMBER = '#F2A83B';
+// Цвета «Вечера» для мест вне темы (виджеты). Внутри приложения — THEMES ниже.
+export const ACCENT = '#E3B65C';
+export const GREEN = '#8FC9A3';
+export const RED = '#F08A6C';
+export const AMBER = '#E9A25F';
 
 export const DEFAULT_SETTINGS = { salary: 600000, monthStartDay: 5, limits: {} };
 
 export const CATS = [
-  { id: 'food', name: 'Продукты', icon: '🛒', color: '#2FA66F', bg: '#E6F6EE', limit: 80000 },
-  { id: 'cafe', name: 'Кафе', icon: '☕', color: '#E0553F', bg: '#FCE9E5', limit: 20000 },
-  { id: 'home', name: 'Жильё', icon: '🏠', color: '#7A4AE0', bg: '#EFE9FC', limit: 45000 },
-  { id: 'transport', name: 'Транспорт', icon: '🚌', color: '#2F5BEA', bg: '#E8EDFD', limit: 25000 },
-  { id: 'fun', name: 'Развлечения', icon: '🎬', color: '#F2A83B', bg: '#FDF1DE', limit: 20000 },
-  { id: 'health', name: 'Здоровье', icon: '💊', color: '#1BA3B5', bg: '#E1F5F7', limit: 15000 },
+// Цвета категорий — для светлой темы; в тёмной модель осветляет их (mix с белым)
+  { id: 'food', name: 'Продукты', icon: 'cart', color: '#3E9B6E', bg: '#E6F3EC', limit: 80000 },
+  { id: 'cafe', name: 'Кафе', icon: 'cup', color: '#D9774F', bg: '#FAEAE2', limit: 20000 },
+  { id: 'home', name: 'Жильё', icon: 'home', color: '#B48A35', bg: '#F6EEDC', limit: 45000 },
+  { id: 'transport', name: 'Транспорт', icon: 'bus', color: '#5C8FD6', bg: '#E7EFFA', limit: 25000 },
+  { id: 'fun', name: 'Развлечения', icon: 'film', color: '#9277CF', bg: '#EFEAF8', limit: 20000 },
+  { id: 'health', name: 'Здоровье', icon: 'pulse', color: '#2E95A3', bg: '#E1F1F3', limit: 15000 },
 ];
 export const CAT_BY_ID = Object.fromEntries(CATS.map(c => [c.id, c]));
 
 // Свои категории семьи лежат в settings.cats: { id, name, color, bg, hidden }.
 // hidden — категория удалена, но по ней остались траты: из выбора убрана, в истории видна.
 export const CAT_PALETTE = [
-  ['#D6457A', '#FBE7EF'], ['#E8702A', '#FDEEE2'], ['#8A5A2B', '#F4ECE3'], ['#5B5BD6', '#ECECFB'],
-  ['#6E8B1F', '#EFF4DE'], ['#A63DB8', '#F5E6F8'], ['#0F766E', '#DDF3F0'], ['#3C4A5C', '#E6E9EE'],
+  ['#C4577A', '#F7E4EB'], ['#C9733A', '#F8EADF'], ['#8A6A45', '#F1EBE3'], ['#6F7FD6', '#E9ECFA'],
+  ['#7C9A3C', '#EEF3E2'], ['#A766B8', '#F3E8F6'], ['#2F8F86', '#E0F1EF'], ['#6B7280', '#ECEDEF'],
 ];
 export const CAT_SUGGEST = ['Кредит', 'Рассрочка', 'Связь', 'Дети', 'Одежда', 'Подарки'];
 // Трата с неизвестной категорией (например, стёртой вручную) попадает сюда, а не в «Продукты».
-export const OTHER_CAT = { id: 'other', name: 'Другое', icon: '📦', color: '#8E8A9C', bg: '#EFEEF3', limit: 0 };
+export const OTHER_CAT = { id: 'other', name: 'Другое', icon: 'box', color: '#8E887C', bg: '#EFEDE8', limit: 0 };
 
-// Иконка своей категории: выбранная вручную или подобранная по названию; иначе — первая буква
+// Иконка своей категории (линейная, из components/ui.jsx): выбранная вручную или подобранная по названию;
+// без неё — первая буква. Старые значения-эмодзи игнорируются.
 const ICON_RULES = [
-  [/кредит|рассроч|ипотек|займ|долг/i, '💳'], [/садик|детсад|школ|дет|ребён|ребен|малыш|игрушк/i, '🧸'],
-  [/одежд|обув/i, '👕'], [/связь|телефон|мобил|интернет/i, '📱'], [/подар|праздник/i, '🎁'],
-  [/спорт|фитнес|трениров/i, '🏋️'], [/красот|салон|космет|маникюр/i, '💅'], [/путешеств|отпуск|поездк/i, '✈️'],
-  [/авто|машин|бензин|топлив/i, '🚗'], [/животн|кот|собак|питом/i, '🐾'], [/учёб|учеб|курс|книг|образован/i, '📚'],
-  [/коммун|свет|газ|вода/i, '💡'], [/подписк/i, '🔁'], [/хоз|быт|уборк/i, '🧽'], [/еда|ресторан|доставк/i, '🍽️'],
-  [/аптек|лекар|врач/i, '💊'], [/благотвор|помощь|родител/i, '🤝'],
+  [/кредит|рассроч|ипотек|займ|долг/i, 'card'], [/садик|детсад|школ|дет|ребён|ребен|малыш|игрушк/i, 'blocks'],
+  [/одежд|обув/i, 'shirt'], [/связь|телефон|мобил|интернет/i, 'phone'], [/подар|праздник/i, 'gift'],
+  [/спорт|фитнес|трениров/i, 'dumbbell'], [/красот|салон|космет|маникюр/i, 'sparkle'], [/путешеств|отпуск|поездк/i, 'plane'],
+  [/авто|машин|бензин|топлив/i, 'car'], [/животн|кот|собак|питом/i, 'paw'], [/учёб|учеб|курс|книг|образован/i, 'book'],
+  [/коммун|свет|газ|вода/i, 'bulb'], [/подписк/i, 'repeat'], [/еда|ресторан|доставк/i, 'fork'],
+  [/аптек|лекар|врач/i, 'pulse'], [/благотвор|помощь|родител/i, 'heart'],
 ];
+export const CAT_ICON_CHOICES = ['cart', 'cup', 'home', 'bus', 'film', 'pulse', 'card', 'blocks', 'shirt', 'phone', 'gift', 'car', 'plane', 'paw', 'book', 'bulb', 'dumbbell', 'sparkle', 'fork', 'heart', 'user', 'box'];
+const ICON_SET = new Set([...CAT_ICON_CHOICES, 'repeat']);
 export const guessIcon = name => { const r = ICON_RULES.find(([re]) => re.test(name || '')); return r ? r[1] : null; };
-export const CAT_ICON_CHOICES = ['🛒', '☕', '🏠', '🚌', '🎬', '💊', '💳', '🧸', '👕', '📱', '🎁', '🚗', '✈️', '🐾', '📚', '💡', '🏋️', '💅', '🍽️', '🧽', '🤝', '👤'];
+export const iconOf = c => (c && ICON_SET.has(c.icon) ? c.icon : guessIcon(c && c.name));
 
 export const allCats = settings => [
   ...CATS,
   ...(settings && Array.isArray(settings.cats) ? settings.cats : [])
     .filter(c => c && c.id && c.name)
-    .map(c => ({ limit: 0, ...c, icon: c.icon || guessIcon(c.name), custom: true })),
+    .map(c => ({ limit: 0, ...c, icon: iconOf(c), custom: true })),
 ];
 
 export const TAGS = ['Дом', 'Покупки', 'Платежи', 'Накопления', 'Здоровье'];
@@ -53,13 +58,28 @@ export const TAG_COLORS = {
   'Накопления': ['#F2A83B', '#FDF1DE'], 'Здоровье': ['#1BA3B5', '#E1F5F7'],
 };
 export const GOAL_PALETTE = [
-  ['#F2A83B', '#FDF1DE'], ['#7A4AE0', '#EFE9FC'], ['#2FA66F', '#E6F6EE'],
-  ['#2F5BEA', '#E8EDFD'], ['#E0553F', '#FCE9E5'], ['#1BA3B5', '#E1F5F7'],
+  ['#B48A35', '#F6EEDC'], ['#3E9B6E', '#E6F3EC'], ['#5C8FD6', '#E7EFFA'],
+  ['#D9774F', '#FAEAE2'], ['#9277CF', '#EFEAF8'], ['#2E95A3', '#E1F1F3'],
 ];
 
+// Темы: «Вечер» (тёмная, по умолчанию) и «Белая». ac — заливка акцента, at — акцентный текст (контраст ≥ 4.5),
+// on — текст на акцентной заливке, bd — рамки карточек, bar — нижняя панель, gr/rd/am — приход, расход/превышение, внимание.
 export const THEMES = {
-  light: { bg: '#F4F3F8', cd: '#FFFFFF', tx: '#16141D', mu: '#7E7B8A', ln: '#ECEAF2', as: '#EFE9FC', ip: '#F1EFF6', sh: '0 2px 12px rgba(30,20,60,0.05)' },
-  dark: { bg: '#0F0E13', cd: '#1C1B22', tx: '#F5F3FA', mu: '#9D9AAA', ln: '#2A2833', as: '#2A2145', ip: '#26242E', sh: 'none' },
+  dark: {
+    bg: '#151413', cd: '#201E1C', tx: '#F2EDE4', mu: '#A39C90', ln: '#2E2B28', bd: '#2E2B28', as: '#2E2817', ip: '#2A2724', sh: 'none',
+    ac: '#E3B65C', at: '#E3B65C', on: '#151413', gr: '#8FC9A3', rd: '#F08A6C', am: '#E9A25F', bar: '#1B1A18', off: '#3A3631',
+  },
+  light: {
+    bg: '#FAFAF8', cd: '#FFFFFF', tx: '#1C1A17', mu: '#6E675C', ln: '#EFEBE4', bd: '#E8E4DC', as: '#F7EDD6', ip: '#F2EFE9', sh: 'none',
+    ac: '#D9A645', at: '#8A6420', on: '#1C1A17', gr: '#2F7D52', rd: '#C2492B', am: '#A65C14', bar: '#FFFFFF', off: '#DCD6CB',
+  },
+};
+// Смешать цвет с белым (доля t): в тёмной теме цвета категорий светлее, чтобы читались на тёмном
+export const mix = (hex, t) => {
+  const n = parseInt(String(hex).slice(1), 16);
+  if (!Number.isFinite(n)) return hex;
+  const ch = s => Math.round(((n >> s) & 255) + (255 - ((n >> s) & 255)) * t);
+  return '#' + [16, 8, 0].map(s => ch(s).toString(16).padStart(2, '0')).join('');
 };
 
 export const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', '⌫'];

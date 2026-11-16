@@ -1,5 +1,5 @@
 import { useBudget } from '../store.jsx';
-import { Letter, ProgressBar } from '../components/ui.jsx';
+import { CatIcon, Icon, ProgressBar } from '../components/ui.jsx';
 
 // Расходы: любой месяц (‹ ›), сколько потрачено и сколько ещё можно, категории и траты по дням.
 // Тап по категории оставляет в списке только её траты.
@@ -26,12 +26,12 @@ export default function Spend() {
         <div className="row-between" style={{ alignItems: 'flex-end' }}>
           <div className="col" style={{ gap: 2 }}>
             <div className="t-meta">Потрачено</div>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: -0.8, lineHeight: 1.1 }}>{v.spentFmt}</div>
+            <div className="t-num" style={{ fontSize: 30, lineHeight: 1.1 }}>{v.spentFmt}</div>
           </div>
           {v.isCurrent && d.budgetTotal > 0 && (
             <div className="col" style={{ gap: 2, alignItems: 'flex-end' }}>
               <div className="t-meta">лимит</div>
-              <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: 'nowrap' }}>{d.budgetTotalFmt}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap' }}>{d.budgetTotalFmt}</div>
             </div>
           )}
         </div>
@@ -41,7 +41,7 @@ export default function Spend() {
           <div className="alert-pills">
             {d.limitAlerts.slice(0, 3).map(x => (
               <span key={x.id} className="alert-pill" data-over={x.over ? 'true' : 'false'} onClick={() => a.setSpendCat(x.id)}>
-                {x.letter} {x.name} · {x.over ? x.short : x.pct + '%'}
+                {x.name} · {x.over ? x.short : x.pct + '%'}
               </span>
             ))}
           </div>
@@ -56,9 +56,9 @@ export default function Spend() {
 
       {v.isCurrent && (
         <div className="quick-row">
-          <QuickTile icon="✨" title="Распределить" sub={d.autoOn ? 'включено' : 'по доходу'} onClick={() => a.openSheet('autoplan')} />
-          <QuickTile icon="🔁" title="Платежи" sub={d.nextBillText} onClick={() => a.go('bills')} />
-          <QuickTile icon="🧾" title="Выписка" sub="из Kaspi" onClick={() => a.openSheet('import')} />
+          <QuickTile icon="pie" title="Распределить" sub={d.autoOn ? 'включено' : 'по доходу'} onClick={() => a.openSheet('autoplan')} />
+          <QuickTile icon="repeat" title="Платежи" sub={d.nextBillText} onClick={() => a.go('bills')} />
+          <QuickTile icon="file" title="Выписка" sub="из Kaspi" onClick={() => a.openSheet('import')} />
         </div>
       )}
 
@@ -70,11 +70,11 @@ export default function Spend() {
           </div>
           {d.spendCats.map(c => (
             <div key={c.id} className="cat-row" data-on={c.selected ? 'true' : 'false'} onClick={() => a.setSpendCat(c.selected ? null : c.id)}>
-              <Letter size={36} radius={12} bg={c.bg} color={c.color} fontSize={14}>{c.letter}</Letter>
+              <CatIcon size={38} icon={c.icon} letter={c.letter} color={c.color} />
               <div className="col" style={{ flex: 1, gap: 6, minWidth: 0 }}>
                 <div className="row-between" style={{ gap: 8 }}>
-                  <span className="ellipsis" style={{ fontSize: 14, fontWeight: 700 }}>{c.name}</span>
-                  <span style={{ fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap' }}>{c.spentFmt}</span>
+                  <span className="ellipsis" style={{ fontSize: 14, fontWeight: 500 }}>{c.name}</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>{c.spentFmt}</span>
                 </div>
                 {v.isCurrent && c.limit > 0 && <ProgressBar height={5} pct={c.budgetPct} color={c.barColor} />}
               </div>
@@ -101,12 +101,12 @@ export default function Spend() {
                 </div>
                 {g.items.map(t => (
                   <div key={t.id} className="list-row list-row--tap" style={{ padding: '11px 0' }} onClick={() => a.openSheet('tx', { tx: t })}>
-                    <Letter size={40} radius={13} bg={t.bg} color={t.color} fontSize={15}>{t.letter}</Letter>
+                    <CatIcon size={40} icon={t.icon} letter={t.letter} color={t.color} />
                     <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                      <div className="ellipsis" style={{ fontSize: 15, fontWeight: 700 }}>{t.title}</div>
+                      <div className="ellipsis" style={{ fontSize: 15, fontWeight: 500 }}>{t.title}</div>
                       <div className="t-meta ellipsis">{t.metaDay}</div>
                     </div>
-                    <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: 'nowrap' }}>−{t.amountFmt}</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap' }}>−{t.amountFmt}</div>
                   </div>
                 ))}
               </div>
@@ -120,7 +120,7 @@ export default function Spend() {
 function QuickTile({ icon, title, sub, onClick }) {
   return (
     <button type="button" className="quick-tile" onClick={onClick}>
-      <span className="quick-tile__icon" aria-hidden="true">{icon}</span>
+      <span className="quick-tile__icon"><Icon name={icon} size={22} /></span>
       <span className="quick-tile__title">{title}</span>
       <span className="quick-tile__sub">{sub}</span>
     </button>
@@ -132,7 +132,7 @@ function EmptyMonth({ v }) {
   const { a } = useBudget();
   return (
     <div className="card empty-month">
-      <div className="empty-month__icon" aria-hidden="true">📭</div>
+      <div className="empty-month__icon"><Icon name="inbox" size={40} stroke={1.5} /></div>
       {v.isCurrent && v.lastHint && (
         <>
           <div className="empty-month__title">В этом месяце трат пока нет</div>
@@ -168,9 +168,9 @@ export function LimitAlerts({ onOpen, max = 4 }) {
       </div>
       {d.limitAlerts.slice(0, max).map(x => (
         <div key={x.id} className="alert-row">
-          <Letter size={32} radius={10} bg={x.bg} color={x.color} fontSize={13}>{x.letter}</Letter>
-          <div className="ellipsis" style={{ flex: 1, fontSize: 14, fontWeight: 700 }}>{x.name}</div>
-          <div style={{ fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', color: x.over ? 'var(--red)' : 'var(--amber)' }}>{x.short}</div>
+          <CatIcon size={34} icon={x.icon} letter={x.letter} color={x.color} />
+          <div className="ellipsis" style={{ flex: 1, fontSize: 14, fontWeight: 500 }}>{x.name}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', color: x.over ? 'var(--red)' : 'var(--amber)' }}>{x.short}</div>
         </div>
       ))}
     </div>

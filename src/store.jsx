@@ -6,12 +6,12 @@ import { guessCat } from './lib/autoplan.js';
 import { backend } from './backend/index.js';
 import { useNow } from './hooks.js';
 import { tap, success, warn, onAppUrlOpen, getLaunchUrl, enableReminder, disableReminder, syncReminder, shareTextFile, updateWidgets, scheduleBillReminders, isNative } from './native.js';
-import { ACCENT } from './data.js';
 
 const PREFS_KEY = 'planerka.prefs';
 const EMPTY = { txs: [], tasks: [], goals: [], incomes: [] };
-const loadPrefs = () => { try { const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}'); return { dark: !!p.dark, notif: p.notif !== false }; } catch { return { dark: false, notif: true }; } };
-const savePrefs = p => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(p)); } catch { /* ignore */ } };
+// Тема по умолчанию — тёмная «Вечер»; старое поле dark (из прежнего оформления) не учитываем
+const loadPrefs = () => { try { const p = JSON.parse(localStorage.getItem(PREFS_KEY) || '{}'); return { dark: p.theme ? p.theme !== 'light' : true, notif: p.notif !== false }; } catch { return { dark: true, notif: true }; } };
+const savePrefs = p => { try { localStorage.setItem(PREFS_KEY, JSON.stringify({ theme: p.dark ? 'dark' : 'light', notif: p.notif })); } catch { /* ignore */ } };
 // «Load failed» (iPhone), «Failed to fetch» (браузер) — до сервера не достучались: интернет или сервер на паузе
 const NET_RE = /load failed|failed to fetch|networkerror|network request failed|fetch failed/i;
 const errText = e => {
@@ -151,6 +151,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       setPlanOwner: planOwner => update({ planOwner }),
       setSpendCat: spendCat => update({ spendCat }),
       toggleDark: () => update(st => { const dark = !st.dark; savePrefs({ dark, notif: st.notif }); return { dark }; }),
+      setTheme: theme => update(st => { const dark = theme !== 'light'; savePrefs({ dark, notif: st.notif }); return { dark }; }),
       toggleNotif: async () => {
         const next = !stateRef.current.notif;
         if (next) {
@@ -494,12 +495,13 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     const t = setTimeout(() => updateWidgets({
       updatedAt: Date.now(),
       balance: d.balanceFmt, spentPct: Math.min(100, d.spentPct), spent: d.spentFmt, daysLeft: d.daysLeft, perDay: d.perDayLeftFmt,
-      cats: d.widgetCats.map(c => ({ letter: c.letter, name: c.name, spent: c.spentShort, color: c.color, bg: c.bg })),
+      // виджеты всегда тёмные («Вечер»): плашки категорий — тёмные при любой теме приложения
+      cats: d.widgetCats.map(c => ({ letter: c.letter, name: c.name, spent: c.spentShort, color: c.color, bg: '#2A2724' })),
       taskRatio: d.taskRatio, taskPct: d.taskPct, tasks: d.widgetTasks.map(t => ({ name: t.name, done: !!t.done })),
       goal: d.wGoal ? { letter: d.wGoal.letter, name: d.wGoal.name, pct: d.wGoal.pct, saved: d.wGoal.savedShort, target: d.wGoal.targetShort } : null,
       weekTotal: d.weekTotalFmt, weekDelta: d.weekDeltaText,
-      weekBars: d.weekBarsDark.map(b => ({ label: b.label, h: b.h, active: b.color === ACCENT })),
-      txs: d.recentTxs.slice(0, 3).map(t => ({ letter: t.letter, title: t.title, amount: t.amountFmt, color: t.color, bg: t.bg })),
+      weekBars: d.weekBarsDark.map(b => ({ label: b.label, h: b.h, active: b.active })),
+      txs: d.recentTxs.slice(0, 3).map(t => ({ letter: t.letter, title: t.title, amount: t.amountFmt, color: t.color, bg: '#2A2724' })),
     }), 800);
     return () => clearTimeout(t);
   }, [ready, d]);

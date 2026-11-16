@@ -85,7 +85,7 @@ export function planBudget(input, save = 0) {
     return parts.join(' · ');
   };
   const view = r => ({
-    id: r.c.id, name: r.c.name, color: r.c.color, bg: r.c.bg, letter: r.c.letter || (r.c.name.trim()[0] || '?').toUpperCase(),
+    id: r.c.id, name: r.c.name, color: r.c.color, bg: r.c.bg, icon: r.c.icon, letter: r.c.letter || (r.c.name.trim()[0] || '?').toUpperCase(),
     fixed: r.fixed, kept: r.kept, limit: r.limit, limitFmt: fmt(r.limit), prev: r.c.limit || 0,
     prevFmt: r.c.limit ? fmt(r.c.limit) : 'без лимита', changed: r.limit !== (r.c.limit || 0), meta: meta(r),
   });
@@ -93,10 +93,10 @@ export function planBudget(input, save = 0) {
 
   const shareBase = Math.max(income, total + goalsRes);
   const parts = [
-    { id: 'fixed', name: 'Обязательные', value: fixedSum, color: '#7A4AE0' },
-    { id: 'flex', name: 'Повседневные', value: flexSum, color: '#2F5BEA' },
-    { id: 'goals', name: 'В цели', value: goalsRes, color: '#F2A83B' },
-    { id: 'free', name: 'Свободно', value: Math.max(0, free), color: '#2FA66F' },
+    { id: 'fixed', name: 'Обязательные', value: fixedSum, color: '#C99A45' },
+    { id: 'flex', name: 'Повседневные', value: flexSum, color: '#6F9BDB' },
+    { id: 'goals', name: 'В цели', value: goalsRes, color: '#A08AD6' },
+    { id: 'free', name: 'Свободно', value: Math.max(0, free), color: '#4FA77B' },
   ].filter(p => p.value > 0).map(p => ({ ...p, valueFmt: fmt(p.value), share: pct(p.value, shareBase) }));
 
   return {

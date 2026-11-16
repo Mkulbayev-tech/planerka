@@ -5,7 +5,7 @@ import { CAT_PALETTE, CAT_SUGGEST, CAT_ICON_CHOICES, guessIcon, TAGS, TAG_COLORS
 import { pinProblem } from '../auth-profiles.js';
 import { iso, shortDate } from '../lib/dates.js';
 import { Sheet, Field, Chips, PrimaryButton, DangerButton } from './Sheet.jsx';
-import { Letter, PlanBar, Switch } from './ui.jsx';
+import { CatIcon, Icon, PlanBar, Switch } from './ui.jsx';
 import { planBudget, basisText, SAVE_LEVELS, guessCat } from '../lib/autoplan.js';
 import { BILL_SUGGEST } from '../lib/bills.js';
 import { parseKaspiLines, parseCsv, buildImport } from '../lib/statement.js';
@@ -140,12 +140,12 @@ function TxSheet({ tx, onClose }) {
   return (
     <Sheet title="Трата" onClose={onClose}>
       <div className="row" style={{ gap: 12 }}>
-        <Letter size={48} radius={16} bg={tx.bg} color={tx.color} fontSize={18}>{tx.letter}</Letter>
+        <CatIcon size={48} icon={tx.icon} letter={tx.letter} color={tx.color} />
         <div className="col" style={{ flex: 1, gap: 3, minWidth: 0 }}>
-          <div className="ellipsis" style={{ fontSize: 17, fontWeight: 800 }}>{tx.title}</div>
+          <div className="ellipsis" style={{ fontSize: 17, fontWeight: 600 }}>{tx.title}</div>
           <div className="t-meta">{tx.catName} · {tx.methodName} · {tx.dateLabel}{tx.author ? ' · ' + tx.author : ''}</div>
         </div>
-        <div style={{ fontSize: 18, fontWeight: 800, whiteSpace: 'nowrap' }}>−{fmt(tx.amount)}</div>
+        <div style={{ fontSize: 18, fontWeight: 600, whiteSpace: 'nowrap' }}>−{fmt(tx.amount)}</div>
       </div>
       <DangerButton onClick={() => { a.deleteTx(tx.id); onClose(); }}>Удалить трату</DangerButton>
     </Sheet>
@@ -184,7 +184,7 @@ function TopUpSheet({ goal, onClose }) {
           {history.map((t, i) => (
             <div key={i} className="row-between" style={{ fontSize: 13, fontWeight: 600 }}>
               <span className="muted">{shortDate(t.date)}{t.by && d.membersById[t.by] ? ' · ' + d.membersById[t.by] : ''}</span>
-              <span style={{ fontWeight: 800 }}>+{fmt(t.amount)}</span>
+              <span style={{ fontWeight: 600 }}>+{fmt(t.amount)}</span>
             </div>
           ))}
         </div>
@@ -216,7 +216,7 @@ function CategorySheet({ cat, pick, onClose }) {
   return (
     <Sheet title={cat ? 'Категория' : 'Новая категория'} onClose={onClose}>
       <div className="row" style={{ gap: 12, alignItems: 'flex-end' }}>
-        <Letter size={48} radius={16} bg={color[1]} color={color[0]} fontSize={18}>{iconV || (name.trim()[0] || '+').toUpperCase()}</Letter>
+        <CatIcon size={48} icon={iconV} letter={(name.trim()[0] || '+').toUpperCase()} color={color[0]} />
         <Field label="Название" style={{ flex: 1 }}>
           <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Например, кредит" autoFocus={!cat} maxLength={24} enterKeyHint="done" onKeyDown={e => e.key === 'Enter' && save()} />
         </Field>
@@ -226,7 +226,7 @@ function CategorySheet({ cat, pick, onClose }) {
       <Field label={icon ? 'Иконка' : 'Иконка · подобрана по названию'}>
         <div className="icon-pick">
           {CAT_ICON_CHOICES.map(x => (
-            <div key={x} className="icon-pick__item" data-on={x === iconV ? 'true' : 'false'} onClick={() => setIcon(x === icon ? null : x)}>{x}</div>
+            <button type="button" key={x} className="icon-pick__item" data-on={x === iconV ? 'true' : 'false'} onClick={() => setIcon(x === icon ? null : x)} aria-label={x}><Icon name={x} size={20} /></button>
           ))}
         </div>
       </Field>
@@ -309,16 +309,16 @@ function AutoPlanSheet({ onClose }) {
       <div className="col">
         {p.rows.map(r => (
           <div key={r.id} className="plan-row">
-            <Letter size={34} radius={11} bg={r.bg} color={r.color} fontSize={14}>{r.letter}</Letter>
+            <CatIcon size={36} icon={r.icon} letter={r.letter} color={r.color} />
             <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
               <div className="row" style={{ gap: 6, minWidth: 0 }}>
-                <span className="ellipsis" style={{ fontSize: 14, fontWeight: 700 }}>{r.name}</span>
+                <span className="ellipsis" style={{ fontSize: 14, fontWeight: 500 }}>{r.name}</span>
                 {r.fixed && <span className="plan-tag">обязательный</span>}
               </div>
               {r.meta && <div className="t-meta ellipsis">{r.meta}</div>}
             </div>
             <div className="col" style={{ gap: 1, alignItems: 'flex-end' }}>
-              <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap' }}>{r.limitFmt}</div>
+              <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap' }}>{r.limitFmt}</div>
               {r.changed && <div className="plan-row__prev">{r.prevFmt}</div>}
             </div>
           </div>
@@ -327,7 +327,7 @@ function AutoPlanSheet({ onClose }) {
 
       <div className="plan-switch" onClick={() => setOn(v => !v)}>
         <div className="col" style={{ gap: 2 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>Распределять автоматически</div>
+          <div style={{ fontSize: 15, fontWeight: 500 }}>Распределять автоматически</div>
           <div className="t-meta">Каждый период {d.monthStartDay}-го числа лимиты пересчитаются по свежим тратам</div>
         </div>
         <Switch on={on} offBg={offBg} />
@@ -339,7 +339,7 @@ function AutoPlanSheet({ onClose }) {
 }
 
 const OTHER_OPTION = { id: 'other', label: 'Другое' };
-const catOptions = cats => [...cats.map(c => ({ id: c.id, label: c.name, color: c.color, bg: c.bg, letter: c.letter })), OTHER_OPTION];
+const catOptions = cats => [...cats.map(c => ({ id: c.id, label: c.name, color: c.color, icon: c.icon, letter: c.letter })), OTHER_OPTION];
 
 // Регулярный платёж: в свой день месяца сам становится тратой, в 10:00 приходит напоминание
 function BillSheet({ bill, onClose }) {
@@ -435,7 +435,7 @@ function ImportSheet({ onClose }) {
   const pickedInc = incRows.filter(r => r.checked);
   const sumOf = list => list.reduce((x, r) => x + r.amount, 0);
   const catById = Object.fromEntries(d.cats.map(c => [c.id, c]));
-  const catView = id => catById[id] || { name: 'Другое', letter: '📦', color: '#8E8A9C', bg: '#EFEEF3' };
+  const catView = id => catById[id] || { name: 'Другое', icon: 'box', letter: 'Д', color: 'var(--mu)' };
   const go = async () => {
     setSaving(true);
     const ok = await a.importRows([...pickedTx, ...pickedInc]);
@@ -453,7 +453,7 @@ function ImportSheet({ onClose }) {
         {picker}
         <div className="t-meta">Траты из банка попадут в бюджет сами — с категориями, подобранными по названию магазина. Уже внесённые повторно не добавятся.</div>
         <div className="plan-sum">
-          <div style={{ fontSize: 14, fontWeight: 800 }}>Как выгрузить из Kaspi</div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>Как выгрузить из Kaspi</div>
           <div className="t-meta">1. Kaspi.kz → Kaspi Gold → «Выписка»</div>
           <div className="t-meta">2. Выберите период → «Отправить» → «Сохранить в Файлы»</div>
           <div className="t-meta">3. Здесь нажмите «Выбрать файл» и найдите PDF</div>
@@ -474,12 +474,12 @@ function ImportSheet({ onClose }) {
         <div className="imp-row">
           <div className="imp-check" data-on={r.checked ? 'true' : 'false'} onClick={() => toggle(r.id)}>✓</div>
           <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }} onClick={() => toggle(r.id)}>
-            <div className="ellipsis" style={{ fontSize: 14, fontWeight: 700, opacity: r.checked ? 1 : 0.55 }}>{r.title}</div>
+            <div className="ellipsis" style={{ fontSize: 14, fontWeight: 500, opacity: r.checked ? 1 : 0.55 }}>{r.title}</div>
             <div className="t-meta ellipsis">{shortDate(r.date)}{r.op ? ' · ' + r.op : ''}{r.likely ? ' · похоже, уже есть' : ''}</div>
           </div>
           <div className="col" style={{ gap: 4, alignItems: 'flex-end' }}>
-            <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap', color: r.kind === 'income' ? 'var(--green)' : 'var(--tx)' }}>{r.kind === 'income' ? '+' : '−'}{fmt(r.amount)}</div>
-            {c && <div className="imp-cat" style={{ background: c.bg, color: c.color }} onClick={() => setOpenId(openId === r.id ? null : r.id)}>{c.letter} {c.name} ▾</div>}
+            <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', color: r.kind === 'income' ? 'var(--green)' : 'var(--tx)' }}>{r.kind === 'income' ? '+' : '−'}{fmt(r.amount)}</div>
+            {c && <div className="imp-cat" style={{ background: 'var(--ip)', color: c.color }} onClick={() => setOpenId(openId === r.id ? null : r.id)}>{c.name} ▾</div>}
           </div>
         </div>
         {openId === r.id && <div style={{ paddingBottom: 10 }}><Chips options={catOptions(d.cats)} value={r.cat} onChange={v => setCat(r.id, v)} /></div>}
@@ -549,7 +549,7 @@ function SweepSheet({ onClose }) {
       </Field>
       <div className="plan-switch" onClick={() => setOn(v => !v)}>
         <div className="col" style={{ gap: 2 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>Откладывать автоматически</div>
+          <div style={{ fontSize: 15, fontWeight: 500 }}>Откладывать автоматически</div>
           <div className="t-meta">{sw.last ? `Последний раз: ${shortDate(sw.last.date)} · ${sw.lastFmt}` : 'Каждый период'}</div>
         </div>
         <Switch on={on} offBg={offBg} />
@@ -589,7 +589,7 @@ function SettleSheet({ onClose }) {
         <div className="plan-sum__row"><span className="muted">{t.bName}: оплачено</span><b>{t.paidBFmt}</b></div>
         <div className="plan-sum__row plan-sum__row--total">
           {t.settled ? <span>Всё ровно</span> : <span>{t.fromName} → {t.toName}</span>}
-          {!t.settled && <b style={{ color: 'var(--accent)' }}>{t.amountFmt}</b>}
+          {!t.settled && <b style={{ color: 'var(--accent-tx)' }}>{t.amountFmt}</b>}
         </div>
       </div>
       <Field label="Как делим траты">
@@ -602,7 +602,7 @@ function SettleSheet({ onClose }) {
           <div className="field__label">Переводы</div>
           {t.log.map((x, i) => (
             <div key={i} className="row-between" style={{ fontSize: 13, fontWeight: 600 }}>
-              <span className="muted">{x.text}</span><span style={{ fontWeight: 800 }}>{x.amountFmt}</span>
+              <span className="muted">{x.text}</span><span style={{ fontWeight: 600 }}>{x.amountFmt}</span>
             </div>
           ))}
         </div>

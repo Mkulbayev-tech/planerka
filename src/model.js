@@ -1,5 +1,5 @@
 // Производные значения для экранов и виджетов: всё считается от реальных дат и общих данных семьи.
-import { ACCENT, GREEN, RED, AMBER, CATS, OTHER_CAT, allCats, TAGS, TAG_COLORS, THEMES, DEFAULT_SETTINGS, fmt, short, traty } from './data.js';
+import { CATS, OTHER_CAT, allCats, TAGS, TAG_COLORS, THEMES, DEFAULT_SETTINGS, fmt, short, traty, mix } from './data.js';
 import {
   iso, startOfDay, addDays, daysBetween, inRange, parseIso, periodBounds, weekBounds,
   longLabel, dayMonth, dayLabel, shortDate, MONTHS_NOM, MONTHS_CAP, MONTHS_GEN, WEEKDAYS_SHORT,
@@ -24,10 +24,18 @@ export function derive(s, now = new Date()) {
   const startDay = Math.min(28, Math.max(1, Number(settings.monthStartDay) || 5));
   const limits = settings.limits || {};
   // Категории: встроенные + свои (кредит, рассрочка…); лимит 0 — без лимита
-  // letter — иконка категории (🛒, ☕…), а если её нет — первая буква названия
-  const catList = allCats(settings).map(c => ({ ...c, letter: c.icon || (c.name.trim()[0] || '?').toUpperCase(), limit: Number(limits[c.id]) > 0 ? Number(limits[c.id]) : (c.limit || 0) }));
+  // Цвета темы: акцент, приход, расход, внимание (раньше были зашиты фиолетовый, зелёный, красный)
+  const ACCENT = th.ac;
+  const GREEN = th.gr;
+  const RED = th.rd;
+  const AMBER = th.am;
+  // Категория: icon — ключ линейной иконки (cart, cup…), letter — первая буква (для виджетов и без иконки).
+  // В тёмной теме цвет категории светлее; плашки у всех нейтральные (bg = th.ip).
+  const themed = c => ({ ...c, color: dark ? mix(c.color, 0.28) : c.color, bg: th.ip, letter: (c.name.trim()[0] || '?').toUpperCase() });
+  const catList = allCats(settings).map(c => ({ ...themed(c), limit: Number(limits[c.id]) > 0 ? Number(limits[c.id]) : (c.limit || 0) }));
   const catMap = Object.fromEntries(catList.map(c => [c.id, c]));
-  const catOf = id => catMap[id] || OTHER_CAT;
+  const OTHER_ROW = themed(OTHER_CAT);
+  const catOf = id => catMap[id] || OTHER_ROW;
   const visibleCats = catList.filter(c => !c.hidden);
   const members = s.members || [];
   const nameOf = id => { const m = members.find(x => x.user_id === id); return (m && m.display_name) || ''; };
@@ -74,7 +82,6 @@ export function derive(s, now = new Date()) {
   const cashPct = pct(cash, spent);
   const cardPct = spent ? 100 - cashPct : 0;
 
-  const OTHER_ROW = { ...OTHER_CAT, letter: OTHER_CAT.icon };
   // Категории с тратами за список операций list (текущий или просматриваемый прошлый месяц)
   const buildCatStats = (rows, total) => [...catList, OTHER_ROW].map(c => {
     const limit = c.limit;
@@ -106,7 +113,7 @@ export function derive(s, now = new Date()) {
     const who = nameOf(t.created_by);
     const methodName = t.method === 'cash' ? 'наличные' : 'карта';
     return {
-      ...t, letter: c.letter || c.icon || c.name[0], color: c.color, bg: c.bg, catName: c.name, amountFmt: fmt(t.amount), dateLabel: shortDate(t.date), methodName, author: who,
+      ...t, letter: c.letter, icon: c.icon, color: c.color, bg: c.bg, catName: c.name, amountFmt: fmt(t.amount), dateLabel: shortDate(t.date), methodName, author: who,
       meta: `${c.name} · ${methodName} · ${shortDate(t.date)}${who && members.length > 1 ? ' · ' + who : ''}`,
       metaDay: `${c.name} · ${methodName}${who && members.length > 1 ? ' · ' + who : ''}`,
     };
@@ -119,7 +126,7 @@ export function derive(s, now = new Date()) {
     const p = g.target ? Math.min(100, Math.round(g.saved / g.target * 100)) : 0;
     const months = g.per > 0 ? Math.max(0, Math.ceil((g.target - g.saved) / g.per)) : null;
     return {
-      ...g, letter: (g.name || 'Ц').trim()[0].toUpperCase(), pct: p,
+      ...g, color: dark ? mix(g.color || '#B48A35', 0.28) : (g.color || '#B48A35'), bg: th.ip, letter: (g.name || 'Ц').trim()[0].toUpperCase(), pct: p,
       savedFmt: fmt(g.saved), targetFmt: fmt(g.target), savedShort: short(g.saved), targetShort: short(g.target),
       eta: p >= 100 ? 'Цель достигнута' : months === null ? 'Без плана пополнений' : `Ещё ${months} мес · по ${fmt(g.per)} в месяц`,
     };
@@ -144,7 +151,7 @@ export function derive(s, now = new Date()) {
     + sum(data.incomes.filter(x => inRange(x.date, iso(addDays(W.start, -7)), W.startIso)), x => x.amount);
   const weekDelta = prevWeekTotal ? Math.round((weekTotal - prevWeekTotal) / prevWeekTotal * 100) : null;
   const weekDeltaText = weekDelta === null ? 'первая неделя' : `${weekDelta > 0 ? '+' : weekDelta < 0 ? '−' : ''}${Math.abs(weekDelta)}% к прошлой`;
-  const bar = (d, i, dim, dimLabel) => ({ label: d.label, h: Math.max(4, Math.round(d.v / weekMax * 100)), color: i === W.index ? ACCENT : dim, labelColor: i === W.index ? (dimLabel ? '#fff' : th.tx) : (dimLabel || th.mu) });
+  const bar = (d, i, dim, dimLabel) => ({ active: i === W.index, label: d.label, h: Math.max(4, Math.round(d.v / weekMax * 100)), color: i === W.index ? ACCENT : dim, labelColor: i === W.index ? (dimLabel ? '#fff' : th.tx) : (dimLabel || th.mu) });
   const weekBars = weekDays.map((d, i) => bar(d, i, th.ip, null));
   const weekBarsDark = weekDays.map((d, i) => bar(d, i, '#2E2C3A', '#9D9AAA'));
 
@@ -183,14 +190,14 @@ export function derive(s, now = new Date()) {
     const c = t.cat ? catMap[t.cat] || null : null;
     return {
       ...t,
-      color: c ? c.color : ACCENT, bg: c ? c.bg : th.as,
+      color: c ? c.color : th.at, bg: th.ip,
       ownerName: t.owner ? (membersById[t.owner] || '') : '',
       costFmt: t.cost ? fmt(t.cost) : 'без затрат',
       costColor: t.cost ? (t.done ? th.mu : th.tx) : th.mu,
       titleStyle: t.done ? 'line-through' : 'none',
       titleColor: t.done ? th.mu : th.tx,
       boxBg: t.done ? GREEN : 'transparent',
-      boxBorder: t.done ? GREEN : (dark ? '#3A3746' : '#D5D1E0'),
+      boxBorder: t.done ? GREEN : th.off,
       checkOpacity: t.done ? 1 : 0,
     };
   };
@@ -284,7 +291,7 @@ export function derive(s, now = new Date()) {
   };
 
   // Кто сколько потратил (по участникам семьи)
-  const MEMBER_COLORS = [['#7A4AE0', '#EFE9FC'], ['#2FA66F', '#E6F6EE'], ['#F2A83B', '#FDF1DE'], ['#2F5BEA', '#E8EDFD']];
+  const MEMBER_COLORS = [[th.at, th.ip], [th.gr, th.ip], [dark ? '#9DB4FF' : '#3E64B8', th.ip], [th.rd, th.ip]];
   const byMember = list => {
     const total = sum(list, t => t.amount);
     const rows = members.map((m, i) => {
@@ -304,7 +311,7 @@ export function derive(s, now = new Date()) {
   const kpiSpent = sum(kpiTxs, t => t.amount);
   const periodCats = [...catList, OTHER_ROW].map(c => {
     const sp = sum(kpiTxs.filter(t => catOf(t.cat).id === c.id), t => t.amount);
-    return { id: c.id, name: c.name, color: c.color, letter: c.letter, spent: sp, spentShort: short(sp), share: pct(sp, kpiSpent) };
+    return { id: c.id, name: c.name, color: c.color, letter: c.letter, icon: c.icon, spent: sp, spentShort: short(sp), share: pct(sp, kpiSpent) };
   }).filter(c => c.spent > 0).sort((a, b) => b.spent - a.spent);
   let accP = 0;
   const periodDonut = periodCats.length
@@ -382,10 +389,10 @@ export function derive(s, now = new Date()) {
     const c = catOf(b.cat);
     const payer = b.payer ? membersById[b.payer] || '' : '';
     return {
-      ...b, letter: c.letter || c.icon || (b.title.trim()[0] || '?').toUpperCase(), color: c.color, bg: c.bg, catName: c.name, amountFmt: fmt(b.amount),
+      ...b, letter: (b.title.trim()[0] || '?').toUpperCase(), icon: c.icon, color: c.color, bg: c.bg, catName: c.name, amountFmt: fmt(b.amount),
       date, paid, payerName: payer,
       status: !active ? 'со следующего периода' : paid ? 'внесено' : date === todayIso ? 'сегодня' : shortDate(date),
-      statusColor: paid ? GREEN : date === todayIso ? ACCENT : th.mu,
+      statusColor: paid ? GREEN : date === todayIso ? th.at : th.mu,
       meta: `${b.day}-го числа · ${c.name}${payer && members.length > 1 ? ' · ' + payer : ''}`,
     };
   }).sort((a, b) => a.day - b.day);
@@ -419,7 +426,7 @@ export function derive(s, now = new Date()) {
   const limitAlerts = catStats.filter(c => c.limit > 0 && c.spent >= c.limit * 0.8).map(c => {
     const p = Math.round(c.spent / c.limit * 100);
     const over = c.spent > c.limit;
-    return { id: c.id, name: c.name, color: c.color, bg: c.bg, letter: c.letter, pct: p, over, level: over ? 100 : 80,
+    return { id: c.id, name: c.name, color: c.color, bg: c.bg, letter: c.letter, icon: c.icon, pct: p, over, level: over ? 100 : 80,
       text: over ? 'лимит превышен на ' + fmt(c.spent - c.limit) : `${p}% лимита · осталось ${fmt(c.limit - c.spent)}`,
       short: over ? '+' + fmt(c.spent - c.limit) + ' сверх' : `${p}% · осталось ${fmt(c.limit - c.spent)}` };
   }).sort((a, b) => b.pct - a.pct);
@@ -492,6 +499,7 @@ export function derive(s, now = new Date()) {
     // регулярные платежи, лимиты, остаток в цель, расчёты
     billRows, billsDue, billReminders, billsMonthlyFmt: fmt(billsMonthly), billsLeftFmt: fmt(billsLeft), billsLeft,
     limitAlerts, sweep, settle, settleAvailable, settleOn, sv, homeLastHint,
+    nextBill: (() => { const b = billRows.filter(x => x.date && !x.paid && x.status !== 'со следующего периода').sort((p, q) => (p.date < q.date ? -1 : 1))[0]; return b ? { title: b.title, date: dayMonth(parseIso(b.date)), amountFmt: b.amountFmt } : null; })(),
     nextBillText: (() => { const b = billRows.filter(x => x.date && !x.paid && x.status !== 'со следующего периода').sort((p, q) => (p.date < q.date ? -1 : 1))[0]; return b ? shortDate(b.date) + ' · ' + b.title : billRows.length ? 'всё внесено' : 'добавить'; })(),
     periodCats, periodDonut, periodWord: s.period === 'week' ? 'за неделю' : s.period === 'year' ? 'за год' : 'за месяц',
     recentTxs, topTxs, widgetTxs: recentTxs.slice(0, 2), txCount: txs.length,
@@ -522,8 +530,8 @@ export function derive(s, now = new Date()) {
     amountColor: amountNum ? th.tx : th.mu,
     pickedCatName: picked.name, catAuto: !!s.catAuto,
     methodName: s.method === 'cash' ? 'наличные' : 'карта',
-    cardPillBg: s.method === 'card' ? ACCENT : th.cd, cardPillFg: s.method === 'card' ? '#fff' : th.mu,
-    cashPillBg: s.method === 'cash' ? ACCENT : th.cd, cashPillFg: s.method === 'cash' ? '#fff' : th.mu,
-    submitBg: amountNum ? ACCENT : (dark ? '#3A3746' : '#CFCBDB'),
+    cardPillBg: s.method === 'card' ? ACCENT : th.cd, cardPillFg: s.method === 'card' ? th.on : th.mu,
+    cashPillBg: s.method === 'cash' ? ACCENT : th.cd, cashPillFg: s.method === 'cash' ? th.on : th.mu,
+    submitBg: amountNum ? ACCENT : th.off, submitFg: amountNum ? th.on : th.mu,
   };
 }

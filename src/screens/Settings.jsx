@@ -7,7 +7,7 @@ const widgetsText = n => (n === 0 ? 'не добавлены' : n % 10 === 1 && 
 
 export default function Settings() {
   const { s, d, a, mode } = useBudget();
-  const offBg = d.dark ? '#3A3746' : '#D9D6E3';
+  const offBg = 'var(--off)';
   // Число виджетов спрашиваем у iOS; в браузере и на Android строку не показываем
   const [widgets, setWidgets] = useState(null);
   useEffect(() => {
@@ -23,7 +23,7 @@ export default function Settings() {
       <div className="t-title">Ещё</div>
 
       <div className="card card--profile">
-        <Letter size={52} radius="50%" bg="var(--accent)" color="#fff" fontSize={20}>{d.greetingName[0].toUpperCase()}</Letter>
+        <Letter size={52} radius="50%" bg="var(--accent)" color="var(--on-accent)" fontSize={20}>{d.greetingName[0].toUpperCase()}</Letter>
         <div className="col" style={{ gap: 2, minWidth: 0 }}>
           <div className="t-card ellipsis">{d.greetingName}</div>
           <div className="t-sub ellipsis" style={{ fontWeight: 600 }}>{d.householdName || 'Личный бюджет'} · ₸ KZT</div>
@@ -34,7 +34,7 @@ export default function Settings() {
         <div className="card card--menu">
           <div className="menu-row menu-row--link" onClick={a.copyInvite}>
             <span className="menu-row__title">Код приглашения</span>
-            <span className="menu-row__value" style={{ color: 'var(--accent)', letterSpacing: 2 }}>{d.inviteCode || '—'}</span>
+            <span className="menu-row__value" style={{ color: 'var(--accent-tx)', letterSpacing: 2 }}>{d.inviteCode || '—'}</span>
           </div>
           <div className="menu-row"><span className="menu-row__title">Участники</span><span className="menu-row__value">{d.membersCount}</span></div>
         </div>
@@ -61,9 +61,12 @@ export default function Settings() {
       </div>
 
       <div className="card card--menu">
-        <div className="menu-row menu-row--switch" onClick={a.toggleDark}>
-          <span className="menu-row__title">Тёмная тема</span>
-          <Switch on={d.dark} offBg={offBg} />
+        <div className="menu-row">
+          <span className="menu-row__title">Тема</span>
+          <div className="theme-seg" role="group" aria-label="Тема">
+            <button type="button" aria-pressed={d.dark ? 'true' : 'false'} onClick={() => a.setTheme('dark')}>Тёмная</button>
+            <button type="button" aria-pressed={d.dark ? 'false' : 'true'} onClick={() => a.setTheme('light')}>Светлая</button>
+          </div>
         </div>
         <div className="menu-row menu-row--switch" onClick={a.toggleNotif}>
           <span className="menu-row__title">Напоминать вносить траты</span>

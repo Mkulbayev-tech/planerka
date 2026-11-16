@@ -26,7 +26,8 @@ const SCREENS = {
 
 export const themeVars = th => ({
   '--bg': th.bg, '--cd': th.cd, '--tx': th.tx, '--mu': th.mu,
-  '--ln': th.ln, '--as': th.as, '--ip': th.ip, '--sh': th.sh,
+  '--ln': th.ln, '--as': th.as, '--ip': th.ip, '--sh': th.sh, '--bd': th.bd, '--bar': th.bar, '--off': th.off,
+  '--accent': th.ac, '--accent-tx': th.at, '--on-accent': th.on, '--green': th.gr, '--red': th.rd, '--amber': th.am,
 });
 
 export function Phone({ mobile = false }) {
@@ -51,7 +52,8 @@ function Stage() {
   const desktop = wide && !isNative;
   const { s, d, a } = useBudget();
 
-  useEffect(() => { syncStatusBar(d.dark); }, [d.dark]);
+  // Цвет за пределами приложения (отскок прокрутки на iPhone, полосы по краям) — как фон темы
+  useEffect(() => { syncStatusBar(d.dark); document.documentElement.style.background = d.th.bg; document.body.style.background = d.th.bg; }, [d.dark, d.th.bg]);
   useEffect(() => { if (s.auth !== 'loading') hideSplash(); }, [s.auth]);
   useEffect(() => { const t = setTimeout(hideSplash, 4000); initKeyboard(); return () => clearTimeout(t); }, []);
   useEffect(() => onBackButton(() => { if (!a.back()) exitApp(); }), [a]);

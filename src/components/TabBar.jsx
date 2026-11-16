@@ -10,7 +10,7 @@ const TABS = {
 
 export default function TabBar() {
   const { s, a } = useBudget();
-  const color = tab => (TABS[tab].includes(s.screen) ? 'var(--accent)' : 'var(--mu)');
+  const color = tab => (TABS[tab].includes(s.screen) ? 'var(--accent-tx)' : 'var(--mu)');
   return (
     <div className="tabbar">
       <div className="tab" style={{ color: color('home') }} onClick={() => a.go('home')}>

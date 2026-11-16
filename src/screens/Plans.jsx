@@ -6,7 +6,7 @@ import { Letter, Checkbox, ProgressBar } from '../components/ui.jsx';
 export default function Plans() {
   const { d, a } = useBudget();
   const p = d.plan;
-  const seg = id => ({ background: p.ownerId === id ? 'var(--accent)' : 'transparent', color: p.ownerId === id ? '#fff' : 'var(--mu)' });
+  const seg = id => ({ background: p.ownerId === id ? 'var(--accent)' : 'transparent', color: p.ownerId === id ? 'var(--on-accent)' : 'var(--mu)' });
   return (
     <div className="screen">
       <div className="row-between">
@@ -26,7 +26,7 @@ export default function Plans() {
       <div className="card" style={{ gap: 10, padding: '12px 10px 10px' }}>
         <div className="row-between" style={{ padding: '0 4px' }}>
           <div className="strip-nav" onClick={() => a.shiftPlanWeek(-1)}>‹</div>
-          <div style={{ fontSize: 13, fontWeight: 800 }}>{p.weekLabel}</div>
+          <div style={{ fontSize: 13, fontWeight: 600 }}>{p.weekLabel}</div>
           <div className="strip-nav" onClick={() => a.shiftPlanWeek(1)}>›</div>
         </div>
         <div className="strip">
@@ -43,7 +43,7 @@ export default function Plans() {
 
       <div className="section-head">
         <div className="t-card">Задачи на {p.isToday ? 'сегодня' : p.dateShort}</div>
-        {p.total > 0 && <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--green)', whiteSpace: 'nowrap' }}>{p.done} из {p.total}</div>}
+        {p.total > 0 && <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--green)', whiteSpace: 'nowrap' }}>{p.done} из {p.total}</div>}
       </div>
       <div className="card card--list">
         {p.total > 0 && <div style={{ padding: '12px 0 6px' }}><ProgressBar height={6} pct={p.pct} color="var(--green)" transition /></div>}
@@ -63,7 +63,7 @@ export default function Plans() {
       {d.goals.length > 0 && (
         <div className="card list-row--tap" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: '14px 16px' }} onClick={() => a.openSheet('sweep')}>
           <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>Остаток месяца {d.sweep.on ? '→ ' + d.sweep.goalName : 'в цель'}</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>Остаток месяца {d.sweep.on ? '→ ' + d.sweep.goalName : 'в цель'}</div>
             <div className="t-meta ellipsis">{d.sweep.on
               ? (d.sweep.last ? `Последний раз ${d.sweep.lastFmt}` : `Каждое ${d.monthStartDay}-е число — то, что не потратили`)
               : 'Что не потратили за месяц — само уйдёт в цель'}</div>
@@ -79,15 +79,15 @@ export default function Plans() {
           <div className="row list-row--tap" style={{ gap: 12 }} onClick={() => a.openSheet('goal', { goal: g })}>
             <Letter size={40} radius={13} bg={g.bg} color={g.color} fontSize={15}>{g.letter}</Letter>
             <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-              <div className="ellipsis" style={{ fontSize: 15, fontWeight: 800 }}>{g.name}</div>
+              <div className="ellipsis" style={{ fontSize: 15, fontWeight: 600 }}>{g.name}</div>
               <div className="t-meta">{g.savedFmt} из {g.targetFmt}</div>
             </div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: g.color }}>{g.pct}%</div>
+            <div style={{ fontSize: 17, fontWeight: 600, color: g.color }}>{g.pct}%</div>
           </div>
           <ProgressBar height={8} pct={g.pct} color={g.color} transition />
           <div className="row-between" style={{ gap: 10 }}>
             <div className="t-meta ellipsis">{g.eta}</div>
-            <div className="pill" style={{ padding: '7px 12px', fontWeight: 800, background: g.bg, color: g.color, whiteSpace: 'nowrap', flex: 'none' }} onClick={() => a.openSheet('topup', { goal: g })}>+ Пополнить</div>
+            <div className="pill" style={{ padding: '7px 12px', fontWeight: 600, background: g.bg, color: g.color, whiteSpace: 'nowrap', flex: 'none' }} onClick={() => a.openSheet('topup', { goal: g })}>+ Пополнить</div>
           </div>
         </div>
       ))}
@@ -102,13 +102,13 @@ function TaskRow({ t, showOwner }) {
     <div className="list-row list-row--tap pressable" {...press}>
       <Checkbox size={24} radius={8} icon={13} done={t.done} border={t.boxBorder} />
       <div className="col" style={{ flex: 1, gap: 3, minWidth: 0 }}>
-        <div className="ellipsis" style={{ fontSize: 15, fontWeight: 700, textDecoration: t.titleStyle, color: t.titleColor }}>{t.name}</div>
+        <div className="ellipsis" style={{ fontSize: 15, fontWeight: 500, textDecoration: t.titleStyle, color: t.titleColor }}>{t.name}</div>
         <div className="row" style={{ gap: 6 }}>
           <div className="tag" style={{ background: t.bg, color: t.color }}>{t.tag}</div>
           <div className="t-meta" style={{ whiteSpace: 'nowrap' }}>{t.time}{showOwner && t.ownerName ? ' · ' + t.ownerName : ''}{showOwner && !t.owner ? ' · общая' : ''}</div>
         </div>
       </div>
-      <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap', color: t.costColor }}>{t.costFmt}</div>
+      <div style={{ fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', color: t.costColor }}>{t.costFmt}</div>
     </div>
   );
 }

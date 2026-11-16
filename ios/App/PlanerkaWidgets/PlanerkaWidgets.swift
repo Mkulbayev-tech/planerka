@@ -42,10 +42,13 @@ struct LetterBadge: View {
     }
 }
 
-let accent = Color(hex: "#7A4AE0")
-let green = Color(hex: "#2FA66F")
-let darkCard = Color(hex: "#1C1A26")
-let mutedDark = Color(hex: "#9D9AAA")
+// Палитра «Вечер»: тёмный графит, золото, приглушённый зелёный — как в приложении
+let accent = Color(hex: "#E3B65C")
+let green = Color(hex: "#8FC9A3")
+let darkCard = Color(hex: "#201E1C")
+let mutedDark = Color(hex: "#A39C90")
+let sand = Color(hex: "#F2EDE4")
+let lineDark = Color(hex: "#2E2B28")
 
 // ---------- Бюджет (средний) ----------
 struct BudgetView: View {
@@ -55,14 +58,14 @@ struct BudgetView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Остаток до зарплаты").font(.system(size: 11, weight: .bold)).opacity(0.8)
-                    Text(d.balance).font(.system(size: 26, weight: .heavy)).lineLimit(1).minimumScaleFactor(0.6)
+                    Text(d.balance).font(.system(size: 26, weight: .heavy)).foregroundStyle(accent).lineLimit(1).minimumScaleFactor(0.6)
                 }
                 Spacer(minLength: 4)
-                Text("₸").font(.system(size: 13, weight: .heavy))
-                    .frame(width: 28, height: 28).background(Color.white.opacity(0.2))
+                Text("₸").font(.system(size: 13, weight: .heavy)).foregroundStyle(accent)
+                    .frame(width: 28, height: 28).background(accent.opacity(0.15))
                     .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
             }
-            Bar(pct: d.spentPct, track: .white.opacity(0.22), fill: .white)
+            Bar(pct: d.spentPct, track: lineDark, fill: accent)
             HStack {
                 Text("Потрачено \(d.spent)")
                 Spacer()
@@ -80,12 +83,12 @@ struct BudgetView: View {
                     }
                     .padding(.horizontal, 8).padding(.vertical, 6)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white.opacity(0.14))
+                    .background(Color(hex: "#2A2724"))
                     .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                 }
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(sand)
         .padding(14)
     }
 }
@@ -95,7 +98,7 @@ struct BudgetWidget: Widget {
         StaticConfiguration(kind: "PlanerkaBudget", provider: Provider()) { entry in
             BudgetView(d: entry.data)
                 .containerBackground(for: .widget) {
-                    LinearGradient(colors: [Color(hex: "#9A6BF5"), Color(hex: "#7A4AE0"), Color(hex: "#5F35C4")], startPoint: .topTrailing, endPoint: .bottomLeading)
+                    darkCard
                 }
         }
         .configurationDisplayName("Бюджет")
@@ -113,10 +116,10 @@ struct PlanView: View {
             HStack {
                 Text("План дня").font(.system(size: 11, weight: .bold)).foregroundStyle(mutedDark)
                 Spacer()
-                Text(d.taskRatio).font(.system(size: 11, weight: .heavy)).foregroundStyle(Color(hex: "#7EE2B0"))
+                Text(d.taskRatio).font(.system(size: 11, weight: .heavy)).foregroundStyle(green)
             }
             if d.tasks.isEmpty {
-                Text("Задач на сегодня нет").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: "#7B7889"))
+                Text("Задач на сегодня нет").font(.system(size: 11, weight: .bold)).foregroundStyle(mutedDark)
             }
             ForEach(Array(d.tasks.prefix(4).enumerated()), id: \.offset) { _, t in
                 HStack(spacing: 7) {
@@ -124,16 +127,16 @@ struct PlanView: View {
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
                             .fill(t.done ? green : Color.clear)
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
-                            .stroke(t.done ? green : Color(hex: "#3A3746"), lineWidth: 1.5)
-                        if t.done { Image(systemName: "checkmark").font(.system(size: 8, weight: .heavy)).foregroundStyle(.white) }
+                            .stroke(t.done ? green : Color(hex: "#3A3631"), lineWidth: 1.5)
+                        if t.done { Image(systemName: "checkmark").font(.system(size: 8, weight: .heavy)).foregroundStyle(Color(hex: "#151413")) }
                     }
                     .frame(width: 14, height: 14)
                     Text(t.name).font(.system(size: 11, weight: .bold)).lineLimit(1)
-                        .strikethrough(t.done).foregroundStyle(t.done ? Color(hex: "#7B7889") : .white)
+                        .strikethrough(t.done).foregroundStyle(t.done ? mutedDark : .white)
                 }
             }
             Spacer(minLength: 0)
-            Bar(pct: d.taskPct, track: Color(hex: "#2A2833"), fill: green, height: 5)
+            Bar(pct: d.taskPct, track: lineDark, fill: green, height: 5)
         }
         .padding(14)
     }
@@ -155,7 +158,7 @@ struct PlanWidget: Widget {
 struct GoalView: View {
     let d: WidgetData
     var body: some View {
-        let ink = Color(hex: "#3A2600")
+        let ink = Color(hex: "#151413")
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text("Цель").font(.system(size: 11, weight: .heavy))
@@ -181,7 +184,7 @@ struct GoalWidget: Widget {
         StaticConfiguration(kind: "PlanerkaGoal", provider: Provider()) { entry in
             GoalView(d: entry.data)
                 .containerBackground(for: .widget) {
-                    LinearGradient(colors: [Color(hex: "#FFC46A"), Color(hex: "#F2A83B")], startPoint: .topTrailing, endPoint: .bottomLeading)
+                    LinearGradient(colors: [Color(hex: "#EBC679"), Color(hex: "#E3B65C")], startPoint: .topTrailing, endPoint: .bottomLeading)
                 }
         }
         .configurationDisplayName("Накопления")
@@ -203,8 +206,8 @@ struct WeekView: View {
                 }
                 Spacer()
                 if !d.weekDelta.isEmpty {
-                    Text(d.weekDelta).font(.system(size: 10, weight: .heavy)).foregroundStyle(Color(hex: "#C9B5FF"))
-                        .padding(.horizontal, 8).padding(.vertical, 4).background(Color(hex: "#2A2145"))
+                    Text(d.weekDelta).font(.system(size: 10, weight: .heavy)).foregroundStyle(accent)
+                        .padding(.horizontal, 8).padding(.vertical, 4).background(Color(hex: "#2E2817"))
                         .clipShape(Capsule())
                 }
             }
@@ -214,7 +217,7 @@ struct WeekView: View {
                         GeometryReader { g in
                             VStack { Spacer(minLength: 0)
                                 RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                    .fill(b.active ? accent : Color(hex: "#2E2C3A"))
+                                    .fill(b.active ? accent : lineDark)
                                     .frame(height: max(3, g.size.height * CGFloat(b.h) / 100))
                             }
                         }
@@ -223,9 +226,9 @@ struct WeekView: View {
                 }
             }
             .frame(height: 64)
-            Rectangle().fill(Color(hex: "#2A2833")).frame(height: 1)
+            Rectangle().fill(lineDark).frame(height: 1)
             if d.txs.isEmpty {
-                Text("Трат пока нет").font(.system(size: 11, weight: .bold)).foregroundStyle(Color(hex: "#7B7889"))
+                Text("Трат пока нет").font(.system(size: 11, weight: .bold)).foregroundStyle(mutedDark)
             }
             ForEach(Array(d.txs.prefix(3).enumerated()), id: \.offset) { _, t in
                 HStack(spacing: 8) {

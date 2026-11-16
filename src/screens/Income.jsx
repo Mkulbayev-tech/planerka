@@ -7,14 +7,12 @@ export default function Income() {
     <div className="screen">
       <BackHead onBack={() => a.go('home')} title="Доходы" />
 
-      <div className="hero hero--green">
-        <div className="col" style={{ gap: 6 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.8 }}>Доход за {d.monthName}</div>
-          <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: -1.2, lineHeight: 1 }}>{d.incomeFmt}</div>
-        </div>
-        <div className="row-between" style={{ fontSize: 13, fontWeight: 700 }}>
-          <span style={{ opacity: 0.85 }}>Среднее за 6 мес · {d.avg6Fmt}</span>
-          {d.incomeDeltaText && <span style={{ background: 'rgba(255,255,255,0.18)', padding: '4px 10px', borderRadius: 99 }}>{d.incomeDeltaText}</span>}
+      <div className="hero">
+        <div className="hero__label">Доход за {d.monthName}</div>
+        <div className="hero__value" style={{ color: 'var(--green)' }}>{d.incomeFmt}</div>
+        <div className="row-between" style={{ fontSize: 14 }}>
+          <span style={{ color: 'var(--mu)' }}>Среднее за 6 мес · {d.avg6Fmt}</span>
+          {d.incomeDeltaText && <span style={{ background: 'var(--ip)', padding: '4px 10px', borderRadius: 99, fontWeight: 500 }}>{d.incomeDeltaText}</span>}
         </div>
       </div>
 
@@ -23,18 +21,18 @@ export default function Income() {
         {d.incomeRows.map(i => (
           <div key={i.id} className="list-row list-row--tap"
             onClick={() => (i.kind === 'salary' ? a.openSheet('salary', { value: d.salary }) : a.openSheet('income', { income: i }))}>
-            <Letter size={42} radius={14} bg="#E6F6EE" color="#2FA66F" fontSize={16}>{i.letter}</Letter>
+            <Letter size={42} radius="50%" bg="var(--ip)" color="var(--green)" fontSize={16}>{i.letter}</Letter>
             <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-              <div className="ellipsis" style={{ fontSize: 15, fontWeight: 700 }}>{i.name}</div>
+              <div className="ellipsis" style={{ fontSize: 15, fontWeight: 500 }}>{i.name}</div>
               <div className="t-meta">{i.meta}</div>
             </div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--green)', whiteSpace: 'nowrap' }}>+{i.amountFmt}</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--green)', whiteSpace: 'nowrap' }}>+{i.amountFmt}</div>
           </div>
         ))}
       </div>
 
       <div className="card" style={{ gap: 12 }}>
-        <div style={{ fontSize: 15, fontWeight: 800 }}>Зарплата — регулярно</div>
+        <div style={{ fontSize: 15, fontWeight: 600 }}>Зарплата — регулярно</div>
         <div className="row-between list-row--tap" style={{ fontSize: 14, fontWeight: 600 }} onClick={() => a.openSheet('salary', { value: d.salary })}>
           <span className="muted">Сумма в месяц</span><span>{d.salary ? d.salaryFmt : 'указать'} ›</span>
         </div>

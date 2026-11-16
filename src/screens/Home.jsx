@@ -1,44 +1,48 @@
 import { useBudget } from '../store.jsx';
-import { Ring, PairBars, Letter, Donut } from '../components/ui.jsx';
+import { PairBars, Letter, ProgressBar } from '../components/ui.jsx';
 import { LimitAlerts } from './Spend.jsx';
 
 // Аналитика: сколько можно тратить до зарплаты и куда уходят деньги за выбранный период.
 export default function Home() {
   const { s, d, a } = useBudget();
-  const seg = p => ({ background: s.period === p ? 'var(--accent)' : 'transparent', color: s.period === p ? '#fff' : 'var(--mu)' });
+  const seg = p => ({ background: s.period === p ? 'var(--accent)' : 'transparent', color: s.period === p ? 'var(--on-accent)' : 'var(--mu)' });
   const top = d.periodCats[0];
   return (
     <div className="screen">
       <div className="row-between" style={{ gap: 12 }}>
         <div className="col" style={{ gap: 2, minWidth: 0 }}>
           <div className="t-eyebrow ellipsis">{d.todayLabel}</div>
-          <div className="t-title ellipsis">Привет, {d.greetingName} 👋</div>
+          <div className="t-title ellipsis">Наш бюджет</div>
         </div>
         <div className="avatar-btn" style={{ flex: 'none' }} onClick={() => a.go('settings')}>{d.greetingName[0].toUpperCase()}</div>
       </div>
 
-      <div className="hero hero--purple">
-        <div className="row-between" style={{ alignItems: 'flex-start' }}>
-          <div className="col" style={{ gap: 6 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, opacity: 0.75 }}>Можно потратить до {d.periodEndLabel}</div>
-            <div style={{ fontSize: 40, fontWeight: 800, letterSpacing: -1.4, lineHeight: 1 }}>{d.balanceFmt}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, opacity: 0.85 }}>≈ {d.perDayLeftFmt} в день · {d.daysLeft} дней</div>
-          </div>
-          <Ring size={76} r={31} width={9} pct={d.spentPct} track="rgba(255,255,255,0.22)" color="#fff">
-            <span style={{ fontSize: 15, fontWeight: 800 }}>{d.spentPct}%</span>
-          </Ring>
-        </div>
-        <div className="row" style={{ gap: 10 }}>
-          <div className="hero-tile" onClick={() => a.go('income')}>
-            <div className="hero-tile__label"><span className="dot" style={{ background: '#7EE2B0' }} />Доходы</div>
-            <div className="hero-tile__value">{d.incomeFmt}</div>
-          </div>
-          <div className="hero-tile" onClick={() => a.go('spend')}>
-            <div className="hero-tile__label"><span className="dot" style={{ background: '#FFB4A4' }} />Расходы</div>
-            <div className="hero-tile__value">{d.spentFmt}</div>
-          </div>
+      <div className="hero">
+        <div className="hero__label">Можно потратить до {d.periodEndLabel}</div>
+        <div className="hero__value">{d.balanceFmt}</div>
+        <div className="hero__sub">≈ {d.perDayLeftFmt} в день · ещё {d.daysLeft} дн.</div>
+        <ProgressBar height={4} pct={d.spentPct} color="var(--accent)" track="var(--ln)" />
+        <div className="hero-split">
+          <button type="button" className="hero-tile" onClick={() => a.go('income')}>
+            <span className="hero-tile__label">Пришло</span>
+            <span className="hero-tile__value" style={{ color: 'var(--green)' }}>+{d.incomeFmt}</span>
+          </button>
+          <button type="button" className="hero-tile" onClick={() => a.go('spend')}>
+            <span className="hero-tile__label">Потрачено</span>
+            <span className="hero-tile__value" style={{ color: 'var(--red)' }}>−{d.spentFmt}</span>
+          </button>
         </div>
       </div>
+
+      {d.nextBill && (
+        <div className="card list-row--tap" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px' }} onClick={() => a.go('bills')}>
+          <div className="col" style={{ gap: 2, minWidth: 0 }}>
+            <span className="t-meta">Скоро платёж, {d.nextBill.date}</span>
+            <span className="ellipsis" style={{ fontSize: 15, fontWeight: 600 }}>{d.nextBill.title}</span>
+          </div>
+          <span style={{ fontSize: 16, fontWeight: 600, whiteSpace: 'nowrap' }}>{d.nextBill.amountFmt}</span>
+        </div>
+      )}
 
       {d.limitAlerts.length > 0 && <LimitAlerts onOpen={() => a.go('spend')} max={3} />}
 
@@ -71,7 +75,7 @@ export default function Home() {
             <div className="t-card">Куда уходят деньги</div>
             <div className="t-meta">{d.periodWord}</div>
           </div>
-          <div className="t-link" onClick={() => a.go('spend')}>Все траты →</div>
+          <div className="t-link" onClick={() => a.go('spend')}>Все траты</div>
         </div>
         {!top && s.period === 'month' && d.homeLastHint && (
           <div className="col" style={{ gap: 8, alignItems: 'flex-start' }}>
@@ -81,17 +85,17 @@ export default function Home() {
         )}
         {!top && !(s.period === 'month' && d.homeLastHint) && <div className="empty">Трат за этот период нет</div>}
         {top && (
-          <div className="row" style={{ gap: 18 }}>
-            <Donut size={104} inset={16} bg={d.periodDonut} gap={0}>
-              <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3 }}>{top.share}%</div>
-              <div className="ellipsis" style={{ fontSize: 10, fontWeight: 700, color: 'var(--mu)', maxWidth: 62 }}>{top.name}</div>
-            </Donut>
-            <div className="col" style={{ flex: 1, gap: 9, minWidth: 0 }}>
+          <div className="col" style={{ gap: 12 }}>
+            <div className="bar-split" aria-hidden="true">
+              {d.periodCats.map(c => <div key={c.id} style={{ flex: Math.max(c.spent, 1), background: c.color }} />)}
+            </div>
+            <div className="col" style={{ gap: 11, minWidth: 0 }}>
               {d.periodCats.slice(0, 5).map(c => (
-                <div key={c.id} className="row" style={{ gap: 8 }}>
-                  <span className="dot9" style={{ background: c.color }} />
-                  <div className="ellipsis" style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>{c.name}</div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--mu)', whiteSpace: 'nowrap' }}>{c.spentShort}</div>
+                <div key={c.id} className="row" style={{ gap: 10 }}>
+                  <span className="dot9" style={{ background: c.color, width: 10, height: 10 }} />
+                  <div className="ellipsis" style={{ flex: 1, fontSize: 15 }}>{c.name}</div>
+                  <div style={{ fontSize: 13, color: 'var(--mu)', whiteSpace: 'nowrap' }}>{c.share}%</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap', width: 96, textAlign: 'right' }}>{c.spentShort}</div>
                 </div>
               ))}
             </div>
@@ -113,10 +117,10 @@ export default function Home() {
             <div key={m.id} className="row" style={{ gap: 12 }}>
               <Letter size={36} radius="50%" bg={m.bg} color={m.color} fontSize={14}>{m.letter}</Letter>
               <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 700 }}>{m.name}</div>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>{m.name}</div>
                 <div className="t-meta">{m.count} операций · {m.share}%</div>
               </div>
-              <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: 'nowrap' }}>{m.spentFmt}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap' }}>{m.spentFmt}</div>
             </div>
           ))}
           {d.settle && <SettleRow />}
@@ -140,8 +144,8 @@ function KpiRow({ label, value, sub, color }) {
     <div className="kpi-row">
       <div className="t-sub">{label}</div>
       <div className="col" style={{ alignItems: 'flex-end', gap: 1 }}>
-        <div style={{ fontSize: 16, fontWeight: 800, whiteSpace: 'nowrap' }}>{value}</div>
-        <div style={{ fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', color: color || 'var(--mu)' }}>{sub}</div>
+        <div style={{ fontSize: 16, fontWeight: 600, whiteSpace: 'nowrap' }}>{value}</div>
+        <div style={{ fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap', color: color || 'var(--mu)' }}>{sub}</div>
       </div>
     </div>
   );
@@ -151,7 +155,7 @@ function Stat({ label, value }) {
   return (
     <div className="col" style={{ flex: 1, gap: 3 }}>
       <div className="tile__label">{label}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, whiteSpace: 'nowrap' }}>{value}</div>
+      <div style={{ fontSize: 17, fontWeight: 600, whiteSpace: 'nowrap' }}>{value}</div>
     </div>
   );
 }
@@ -163,11 +167,11 @@ function SettleRow({ first = false }) {
   return (
     <div className="row-between list-row--tap" style={first ? { gap: 10 } : { borderTop: '1px solid var(--ln)', paddingTop: 12, gap: 10 }} onClick={() => a.openSheet('settle')}>
       <div className="col" style={{ gap: 2, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 700 }}>{t.settled ? 'Расчёт: всё ровно' : `${t.fromName} → ${t.toName}`}</div>
+        <div style={{ fontSize: 14, fontWeight: 500 }}>{t.settled ? 'Расчёт: всё ровно' : `${t.fromName} → ${t.toName}`}</div>
         <div className="t-meta">С {t.sinceLabel}, делим {t.splitLabel}</div>
       </div>
       <div className="row" style={{ gap: 6 }}>
-        {!t.settled && <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--accent)', whiteSpace: 'nowrap' }}>{t.amountFmt}</div>}
+        {!t.settled && <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--accent-tx)', whiteSpace: 'nowrap' }}>{t.amountFmt}</div>}
         <div className="t-link">›</div>
       </div>
     </div>
