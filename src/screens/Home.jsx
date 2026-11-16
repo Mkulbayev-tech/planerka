@@ -1,16 +1,19 @@
 import { useBudget } from '../store.jsx';
-import { Ring, BarChart, Letter, Checkbox, ProgressBar } from '../components/ui.jsx';
+import { Ring, PairBars, Letter, Donut } from '../components/ui.jsx';
 
+// Аналитика: сколько можно тратить до зарплаты и куда уходят деньги за выбранный период.
 export default function Home() {
-  const { d, a } = useBudget();
+  const { s, d, a } = useBudget();
+  const seg = p => ({ background: s.period === p ? 'var(--accent)' : 'transparent', color: s.period === p ? '#fff' : 'var(--mu)' });
+  const top = d.periodCats[0];
   return (
     <div className="screen">
-      <div className="row-between">
-        <div className="col" style={{ gap: 2 }}>
-          <div className="t-eyebrow">{d.todayLabel}</div>
-          <div className="t-title">Привет, {d.greetingName}</div>
+      <div className="row-between" style={{ gap: 12 }}>
+        <div className="col" style={{ gap: 2, minWidth: 0 }}>
+          <div className="t-eyebrow ellipsis">Привет, {d.greetingName} · {d.todayLabel}</div>
+          <div className="t-title">Аналитика</div>
         </div>
-        <div className="avatar-btn" onClick={() => a.go('settings')}>{d.greetingName[0].toUpperCase()}</div>
+        <div className="avatar-btn" style={{ flex: 'none' }} onClick={() => a.go('settings')}>{d.greetingName[0].toUpperCase()}</div>
       </div>
 
       <div className="hero hero--purple">
@@ -29,33 +32,70 @@ export default function Home() {
             <div className="hero-tile__label"><span className="dot" style={{ background: '#7EE2B0' }} />Доходы</div>
             <div className="hero-tile__value">{d.incomeFmt}</div>
           </div>
-          <div className="hero-tile" onClick={() => a.go('cats')}>
+          <div className="hero-tile" onClick={() => a.go('spend')}>
             <div className="hero-tile__label"><span className="dot" style={{ background: '#FFB4A4' }} />Расходы</div>
             <div className="hero-tile__value">{d.spentFmt}</div>
           </div>
         </div>
       </div>
 
-      <div className="card" style={{ padding: '18px 18px 14px' }}>
-        <div className="row-between" style={{ alignItems: 'baseline' }}>
-          <div className="t-card">Эта неделя</div>
-          <div className="t-sub">{d.weekTotalFmt}</div>
-        </div>
-        <BarChart items={d.weekBars} height={72} />
+      <div className="seg">
+        <div className="seg__item" style={seg('week')} onClick={() => a.setPeriod('week')}>Неделя</div>
+        <div className="seg__item" style={seg('month')} onClick={() => a.setPeriod('month')}>Месяц</div>
+        <div className="seg__item" style={seg('year')} onClick={() => a.setPeriod('year')}>Год</div>
       </div>
 
-      <div className="row" style={{ gap: 12 }}>
-        <WalletCard label="Наличные" value={d.cashFmt} pct={d.cashPct} count={d.cashCount} color="var(--green)" kind="cash" />
-        <WalletCard label="Карта" value={d.cardFmt} pct={d.cardPct} count={d.cardCount} color="var(--accent)" kind="card" />
-      </div>
-
-      {d.memberStats.length > 1 && (
-        <div className="card">
-          <div className="row-between"><div className="t-card">Кто сколько потратил</div><div className="t-sub">за период</div></div>
-          <div style={{ display: 'flex', height: 10, borderRadius: 99, overflow: 'hidden', gap: 3 }}>
-            {d.memberStats.map(m => <div key={m.id} style={{ flex: Math.max(m.spent, 1), background: m.color, borderRadius: 99 }} />)}
+      <div className="card" style={{ gap: 14 }}>
+        <div className="row-between">
+          <div className="t-card">Доходы и расходы</div>
+          <div className="legend">
+            <span><i style={{ background: 'var(--green)' }} />Доход</span>
+            <span><i style={{ background: 'var(--accent)' }} />Расход</span>
           </div>
-          {d.memberStats.map(m => (
+        </div>
+        <PairBars items={d.pairBars} height={120} />
+        <div className="col">
+          <KpiRow label="Расходы" value={d.chartTotalFmt} sub={d.deltaText} color={d.deltaColor} />
+          <KpiRow label="Доходы" value={d.kpiIncomeFmt} sub={d.kpiIncomeDeltaText} color={d.kpiIncomeDeltaColor} />
+          <KpiRow label="Отложено в цели" value={d.kpiSavedFmt} sub={d.saveRate + '% от дохода'} />
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="row-between">
+          <div className="col" style={{ gap: 1 }}>
+            <div className="t-card">Куда уходят деньги</div>
+            <div className="t-meta">{d.periodWord}</div>
+          </div>
+          <div className="t-link" onClick={() => a.go('spend')}>Все траты →</div>
+        </div>
+        {!top && <div className="empty">Трат за этот период нет</div>}
+        {top && (
+          <div className="row" style={{ gap: 18 }}>
+            <Donut size={104} inset={16} bg={d.periodDonut} gap={0}>
+              <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3 }}>{top.share}%</div>
+              <div className="ellipsis" style={{ fontSize: 10, fontWeight: 700, color: 'var(--mu)', maxWidth: 62 }}>{top.name}</div>
+            </Donut>
+            <div className="col" style={{ flex: 1, gap: 9, minWidth: 0 }}>
+              {d.periodCats.slice(0, 5).map(c => (
+                <div key={c.id} className="row" style={{ gap: 8 }}>
+                  <span className="dot9" style={{ background: c.color }} />
+                  <div className="ellipsis" style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>{c.name}</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--mu)', whiteSpace: 'nowrap' }}>{c.spentShort}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {d.memberStatsPeriod.length > 1 && d.memberStatsPeriod.some(m => m.spent > 0) && (
+        <div className="card">
+          <div className="row-between"><div className="t-card">Кто сколько потратил</div><div className="t-meta">{d.periodWord}</div></div>
+          <div style={{ display: 'flex', height: 10, borderRadius: 99, overflow: 'hidden', gap: 3 }}>
+            {d.memberStatsPeriod.map(m => <div key={m.id} style={{ flex: Math.max(m.spent, 1), background: m.color, borderRadius: 99 }} />)}
+          </div>
+          {d.memberStatsPeriod.map(m => (
             <div key={m.id} className="row" style={{ gap: 12 }}>
               <Letter size={36} radius="50%" bg={m.bg} color={m.color} fontSize={14}>{m.letter}</Letter>
               <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
@@ -68,97 +108,35 @@ export default function Home() {
         </div>
       )}
 
-      <div className="chips">
-        {d.catStats.map(c => (
-          <div key={c.id} className="chip chip--shadow" onClick={() => a.go('cats')}>
-            <Letter size={26} radius="50%" bg={c.bg} color={c.color} fontSize={12}>{c.letter}</Letter>
-            <div className="col">
-              <div style={{ fontSize: 12, fontWeight: 700 }}>{c.name}</div>
-              <div className="chip__sub">{c.spentFmt}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="card">
-        <div className="row" style={{ gap: 14 }}>
-          <Ring size={60} r={26} width={8} pct={d.taskPct} track="var(--ip)" color="var(--green)" transition=".4s">
-            <span style={{ fontSize: 13, fontWeight: 800 }}>{d.doneCount}/{d.taskTotal}</span>
-          </Ring>
-          <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-            <div className="t-card">План на сегодня</div>
-            <div className="t-meta">Выполнено {d.taskPct}% · затраты по плану {d.plannedCostFmt}</div>
-          </div>
-          <div className="t-link" onClick={() => a.go('plans')}>Все →</div>
-        </div>
-        <div className="col" style={{ gap: 2 }}>
-          {d.topTasks.length === 0 && <div className="empty">{d.taskTotal ? 'Все задачи на сегодня выполнены' : 'Задач на сегодня нет'}</div>}
-          {d.topTasks.map(t => (
-            <div key={t.id} className="task-mini" onClick={() => a.toggleTask(t.id)}>
-              <Checkbox size={22} radius={7} icon={12} done={t.done} border={t.boxBorder} />
-              <div className="task-mini__name">{t.name}</div>
-              <div className="task-mini__time">{t.time}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="card">
-        <div className="row-between">
-          <div className="t-card">Цели</div>
-          <div className="t-link" onClick={() => a.go('goals')}>Все →</div>
-        </div>
-        {d.topGoals.length === 0 && <div className="empty">Пока нет целей</div>}
-        {d.topGoals.map(g => (
-          <div key={g.id} className="row" style={{ gap: 12 }}>
-            <Letter size={40} radius={13} bg={g.bg} color={g.color} fontSize={15}>{g.letter}</Letter>
-            <div className="col" style={{ flex: 1, gap: 7, minWidth: 0 }}>
-              <div className="row-between" style={{ fontSize: 14, fontWeight: 700 }}>
-                <span className="ellipsis">{g.name}</span><span className="muted">{g.pct}%</span>
-              </div>
-              <ProgressBar height={7} pct={g.pct} color={g.color} />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="col" style={{ gap: 10 }}>
-        <div className="section-head">
-          <div className="t-card">Последние траты</div>
-          <div className="t-link" onClick={() => a.go('cats')}>Все →</div>
-        </div>
-        <div className="card card--list">
-          {d.recentTxs.length === 0 && <div className="empty">Пока нет трат за этот период. Нажмите + внизу.</div>}
-          {d.recentTxs.map(t => (
-            <div key={t.id} className="list-row list-row--tap" style={{ padding: '12px 0' }} onClick={() => a.openSheet('tx', { tx: t })}>
-              <Letter size={42} radius={14} bg={t.bg} color={t.color} fontSize={16}>{t.letter}</Letter>
-              <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                <div className="ellipsis" style={{ fontSize: 15, fontWeight: 700 }}>{t.title}</div>
-                <div className="t-meta ellipsis">{t.meta}</div>
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: 'nowrap' }}>−{t.amountFmt}</div>
-            </div>
-          ))}
+      <div className="card list-row--tap" onClick={() => a.go('plans')}>
+        <div className="row-between"><div className="t-card">Планы</div><div className="t-link">Открыть →</div></div>
+        <div className="row" style={{ gap: 10, alignItems: 'stretch' }}>
+          <Stat label="Сегодня" value={d.taskRatio} />
+          <Stat label="За неделю" value={d.weekPlanPct + '%'} />
+          <Stat label="Серия" value={d.streak + ' дн'} />
         </div>
       </div>
     </div>
   );
 }
 
-function WalletCard({ label, value, pct, count, color, kind }) {
+function KpiRow({ label, value, sub, color }) {
   return (
-    <div className="wallet">
-      <div className="row" style={{ gap: 8 }}>
-        <div className="wallet__icon" style={{ background: kind === 'cash' ? '#E6F6EE' : 'var(--as)' }}>
-          {kind === 'cash'
-            ? <div style={{ width: 15, height: 11, border: '2px solid #2FA66F', borderRadius: 3 }} />
-            : <div style={{ width: 15, height: 11, borderRadius: 3, background: '#7A4AE0' }} />}
-        </div>
-        <div className="t-sub">{label}</div>
+    <div className="kpi-row">
+      <div className="t-sub">{label}</div>
+      <div className="col" style={{ alignItems: 'flex-end', gap: 1 }}>
+        <div style={{ fontSize: 16, fontWeight: 800, whiteSpace: 'nowrap' }}>{value}</div>
+        <div style={{ fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', color: color || 'var(--mu)' }}>{sub}</div>
       </div>
-      <div className="wallet__value">{value}</div>
-      <ProgressBar height={5} pct={pct} color={color} />
-      <div className="t-meta">{pct}% трат · {count} операций</div>
+    </div>
+  );
+}
+
+function Stat({ label, value }) {
+  return (
+    <div className="col" style={{ flex: 1, gap: 3 }}>
+      <div className="tile__label">{label}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, whiteSpace: 'nowrap' }}>{value}</div>
     </div>
   );
 }

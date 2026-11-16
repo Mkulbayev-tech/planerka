@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Заводит профили семьи (вход по номеру и паролю), добавляет обоих в общий бюджет и закрывает регистрацию посторонних.
-//   SUPABASE_ACCESS_TOKEN=sbp_... node scripts/setup-users.mjs [--project-ref=xxxx] [--pin-01=01] [--pin-02=02]
+//   SUPABASE_ACCESS_TOKEN=sbp_... node scripts/setup-users.mjs [--project-ref=xxxx] [--pin-01=…] [--pin-02=…]
+// Пароль меняется только у тех, для кого передан --pin-NN (не короче 6 символов); новому профилю он обязателен.
+// Обычно пароль каждый задаёт себе сам: «Ещё» → «Сменить пароль».
 import { readFileSync } from 'node:fs';
-import { PROFILES, HOUSEHOLD_NAME, loginEmail, pinToPassword } from '../src/auth-profiles.js';
+import { PROFILES, HOUSEHOLD_NAME, loginEmail, pinToPassword, pinProblem } from '../src/auth-profiles.js';
 
 const API = 'https://api.supabase.com/v1';
 const token = process.env.SUPABASE_ACCESS_TOKEN;
@@ -31,13 +33,17 @@ const existing = (await admin('GET', '/admin/users?page=1&per_page=1000')).users
 const ids = {};
 for (const p of PROFILES) {
   const email = loginEmail(p.login);
-  const password = pinToPassword(args['pin-' + p.login] || p.login);
+  const pin = args['pin-' + p.login] === undefined ? '' : String(args['pin-' + p.login]);
+  if (pin && pinProblem(pin)) { console.error(`Пароль для №${p.login}: ${pinProblem(pin)}`); process.exit(1); }
+  // pin_set: true — приложение не будет просить сменить пароль
+  const pass = pin ? { password: pinToPassword(pin), user_metadata: { name: p.name, pin_set: true } } : { user_metadata: { name: p.name } };
   const found = existing.find(u => u.email === email);
   if (found) {
-    await admin('PUT', `/admin/users/${found.id}`, { password, email_confirm: true, user_metadata: { name: p.name } });
-    ids[p.login] = found.id; log('Профиль обновлён:', p.name, '(№' + p.login + ')');
+    await admin('PUT', `/admin/users/${found.id}`, { ...pass, email_confirm: true });
+    ids[p.login] = found.id; log('Профиль обновлён:', p.name, '(№' + p.login + ')' + (pin ? ', пароль изменён' : ''));
   } else {
-    const u = await admin('POST', '/admin/users', { email, password, email_confirm: true, user_metadata: { name: p.name } });
+    if (!pin) { console.error(`Для нового профиля №${p.login} нужен --pin-${p.login}=…`); process.exit(1); }
+    const u = await admin('POST', '/admin/users', { email, ...pass, email_confirm: true });
     ids[p.login] = u.id; log('Профиль создан:', p.name, '(№' + p.login + ')');
   }
 }
@@ -55,4 +61,4 @@ log('Оба профиля добавлены в бюджет «' + HOUSEHOLD_NA
 
 await mgmt('PATCH', `/projects/${ref}/config/auth`, { disable_signup: true });
 log('Регистрация посторонних отключена');
-console.log('\nГотово: вход по номеру 01/02 и паролю.');
+console.log('\nГотово: вход по профилю и паролю.');

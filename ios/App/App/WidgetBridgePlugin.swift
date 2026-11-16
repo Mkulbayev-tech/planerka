@@ -8,7 +8,8 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "WidgetBridgePlugin"
     public let jsName = "WidgetBridge"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "update", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "update", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "count", returnType: CAPPluginReturnPromise)
     ]
     static let appGroup = "group.kz.planerka.app"
 
@@ -18,5 +19,15 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         ud.set(json, forKey: "widgetData")
         WidgetCenter.shared.reloadAllTimelines()
         call.resolve()
+    }
+
+    // Сколько виджетов приложения сейчас добавлено (экран «Домой», StandBy).
+    @objc func count(_ call: CAPPluginCall) {
+        WidgetCenter.shared.getCurrentConfigurations { result in
+            switch result {
+            case .success(let list): call.resolve(["count": list.count])
+            case .failure(let error): call.reject(error.localizedDescription)
+            }
+        }
     }
 }

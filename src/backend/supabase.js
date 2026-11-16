@@ -27,6 +27,11 @@ export function createSupabaseBackend(url, key) {
       if (error) throw error;
     },
     async signOut() { await sb.auth.signOut(); },
+    // Свой пароль вместо номера профиля; pin_set в профиле — признак, что простой пароль уже сменён
+    async changePin(pin) {
+      const { error } = await sb.auth.updateUser({ password: pinToPassword(pin), data: { pin_set: true } });
+      if (error) throw error;
+    },
     // Вход по ссылке из письма, открывшей приложение: planerka://login#access_token=…&refresh_token=… или ?code=…
     async handleAuthUrl(url) {
       if (!url || !/^planerka:/i.test(url)) return false;
@@ -51,13 +56,16 @@ export function createSupabaseBackend(url, key) {
       const [household] = await rows(sb.from('households').select('*').eq('id', hid).limit(1));
       if (!household) return null;
       const members = await rows(sb.from('household_members').select('user_id, display_name').eq('household_id', hid));
-      return { household, members, me: members.find(m => m.user_id === user.id) || null };
+      const pinSet = !!(user.user_metadata && user.user_metadata.pin_set);
+      return { household, members, me: members.find(m => m.user_id === user.id) || null, pinSet };
     },
     async createHousehold(name, displayName) { return rows(sb.rpc('create_household', { p_name: name, p_display_name: displayName })); },
     async joinHousehold(code, displayName) { return rows(sb.rpc('join_household', { p_code: code, p_display_name: displayName })); },
+    // patch — объект или функция от свежих настроек с сервера (чтобы не затереть правку партнёра)
     async updateSettings(hid, patch) {
       const [hh] = await rows(sb.from('households').select('settings').eq('id', hid).limit(1));
-      const settings = { ...((hh && hh.settings) || {}), ...patch };
+      const cur = (hh && hh.settings) || {};
+      const settings = { ...cur, ...(typeof patch === 'function' ? patch(cur) : patch) };
       await rows(sb.from('households').update({ settings }).eq('id', hid));
       return settings;
     },

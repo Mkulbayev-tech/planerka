@@ -1,11 +1,12 @@
 // Нижняя шторка с формой и простые поля в стиле макета.
 import { Letter } from './ui.jsx';
 
-export function Sheet({ title, onClose, children }) {
+// closable={false} — обязательная шторка: без крестика, тап мимо только прячет клавиатуру.
+export function Sheet({ title, onClose, children, closable = true }) {
   const onBackdrop = () => {
     const el = document.activeElement;
     if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) { el.blur(); return; }
-    onClose();
+    if (closable) onClose();
   };
   return (
     <div className="sheet-backdrop" onClick={onBackdrop}>
@@ -13,7 +14,7 @@ export function Sheet({ title, onClose, children }) {
         <div className="sheet__grip" />
         <div className="row-between">
           <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.4 }}>{title}</div>
-          <div className="sheet__close" onClick={onClose}>×</div>
+          {closable && <div className="sheet__close" onClick={onClose}>×</div>}
         </div>
         {children}
       </div>

@@ -4,22 +4,23 @@ import { isNative, syncStatusBar, hideSplash, onBackButton, exitApp, initKeyboar
 import { useMediaQuery } from './hooks.js';
 import { IOSDevice } from './ios-frame.jsx';
 import TabBar from './components/TabBar.jsx';
-import SheetHost from './components/SheetHost.jsx';
+import SheetHost, { PinSheet } from './components/SheetHost.jsx';
 import Access from './screens/Access.jsx';
 import Home from './screens/Home.jsx';
 import Add from './screens/Add.jsx';
-import Categories from './screens/Categories.jsx';
+import Spend from './screens/Spend.jsx';
 import Budget from './screens/Budget.jsx';
 import Income from './screens/Income.jsx';
-import Goals from './screens/Goals.jsx';
 import Plans from './screens/Plans.jsx';
-import Dashboard from './screens/Dashboard.jsx';
 import Settings from './screens/Settings.jsx';
 import WidgetsBoard from './widgets/WidgetsBoard.jsx';
 
+// Вкладки: home — «Аналитика», plans — «Планы» (задачи и цели), spend — «Расходы», settings — «Ещё».
+// Старые адреса (stats, cats, goals) ведут в новые вкладки.
 const SCREENS = {
-  home: Home, add: Add, cats: Categories, budget: Budget, income: Income,
-  goals: Goals, plans: Plans, stats: Dashboard, settings: Settings,
+  home: Home, plans: Plans, spend: Spend, settings: Settings,
+  add: Add, budget: Budget, income: Income,
+  stats: Home, cats: Spend, goals: Plans,
 };
 
 export const themeVars = th => ({
@@ -31,11 +32,14 @@ export function Phone({ mobile = false }) {
   const { s, d } = useBudget();
   const ready = s.auth === 'in' && !!s.household && !!s.data;
   const Screen = ready ? (SCREENS[s.screen] || Home) : Access;
+  // Пароль ещё простой (совпадает с номером профиля) — сначала сменить
+  const needPin = ready && !!s.user && s.user.pinSet === false;
   return (
     <div className={'phone' + (mobile ? ' phone--mobile' : '')} style={themeVars(d.th)}>
       <Screen />
       {ready && s.screen !== 'add' && <TabBar />}
-      {ready && s.sheet && <SheetHost />}
+      {ready && !needPin && s.sheet && <SheetHost />}
+      {needPin && <PinSheet force />}
       {s.toast && <div className="toast" key={s.toast}>{s.toast}</div>}
     </div>
   );

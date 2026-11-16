@@ -1,10 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { CAT_BY_ID, DEFAULT_SETTINGS, GOAL_PALETTE, fmt, uid } from './data.js';
+import { CATS, DEFAULT_SETTINGS, GOAL_PALETTE, allCats, fmt, uid } from './data.js';
 import { iso, addDays, parseIso } from './lib/dates.js';
 import { derive } from './model.js';
+import { guessCat } from './lib/autoplan.js';
 import { backend } from './backend/index.js';
 import { useNow } from './hooks.js';
-import { tap, success, onAppUrlOpen, getLaunchUrl, enableReminder, disableReminder, shareTextFile, updateWidgets, isNative } from './native.js';
+import { tap, success, onAppUrlOpen, getLaunchUrl, enableReminder, disableReminder, syncReminder, shareTextFile, updateWidgets, isNative } from './native.js';
 import { ACCENT } from './data.js';
 
 const PREFS_KEY = 'planerka.prefs';
@@ -23,7 +24,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     auth: 'loading', user: null, household: undefined, members: [], me: null, data: null, loadError: false,
     ...loadPrefs(),
     screen: 'home', period: 'month', amount: '', cat: 'food', method: 'card', note: '', toast: null, sheet: null,
-    planDate: null, planOwner: 'me',
+    planDate: null, planOwner: 'me', spendCat: null, prev: null, catPicked: false, catAuto: false,
     busy: false,
     ...(initial || {}),
   }));
@@ -46,7 +47,10 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       const res = await backend.getHousehold();
       if (!res) { update({ household: null, members: [], me: null, data: null }); return; }
       const data = await backend.loadData(res.household.id);
-      update({ household: res.household, members: res.members, me: res.me || null, data });
+      update(st => ({
+        household: res.household, members: res.members, me: res.me || null, data,
+        user: st.user && res.pinSet !== undefined ? { ...st.user, pinSet: res.pinSet } : st.user,
+      }));
     } catch (e) {
       console.error(e);
       update({ loadError: true });
@@ -100,19 +104,27 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     try { await remoteFn(); } catch (e) { console.error(e); showToast('Не удалось сохранить: ' + errText(e)); loadHousehold(); }
   }, [update, showToast, loadHousehold]);
 
+  // patch — объект или функция от текущих настроек: функция ещё раз применяется к свежим настройкам на сервере,
+  // поэтому одновременные правки лимитов и категорий у двоих не затирают друг друга.
   const patchSettings = useCallback(async patch => {
     const cur = stateRef.current;
     if (!cur.household) return;
-    update(st => ({ household: { ...st.household, settings: { ...DEFAULT_SETTINGS, ...(st.household.settings || {}), ...patch } } }));
-    try { await backend.updateSettings(cur.household.id, patch); } catch (e) { console.error(e); showToast('Не удалось сохранить настройки'); loadHousehold(); }
+    const fn = typeof patch === 'function' ? patch : () => patch;
+    update(st => {
+      const base = { ...DEFAULT_SETTINGS, ...(st.household.settings || {}) };
+      return { household: { ...st.household, settings: { ...base, ...fn(base) } } };
+    });
+    try { await backend.updateSettings(cur.household.id, fn); } catch (e) { console.error(e); showToast('Не удалось сохранить настройки'); loadHousehold(); }
   }, [update, showToast, loadHousehold]);
 
   const a = useMemo(() => {
     const hid = () => (stateRef.current.household ? stateRef.current.household.id : null);
     const data = () => stateRef.current.data || EMPTY;
+    const cats = () => allCats(stateRef.current.household && stateRef.current.household.settings);
     const busy = async fn => { update({ busy: true }); try { await fn(); } finally { update({ busy: false }); } };
     return {
-      go: screen => update({ screen, sheet: null }),
+      // prev — вкладка, с которой открыли «+»: после траты возвращаемся туда же
+      go: screen => update(st => ({ screen, sheet: null, prev: screen === 'add' ? st.screen : st.prev, ...(screen === 'add' ? { catPicked: false, catAuto: false } : {}) })),
       // Аппаратная кнопка «назад»: закрыть шторку, вернуться на главную, иначе выйти
       back: () => {
         const st = stateRef.current;
@@ -125,6 +137,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       planToday: () => update({ planDate: null }),
       shiftPlanWeek: n => update(st => ({ planDate: iso(addDays(parseIso(st.planDate || todayIso()), 7 * n)) })),
       setPlanOwner: planOwner => update({ planOwner }),
+      setSpendCat: spendCat => update({ spendCat }),
       toggleDark: () => update(st => { const dark = !st.dark; savePrefs({ dark, notif: st.notif }); return { dark }; }),
       toggleNotif: async () => {
         const next = !stateRef.current.notif;
@@ -213,17 +226,25 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
         if (st.amount === '' && (label === '0' || label === '000')) return {};
         return { amount: st.amount + label };
       }),
-      pickCat: cat => update({ cat }),
+      pickCat: cat => update({ cat, catPicked: true, catAuto: false }),
       setMethod: method => update({ method }),
-      setNote: note => update({ note }),
+      // Пока категорию не выбрали руками — подбираем её по комментарию («Magnum» → Продукты)
+      setNote: note => update(st => {
+        if (st.catPicked) return { note };
+        const guess = note.trim() ? guessCat(note, (st.data || EMPTY).txs, allCats(st.household && st.household.settings).filter(c => !c.hidden)) : null;
+        // catBase — категория до подбора: если комментарий перестал совпадать, возвращаем её
+        if (guess) return { note, cat: guess, catAuto: true, catBase: st.catAuto ? st.catBase : st.cat };
+        return st.catAuto ? { note, cat: st.catBase || st.cat, catAuto: false } : { note };
+      }),
       submitTx: () => {
         const st = stateRef.current;
         const amount = Number(st.amount || 0);
         if (!amount) return;
-        const cat = CAT_BY_ID[st.cat] ? st.cat : 'food';
-        const row = { id: uid(), title: st.note.trim() || CAT_BY_ID[cat].name, cat, amount, method: st.method, date: todayIso(), created_by: st.user ? st.user.id : null };
+        const c = cats().find(x => x.id === st.cat && !x.hidden) || CATS[0];
+        const cat = c.id;
+        const row = { id: uid(), title: st.note.trim() || c.name, cat, amount, method: st.method, date: todayIso(), created_by: st.user ? st.user.id : null };
         mutate(d => ({ ...d, txs: [...d.txs, row] }), () => backend.insert('transactions', row, hid()));
-        update({ amount: '', note: '', screen: 'home' });
+        update(st => ({ amount: '', note: '', catPicked: false, catAuto: false, screen: st.prev || 'home' }));
         success();
         showToast('Добавлено −' + fmt(amount));
       },
@@ -232,10 +253,41 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       // Настройки семьи
       setSalary: v => patchSettings({ salary: Math.max(0, Math.round(v) || 0) }),
       setMonthStart: day => patchSettings({ monthStartDay: Math.min(28, Math.max(1, Math.round(day) || 1)) }),
-      setLimit: (catId, v) => {
-        const hh = stateRef.current.household;
-        const cur = (hh && hh.settings && hh.settings.limits) || {};
-        patchSettings({ limits: { ...cur, [catId]: Math.max(0, Math.round(v) || 0) } });
+      setLimit: (catId, v) => patchSettings(cur => ({ limits: { ...(cur.limits || {}), [catId]: Math.max(0, Math.round(v) || 0) } })),
+      // Автораспределение: записать лимиты плана и настройки (on — повторять в начале каждого периода)
+      applyPlan: (limits, cfg) => {
+        patchSettings(cur => ({ limits: { ...(cur.limits || {}), ...limits }, autoPlan: { ...(cur.autoPlan || {}), ...cfg } }));
+        success();
+        showToast(cfg && cfg.on ? 'Лимиты распределены · дальше автоматически' : 'Лимиты распределены');
+      },
+      setAutoPlan: cfg => patchSettings(cur => ({ autoPlan: { ...(cur.autoPlan || {}), ...cfg } })),
+
+      // Свои категории трат (кредит, рассрочка…): общие для семьи, лежат в настройках
+      saveCategory: (fields, id) => {
+        const catId = id || 'c-' + uid().replace(/^id-/, '').slice(0, 8);
+        const row = { id: catId, name: fields.name, color: fields.color, bg: fields.bg };
+        const limit = Math.max(0, Math.round(Number(fields.limit) || 0));
+        patchSettings(cur => {
+          const list = Array.isArray(cur.cats) ? cur.cats : [];
+          const next = list.some(c => c.id === catId) ? list.map(c => (c.id === catId ? { ...c, ...row } : c)) : [...list, row];
+          return { cats: next, limits: { ...(cur.limits || {}), [catId]: limit } };
+        });
+        showToast(id ? 'Категория сохранена' : 'Категория добавлена: ' + fields.name);
+        return catId;
+      },
+      // Если по категории уже есть траты или задачи — прячем её из выбора, история остаётся; иначе удаляем совсем
+      deleteCategory: id => {
+        const d = data();
+        const used = d.txs.some(t => t.cat === id) || d.tasks.some(t => t.cat === id);
+        patchSettings(cur => {
+          const list = Array.isArray(cur.cats) ? cur.cats : [];
+          if (used) return { cats: list.map(c => (c.id === id ? { ...c, hidden: true } : c)) };
+          const limits = { ...(cur.limits || {}) };
+          delete limits[id];
+          return { cats: list.filter(c => c.id !== id), limits };
+        });
+        if (stateRef.current.cat === id) update({ cat: CATS[0].id });
+        showToast('Категория удалена');
       },
       copyInvite: async () => {
         const hh = stateRef.current.household;
@@ -249,7 +301,7 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
         const who = id => { const m = members.find(x => x.user_id === id); return (m && m.display_name) || ''; };
         const rows = [
           ['Дата', 'Название', 'Категория', 'Способ', 'Сумма', 'Кто'],
-          ...txs.map(t => [t.date, t.title, (CAT_BY_ID[t.cat] || {}).name || t.cat, t.method === 'cash' ? 'Наличные' : 'Карта', t.amount, who(t.created_by)]),
+          ...txs.map(t => [t.date, t.title, (cats().find(c => c.id === t.cat) || {}).name || 'Другое', t.method === 'cash' ? 'Наличные' : 'Карта', t.amount, who(t.created_by)]),
         ];
         const csv = '\uFEFF' + rows.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
         if (isNative) {
@@ -297,6 +349,14 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
         try { await backend.joinHousehold(c, String(myName || '').trim()); await loadHousehold(); showToast('Вы присоединились'); }
         catch { showToast('Код не найден'); }
       }),
+      changePin: pin => busy(async () => {
+        try {
+          await backend.changePin(pin);
+          update(st => ({ user: st.user ? { ...st.user, pinSet: true } : st.user, sheet: st.sheet && st.sheet.kind === 'pin' ? null : st.sheet }));
+          success();
+          showToast('Пароль изменён');
+        } catch (err) { showToast('Не удалось сменить пароль: ' + errText(err)); }
+      }),
       retryLoad: () => loadHousehold(),
       signOut: async () => {
         try { await backend.signOut(); } catch { /* ignore */ }
@@ -323,6 +383,32 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
     }), 800);
     return () => clearTimeout(t);
   }, [ready, d]);
+
+  // Автораспределение в начале нового периода: один раз на период, кто из семьи первым откроет приложение.
+  // Функция ещё раз проверяет свежие настройки на сервере, чтобы второй телефон не распределил повторно.
+  const autoDone = useRef(null);
+  useEffect(() => {
+    if (!ready || !d.autoOn || d.autoPeriod === d.periodStartIso || autoDone.current === d.periodStartIso || !(d.autoPlan.income > 0)) return;
+    const period = d.periodStartIso;
+    const limits = d.autoPlan.limits;
+    autoDone.current = period;
+    patchSettings(cur => (cur.autoPlan && cur.autoPlan.period === period
+      ? {}
+      : { limits: { ...(cur.limits || {}), ...limits }, autoPlan: { ...(cur.autoPlan || {}), period } }));
+    showToast('Бюджет на новый период распределён');
+  }, [ready, d, patchSettings, showToast]);
+
+  // Напоминание: переключатель по умолчанию включён — один раз после входа ставим его в расписание по-настоящему
+  const reminderSynced = useRef(false);
+  useEffect(() => {
+    if (!ready || reminderSynced.current) return;
+    reminderSynced.current = true;
+    syncReminder(stateRef.current.notif).then(on => {
+      if (on === stateRef.current.notif) return;
+      update(st => { savePrefs({ dark: st.dark, notif: on }); return { notif: on }; });
+    });
+  }, [ready, update]);
+
   const value = useMemo(() => ({ s, d, a, mode: backend.mode }), [s, d, a]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

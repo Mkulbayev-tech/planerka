@@ -100,3 +100,21 @@ export function BackHead({ onBack, title }) {
     </div>
   );
 }
+
+// Полоса долей: из чего складывается доход (обязательные, повседневные, цели, свободно)
+export function PlanBar({ parts, height = 10, legend = true }) {
+  return (
+    <div className="col" style={{ gap: 8 }}>
+      <div style={{ display: 'flex', height, borderRadius: 99, overflow: 'hidden', gap: 2, background: 'var(--ip)' }}>
+        {parts.map(p => <div key={p.id} style={{ flex: Math.max(p.value, 1), background: p.color }} />)}
+      </div>
+      {legend && (
+        <div className="plan-legend">
+          {parts.map(p => (
+            <span key={p.id}><i style={{ background: p.color }} />{p.name} {p.share}%</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

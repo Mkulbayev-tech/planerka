@@ -18,6 +18,22 @@ export const CATS = [
 ];
 export const CAT_BY_ID = Object.fromEntries(CATS.map(c => [c.id, c]));
 
+// Свои категории семьи лежат в settings.cats: { id, name, color, bg, hidden }.
+// hidden — категория удалена, но по ней остались траты: из выбора убрана, в истории видна.
+export const CAT_PALETTE = [
+  ['#D6457A', '#FBE7EF'], ['#E8702A', '#FDEEE2'], ['#8A5A2B', '#F4ECE3'], ['#5B5BD6', '#ECECFB'],
+  ['#6E8B1F', '#EFF4DE'], ['#A63DB8', '#F5E6F8'], ['#0F766E', '#DDF3F0'], ['#3C4A5C', '#E6E9EE'],
+];
+export const CAT_SUGGEST = ['Кредит', 'Рассрочка', 'Связь', 'Дети', 'Одежда', 'Подарки'];
+// Трата с неизвестной категорией (например, стёртой вручную) попадает сюда, а не в «Продукты».
+export const OTHER_CAT = { id: 'other', name: 'Другое', color: '#8E8A9C', bg: '#EFEEF3', limit: 0 };
+export const allCats = settings => [
+  ...CATS,
+  ...(settings && Array.isArray(settings.cats) ? settings.cats : [])
+    .filter(c => c && c.id && c.name)
+    .map(c => ({ limit: 0, ...c, custom: true })),
+];
+
 export const TAGS = ['Дом', 'Покупки', 'Платежи', 'Накопления', 'Здоровье'];
 export const TAG_COLORS = {
   'Дом': ['#7A4AE0', '#EFE9FC'], 'Покупки': ['#2FA66F', '#E6F6EE'], 'Платежи': ['#2F5BEA', '#E8EDFD'],

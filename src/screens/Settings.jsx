@@ -1,9 +1,23 @@
+import { useEffect, useState } from 'react';
 import { useBudget } from '../store.jsx';
+import { widgetCount } from '../native.js';
 import { Letter, Switch } from '../components/ui.jsx';
+
+const widgetsText = n => (n === 0 ? 'не добавлены' : n % 10 === 1 && n % 100 !== 11 ? `${n} активный` : `${n} активных`);
 
 export default function Settings() {
   const { s, d, a, mode } = useBudget();
   const offBg = d.dark ? '#3A3746' : '#D9D6E3';
+  // Число виджетов спрашиваем у iOS; в браузере и на Android строку не показываем
+  const [widgets, setWidgets] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    const load = () => widgetCount().then(n => { if (alive) setWidgets(n); });
+    load();
+    const vis = () => { if (document.visibilityState === 'visible') load(); };
+    document.addEventListener('visibilitychange', vis);
+    return () => { alive = false; document.removeEventListener('visibilitychange', vis); };
+  }, []);
   return (
     <div className="screen">
       <div className="t-title">Ещё</div>
@@ -27,11 +41,11 @@ export default function Settings() {
       )}
 
       <div className="card card--menu">
-        <MenuLink title="Бюджет по категориям" onClick={() => a.go('budget')} />
-        <MenuLink title="Категории" onClick={() => a.go('cats')} />
-        <MenuLink title="Планы и задачи" onClick={() => a.go('plans')} />
-        <MenuLink title="Цели накоплений" onClick={() => a.go('goals')} />
         <MenuLink title="Доходы и зарплата" onClick={() => a.go('income')} />
+        <MenuLink title="Лимиты и категории" onClick={() => a.go('budget')} />
+        <div className="menu-row menu-row--link" onClick={() => a.openSheet('autoplan')}>
+          <span className="menu-row__title">Автораспределение</span><span className="menu-row__value">{d.autoOn ? 'включено ›' : 'выключено ›'}</span>
+        </div>
       </div>
 
       <div className="card card--menu">
@@ -43,7 +57,7 @@ export default function Settings() {
           <span className="menu-row__title">Напоминать вносить траты</span>
           <Switch on={s.notif} offBg={offBg} />
         </div>
-        <div className="menu-row"><span className="menu-row__title">Виджеты на экране</span><span className="menu-row__value">3 активных</span></div>
+        {widgets !== null && <div className="menu-row"><span className="menu-row__title">Виджеты на экране</span><span className="menu-row__value">{widgetsText(widgets)}</span></div>}
         <div className="menu-row"><span className="menu-row__title">Валюта</span><span className="menu-row__value">₸ Тенге</span></div>
         <div className="menu-row menu-row--link" onClick={() => a.openSheet('monthStart', { value: d.monthStartDay })}>
           <span className="menu-row__title">Начало месяца</span><span className="menu-row__value">{d.monthStartDay}-е число ›</span>
@@ -52,6 +66,7 @@ export default function Settings() {
 
       <div className="card card--menu">
         <MenuLink title="Экспорт в Excel" onClick={a.exportCsv} />
+        {mode === 'supabase' && <MenuLink title="Сменить пароль" onClick={() => a.openSheet('pin')} />}
         {mode === 'supabase' && <MenuLink title="Выйти из аккаунта" onClick={a.signOut} />}
         <div className="menu-row menu-row--link" onClick={a.resetData}>
           <span className="menu-row__title" style={{ color: 'var(--red)' }}>{mode === 'local' ? 'Сбросить данные' : 'Удалить все данные семьи'}</span>

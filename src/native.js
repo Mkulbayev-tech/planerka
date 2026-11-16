@@ -91,6 +91,16 @@ export async function enableReminder() {
   }] });
   return true;
 }
+// Переключатель включён по умолчанию, поэтому при запуске ставим напоминание в расписание по-настоящему.
+// Если уведомления запрещены в настройках телефона — возвращаем false, чтобы переключатель показал правду.
+export async function syncReminder(want) {
+  if (!isNative || !want) return want;
+  try {
+    const perm = await LocalNotifications.checkPermissions();
+    if (perm.display === 'denied') return false;
+    return await enableReminder();
+  } catch { return want; }
+}
 export async function disableReminder() {
   if (!isNative) return;
   try { await LocalNotifications.cancel({ notifications: [{ id: REMINDER_ID }] }); } catch { /* ignore */ }
@@ -101,4 +111,9 @@ const WidgetBridge = registerPlugin('WidgetBridge');
 export async function updateWidgets(payload) {
   if (!isNative || platform !== 'ios') return;
   try { await WidgetBridge.update({ json: JSON.stringify(payload) }); } catch (e) { console.warn('widgets:', e && e.message); }
+}
+// Сколько виджетов приложения стоит на экране «Домой»; null — узнать нельзя (браузер, Android)
+export async function widgetCount() {
+  if (!isNative || platform !== 'ios') return null;
+  try { const r = await WidgetBridge.count(); return typeof r.count === 'number' ? r.count : null; } catch { return null; }
 }

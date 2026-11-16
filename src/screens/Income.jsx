@@ -14,7 +14,7 @@ export default function Income() {
         </div>
         <div className="row-between" style={{ fontSize: 13, fontWeight: 700 }}>
           <span style={{ opacity: 0.85 }}>Среднее за 6 мес · {d.avg6Fmt}</span>
-          <span style={{ background: 'rgba(255,255,255,0.18)', padding: '4px 10px', borderRadius: 99 }}>{d.incomeDeltaText}</span>
+          {d.incomeDeltaText && <span style={{ background: 'rgba(255,255,255,0.18)', padding: '4px 10px', borderRadius: 99 }}>{d.incomeDeltaText}</span>}
         </div>
       </div>
 

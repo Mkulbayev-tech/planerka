@@ -31,12 +31,16 @@ export function createLocalBackend() {
     onAuthChange() { return () => {}; },
     async signIn() {},
     async signOut() {},
+    async changePin() {},
     async handleAuthUrl() { return false; },
-    async getHousehold() { const db = ensure(); return { household: db.household, members: db.members, me: db.members[0] }; },
+    async getHousehold() { const db = ensure(); return { household: db.household, members: db.members, me: db.members[0], pinSet: true }; },
     async createHousehold() { return ensure().household; },
     async joinHousehold() { return ensure().household; },
     async updateSettings(_hid, patch) {
-      return change(db => { db.household.settings = { ...db.household.settings, ...patch }; }).household.settings;
+      return change(db => {
+        const cur = db.household.settings || {};
+        db.household.settings = { ...cur, ...(typeof patch === 'function' ? patch(cur) : patch) };
+      }).household.settings;
     },
     async loadData() { const db = ensure(); return { txs: db.txs, tasks: db.tasks, goals: db.goals, incomes: db.incomes }; },
     async insert(table, row) { change(db => { db[TABLES[table]].push({ ...row, created_at: new Date().toISOString() }); }); },
