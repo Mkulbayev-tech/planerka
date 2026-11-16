@@ -36,7 +36,7 @@ export default function Settings() {
         <MenuLink icon="users" title="Семья" value={d.membersCount > 1 ? `${d.membersCount} участника` : ''} onClick={() => a.go('family')} />
         <MenuLink icon="wallet" title="Доходы и зарплаты" value={d.incomeFmt} onClick={() => a.go('income')} />
         <MenuLink icon="card" title="Счета" value={d.accounts.list.length ? '≈ ' + d.accounts.totalFmt : 'добавить'} onClick={() => a.go('accounts')} />
-        <MenuLink icon="file" title="Импорт выписки Kaspi" onClick={() => a.openSheet('import')} />
+        <MenuLink icon="file" title="Импорт: выписка и чеки" onClick={() => a.go('import')} />
       </div>
 
       <div className="card card--menu">

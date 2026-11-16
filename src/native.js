@@ -154,6 +154,14 @@ export async function scheduleChoreReminders(list) {
   } catch (e) { console.warn('chores:', e && e.message); }
 }
 
+// Чек по фото: текст распознаёт iPhone (Vision), разбор — в lib/receipt.js. В браузере и на Android недоступно.
+const ReceiptOCR = registerPlugin('ReceiptOCR');
+export const canScanReceipt = isNative && platform === 'ios';
+export async function recognizeImage(base64) {
+  const r = await ReceiptOCR.recognize({ base64 });
+  return Array.isArray(r.lines) ? r.lines : [];
+}
+
 // Виджеты iOS: приложение передаёт сводку, расширение WidgetKit её рисует
 const WidgetBridge = registerPlugin('WidgetBridge');
 export async function updateWidgets(payload) {

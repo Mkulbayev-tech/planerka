@@ -111,7 +111,7 @@ function EmptyMonth({ v }) {
       {v.isCurrent && !v.lastHint && (
         <>
           <div className="empty-month__title">Трат пока нет</div>
-          <div className="t-meta">Нажмите +, чтобы внести первую, или загрузите выписку из Kaspi в «Ещё».</div>
+          <div className="t-meta">Нажмите +, чтобы внести первую, или загрузите выписку из Kaspi: «Ещё» → «Импорт».</div>
         </>
       )}
       {!v.isCurrent && (
