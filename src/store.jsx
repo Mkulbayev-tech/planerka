@@ -5,7 +5,7 @@ import { derive } from './model.js';
 import { guessCat } from './lib/autoplan.js';
 import { backend } from './backend/index.js';
 import { useNow } from './hooks.js';
-import { tap, success, onAppUrlOpen, getLaunchUrl, enableReminder, disableReminder, syncReminder, shareTextFile, updateWidgets, isNative } from './native.js';
+import { tap, success, warn, onAppUrlOpen, getLaunchUrl, enableReminder, disableReminder, syncReminder, shareTextFile, updateWidgets, scheduleBillReminders, isNative } from './native.js';
 import { ACCENT } from './data.js';
 
 const PREFS_KEY = 'planerka.prefs';
@@ -33,10 +33,10 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
   const toastTimer = useRef(null);
 
   const update = useCallback(patch => setS(st => ({ ...st, ...(typeof patch === 'function' ? patch(st) : patch) })), []);
-  const showToast = useCallback(msg => {
+  const showToast = useCallback((msg, ms = 1800) => {
     clearTimeout(toastTimer.current);
     update({ toast: msg });
-    toastTimer.current = setTimeout(() => update({ toast: null }), 1800);
+    toastTimer.current = setTimeout(() => update({ toast: null }), ms);
   }, [update]);
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
@@ -262,6 +262,102 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       },
       setAutoPlan: cfg => patchSettings(cur => ({ autoPlan: { ...(cur.autoPlan || {}), ...cfg } })),
 
+      // Регулярные платежи (settings.recurring): since — со дня добавления, прошлые даты не вносятся
+      saveBill: (fields, id) => {
+        const row = {
+          title: fields.title, amount: Math.max(0, Math.round(Number(fields.amount) || 0)), day: Math.min(31, Math.max(1, Math.round(Number(fields.day) || 1))),
+          cat: fields.cat || null, method: fields.method || 'card', payer: fields.payer || null,
+        };
+        patchSettings(cur => {
+          const list = Array.isArray(cur.recurring) ? cur.recurring : [];
+          if (id) return { recurring: list.map(b => (b.id === id ? { ...b, ...row } : b)) };
+          return { recurring: [...list, { id: 'b' + uid().replace(/-/g, '').slice(0, 10), since: todayIso(), done: [], ...row }] };
+        });
+        showToast(id ? 'Платёж сохранён' : 'Платёж добавлен: ' + row.title);
+      },
+      deleteBill: id => {
+        patchSettings(cur => ({ recurring: (Array.isArray(cur.recurring) ? cur.recurring : []).filter(b => b.id !== id) }));
+        showToast('Платёж удалён — прошлые траты остались');
+      },
+      // Внести наступившие платежи: id траты детерминированный, второй телефон дубль не создаст
+      runBills: async rows => {
+        if (!rows.length) return;
+        const clean = rows.map(({ billId, ...r }) => r); // eslint-disable-line no-unused-vars
+        update(st => {
+          const d = st.data || EMPTY;
+          const have = new Set(d.txs.map(t => t.id));
+          return { data: { ...d, txs: [...d.txs, ...clean.filter(r => !have.has(r.id))] } };
+        });
+        try {
+          await backend.insertMany('transactions', clean, hid(), { skipExisting: true });
+        } catch (e) { console.error(e); showToast('Не удалось внести платежи: ' + errText(e)); loadHousehold(); return; }
+        const done = {};
+        rows.forEach(r => { (done[r.billId] = done[r.billId] || []).push(r.date); });
+        patchSettings(cur => ({
+          recurring: (Array.isArray(cur.recurring) ? cur.recurring : []).map(b => (done[b.id]
+            ? { ...b, done: [...new Set([...(b.done || []), ...done[b.id]])].sort().slice(-24) }
+            : b)),
+        }));
+        const total = rows.reduce((x, r) => x + r.amount, 0);
+        showToast(rows.length === 1 ? `Внесён платёж: ${rows[0].title} −${fmt(total)}` : `Внесено платежей: ${rows.length} на ${fmt(total)}`, 2600);
+      },
+
+      // Остаток прошлого периода → в цель. claim — чтобы при двух телефонах это случилось один раз
+      setSweep: cfg => patchSettings(cur => ({ sweep: { ...(cur.sweep || {}), ...cfg } })),
+      sweepNow: async (goalId, amount, period) => {
+        const g = data().goals.find(x => x.id === goalId);
+        const add = g ? Math.max(0, Math.min(Math.round(amount), g.target - g.saved)) : 0;
+        if (!add) return;
+        let mine = false;
+        try { mine = await backend.claim(hid(), 'sweep', period); } catch (e) { console.error(e); }
+        if (!mine) { loadHousehold(); return; }
+        const by = stateRef.current.user ? stateRef.current.user.id : null;
+        update(st => {
+          const hh = st.household;
+          return { household: { ...hh, settings: { ...hh.settings, claims: { ...((hh.settings && hh.settings.claims) || {}), sweep: period } } } };
+        });
+        mutate(
+          d => ({ ...d, goals: d.goals.map(x => (x.id === goalId ? { ...x, saved: x.saved + add, topups: [...(x.topups || []), { date: todayIso(), amount: add, by }] } : x)) }),
+          () => backend.topUpGoal(goalId, add),
+        );
+        patchSettings(cur => ({ sweep: { ...(cur.sweep || {}), last: { period, amount: add, goalId, date: todayIso() } } }));
+        success();
+        showToast(`Остаток ${fmt(add)} отложен: ${g.name}`, 2600);
+      },
+
+      // Расчёты между двумя участниками: доля трат и запись «перевёл» в settings.settle.log
+      setSplit: share => patchSettings({ split: { share } }),
+      recordSettle: (from, to, amount) => {
+        const v = Math.max(0, Math.round(Number(amount) || 0));
+        if (!from || !to || !v) return;
+        const by = stateRef.current.user ? stateRef.current.user.id : null;
+        patchSettings(cur => {
+          const log = (cur.settle && Array.isArray(cur.settle.log)) ? cur.settle.log : [];
+          return { settle: { ...(cur.settle || {}), log: [...log, { date: todayIso(), from, to, amount: v, by }].slice(-50) } };
+        });
+        success();
+        showToast('Записано: перевод ' + fmt(v));
+      },
+
+      // Импорт выписки: траты и поступления; id из содержимого строки — повторный импорт не задвоит
+      importRows: async rows => {
+        const me = stateRef.current.user ? stateRef.current.user.id : null;
+        const txs = rows.filter(r => r.kind === 'tx').map(r => ({ id: r.id, title: r.title, cat: r.cat || 'other', amount: r.amount, method: 'card', date: r.date, created_by: me }));
+        const incomes = rows.filter(r => r.kind === 'income').map(r => ({ id: r.id, title: r.title, amount: r.amount, date: r.date, method: 'card' }));
+        update(st => {
+          const d = st.data || EMPTY;
+          return { data: { ...d, txs: [...d.txs, ...txs], incomes: [...d.incomes, ...incomes] } };
+        });
+        try {
+          if (txs.length) await backend.insertMany('transactions', txs, hid(), { skipExisting: true });
+          if (incomes.length) await backend.insertMany('incomes', incomes, hid(), { skipExisting: true });
+        } catch (e) { console.error(e); showToast('Не удалось импортировать: ' + errText(e)); loadHousehold(); return false; }
+        success();
+        const spentSum = txs.reduce((x, r) => x + r.amount, 0);
+        showToast(`Импортировано: ${txs.length} трат на ${fmt(spentSum)}${incomes.length ? ` и ${incomes.length} поступл.` : ''}`, 2600);
+        return true;
+      },
+
       // Свои категории трат (кредит, рассрочка…): общие для семьи, лежат в настройках
       saveCategory: (fields, id) => {
         const catId = id || 'c-' + uid().replace(/^id-/, '').slice(0, 8);
@@ -397,6 +493,51 @@ export function BudgetProvider({ children, initial, now: nowProp }) {
       : { limits: { ...(cur.limits || {}), ...limits }, autoPlan: { ...(cur.autoPlan || {}), period } }));
     showToast('Бюджет на новый период распределён');
   }, [ready, d, patchSettings, showToast]);
+
+  // Регулярные платежи: в свой день сами становятся тратой (один раз на набор дат)
+  const billsRunning = useRef('');
+  useEffect(() => {
+    if (!ready || !d.billsDue.length) return;
+    const key = d.billsDue.map(r => r.id).join(',');
+    if (billsRunning.current === key) return;
+    billsRunning.current = key;
+    a.runBills(d.billsDue);
+  }, [ready, d.billsDue, a]);
+
+  // Напоминания о платежах в день списания (только если напоминания включены)
+  const billKey = JSON.stringify([s.notif, d.billReminders]);
+  const billKeyRef = useRef('');
+  useEffect(() => {
+    if (!ready || billKeyRef.current === billKey) return;
+    billKeyRef.current = billKey;
+    scheduleBillReminders(s.notif ? d.billReminders : []);
+  }, [ready, billKey, s.notif, d.billReminders]);
+
+  // Предупреждение, когда категория дошла до 80% или превысила лимит — своей тратой, тратой партнёра или импортом
+  const levelsRef = useRef(null);
+  const alertTimer = useRef(null);
+  useEffect(() => {
+    if (!ready) return;
+    const levels = Object.fromEntries(d.limitAlerts.map(x => [x.id, x.level]));
+    const prev = levelsRef.current;
+    levelsRef.current = { period: d.periodStartIso, levels };
+    if (!prev || prev.period !== d.periodStartIso) return;
+    const rose = d.limitAlerts.filter(x => (prev.levels[x.id] || 0) < x.level);
+    if (!rose.length) return;
+    const x = rose[0];
+    clearTimeout(alertTimer.current);
+    // чуть позже тоста «Добавлено», чтобы оба успели прочитать
+    alertTimer.current = setTimeout(() => { warn(); showToast(`${x.name}: ${x.text}`, 3200); }, 1100);
+  }, [ready, d.limitAlerts, d.periodStartIso, showToast]);
+  useEffect(() => () => clearTimeout(alertTimer.current), []);
+
+  // Остаток прошлого периода — в выбранную цель, в начале нового периода
+  const sweepRef = useRef(null);
+  useEffect(() => {
+    if (!ready || !d.sweep.due || d.sweep.skip || sweepRef.current === d.periodStartIso) return;
+    sweepRef.current = d.periodStartIso;
+    a.sweepNow(d.sweep.goalId, d.sweep.prevLeft, d.periodStartIso);
+  }, [ready, d.sweep, d.periodStartIso, a]);
 
   // Напоминание: переключатель по умолчанию включён — один раз после входа ставим его в расписание по-настоящему
   const reminderSynced = useRef(false);

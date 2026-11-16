@@ -5,6 +5,8 @@ import {
   longLabel, dayMonth, dayLabel, shortDate, MONTHS_NOM, MONTHS_CAP, MONTHS_GEN, WEEKDAYS_SHORT,
 } from './lib/dates.js';
 import { planBudget } from './lib/autoplan.js';
+import { validBills, billDates, billTxId, dueBills, upcomingBills } from './lib/bills.js';
+import { settleUp, SPLIT_OPTIONS } from './lib/settle.js';
 
 const sum = (list, f) => list.reduce((a, x) => a + (f(x) || 0), 0);
 const pct = (a, b) => (b ? Math.round(a / b * 100) : 0);
@@ -329,14 +331,89 @@ export function derive(s, now = new Date()) {
     const id = catOf(t.cat).id;
     plannedByCat[id] = (plannedByCat[id] || 0) + t.cost;
   });
+
+  // Регулярные платежи: статус в этом периоде, что пора внести сейчас, ближайшие — для напоминаний
+  const bills = validBills(settings.recurring);
+  const txIds = new Set(data.txs.map(t => t.id));
+  const billPaid = (b, date) => txIds.has(billTxId(b.id, date)) || b.done.includes(date);
+  const billRows = bills.map(b => {
+    const date = billDates(b.day, P.startIso, P.endIso)[0] || null;
+    const active = !!date && (!b.since || date >= b.since);
+    const paid = active && billPaid(b, date);
+    const c = catOf(b.cat);
+    const payer = b.payer ? membersById[b.payer] || '' : '';
+    return {
+      ...b, letter: (b.title.trim()[0] || '?').toUpperCase(), color: c.color, bg: c.bg, catName: c.name, amountFmt: fmt(b.amount),
+      date, paid, payerName: payer,
+      status: !active ? 'со следующего периода' : paid ? 'внесено' : date === todayIso ? 'сегодня' : shortDate(date),
+      statusColor: paid ? GREEN : date === todayIso ? ACCENT : th.mu,
+      meta: `${b.day}-го числа · ${c.name}${payer && members.length > 1 ? ' · ' + payer : ''}`,
+    };
+  }).sort((a, b) => a.day - b.day);
+  // Ещё не внесённые платежи до конца периода — в планах автораспределения, их категории обязательные
+  bills.forEach(b => {
+    billDates(b.day, P.startIso, P.endIso).forEach(date => {
+      if ((b.since && date < b.since) || billPaid(b, date)) return;
+      const id = catOf(b.cat).id;
+      plannedByCat[id] = (plannedByCat[id] || 0) + b.amount;
+    });
+  });
+  const myId = s.user ? s.user.id : null;
+  const billsDue = dueBills(bills, txIds, todayIso).map(x => ({
+    id: x.id, title: x.bill.title, cat: x.bill.cat || OTHER_CAT.id, amount: x.bill.amount, method: x.bill.method || 'card', date: x.date,
+    created_by: x.bill.payer && membersById[x.bill.payer] !== undefined ? x.bill.payer : myId, billId: x.bill.id,
+  }));
+  const billReminders = upcomingBills(bills, todayIso).map(x => ({ date: x.date, title: 'Платёж: ' + x.bill.title, body: `${fmt(x.bill.amount)} — трата внесётся в бюджет автоматически` }));
+  const billsMonthly = sum(bills, b => b.amount);
+  const billsLeft = sum(billRows.filter(b => b.date && !b.paid && b.status !== 'со следующего периода'), b => b.amount);
+
   const planInput = {
-    income, goals: data.goals, cats: catList, spent: spentByCat(txs), planned: plannedByCat,
+    income, goals: data.goals, cats: catList, spent: spentByCat(txs), planned: plannedByCat, fixedIds: [...new Set(bills.map(b => b.cat).filter(Boolean))],
     history: Object.fromEntries(Object.entries(histTotal).map(([id, v]) => [id, v / histPeriods.length])),
     historyCount: histPeriods.length, daysElapsed, periodDays: daysBetween(P.start, P.end),
   };
   const autoCfg = settings.autoPlan || {};
   const autoSave = Number(autoCfg.save) || 0;
   const autoPlan = planBudget(planInput, autoSave);
+
+  // Предупреждения о лимитах: 80% и больше, превышенные — первыми
+  const limitAlerts = catStats.filter(c => c.limit > 0 && c.spent >= c.limit * 0.8).map(c => {
+    const p = Math.round(c.spent / c.limit * 100);
+    const over = c.spent > c.limit;
+    return { id: c.id, name: c.name, color: c.color, bg: c.bg, letter: c.letter, pct: p, over, level: over ? 100 : 80,
+      text: over ? 'лимит превышен на ' + fmt(c.spent - c.limit) : `${p}% лимита · осталось ${fmt(c.limit - c.spent)}`,
+      short: over ? '+' + fmt(c.spent - c.limit) + ' сверх' : `${p}% · осталось ${fmt(c.limit - c.spent)}` };
+  }).sort((a, b) => b.pct - a.pct);
+
+  // Остаток прошлого периода → в цель (settings.sweep): доход − траты − уже отложенное в цели
+  const sweepCfg = settings.sweep || {};
+  const prevLeft = hasData(prevP) ? Math.max(0, periodIncome(prevP) - periodSpent(prevP) - topupsIn(prevP.startIso, prevP.endIso)) : 0;
+  const sweepGoal = goals.find(g => g.id === sweepCfg.goalId) || null;
+  const sweptNow = (sweepCfg.last && sweepCfg.last.period === P.startIso) || (settings.claims && settings.claims.sweep === P.startIso);
+  const sweep = {
+    on: !!sweepCfg.on && !!sweepGoal, goalId: sweepGoal ? sweepGoal.id : null, goalName: sweepGoal ? sweepGoal.name : '',
+    prevLeft, prevLeftFmt: fmt(prevLeft), prevMonth: MONTHS_NOM[prevP.start.getMonth()],
+    swept: !!sweptNow, last: sweepCfg.last || null, lastFmt: sweepCfg.last ? fmt(sweepCfg.last.amount) : '',
+    canNow: !!sweepGoal && sweepGoal.pct < 100 && prevLeft > 0 && !sweptNow,
+    // skip — включили посреди периода: прошлый остаток откладывается только кнопкой, авто — со следующего
+    skip: sweepCfg.skip === P.startIso,
+    due: !!sweepCfg.on && !!sweepGoal && sweepGoal.pct < 100 && prevLeft > 0 && !sweptNow && sweepCfg.skip !== P.startIso,
+  };
+
+  // Кто кому переводит, чтобы общие траты делились поровну (или в выбранной доле)
+  const settleLog = (settings.settle && Array.isArray(settings.settle.log)) ? settings.settle.log : [];
+  const st = settleUp(members, data.txs, settings.split, settleLog);
+  const nm = m => (m && (m.display_name || 'Партнёр')) || '';
+  const settle = st && (st.total > 0 || settleLog.length) ? {
+    aId: st.A.user_id, bId: st.B.user_id, aName: nm(st.A), bName: nm(st.B),
+    paidAFmt: fmt(st.paidA), paidBFmt: fmt(st.paidB), totalFmt: fmt(st.total),
+    settled: st.settled, amount: st.amount, amountFmt: fmt(st.amount),
+    fromId: st.from ? st.from.user_id : null, toId: st.to ? st.to.user_id : null, fromName: nm(st.from), toName: nm(st.to),
+    options: SPLIT_OPTIONS(nm(st.A), nm(st.B)),
+    splitId: (SPLIT_OPTIONS('', '').find(o => Math.abs(o.share - st.shareA) < 0.001) || { id: 'equal' }).id,
+    splitLabel: Math.abs(st.shareA - 0.5) < 0.001 ? 'поровну' : `${nm(st.A)} ${Math.round(st.shareA * 100)}% · ${nm(st.B)} ${Math.round((1 - st.shareA) * 100)}%`,
+    log: [...settleLog].slice(-4).reverse().map(x => ({ ...x, text: `${shortDate(x.date)} · ${membersById[x.from] || '?'} → ${membersById[x.to] || '?'}`, amountFmt: fmt(x.amount) })),
+  } : null;
 
   // Экран добавления траты
   const amountNum = Number(s.amount || 0);
@@ -366,6 +443,9 @@ export function derive(s, now = new Date()) {
     spendCats, spendDays, spendCatName: spendCat ? catOf(spendCat).name : '',
     // автораспределение
     planInput, autoPlan, autoSave, autoOn: !!autoCfg.on, autoPeriod: autoCfg.period || null, periodStartIso: P.startIso,
+    // регулярные платежи, лимиты, остаток в цель, расчёты
+    billRows, billsDue, billReminders, billsMonthlyFmt: fmt(billsMonthly), billsLeftFmt: fmt(billsLeft), billsLeft,
+    limitAlerts, sweep, settle,
     periodCats, periodDonut, periodWord: s.period === 'week' ? 'за неделю' : s.period === 'year' ? 'за год' : 'за месяц',
     recentTxs, topTxs, widgetTxs: recentTxs.slice(0, 2), txCount: txs.length,
     // цели

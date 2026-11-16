@@ -77,10 +77,25 @@ export function createSupabaseBackend(url, key) {
       return { txs, tasks, goals, incomes };
     },
     async insert(table, row, hid) { await rows(sb.from(table).insert({ ...row, household_id: hid })); },
-    async insertMany(table, list, hid) { await rows(sb.from(table).insert(list.map(r => ({ ...r, household_id: hid })))); },
+    // skipExisting — INSERT … ON CONFLICT (id) DO NOTHING: второй телефон не создаст дубль
+    async insertMany(table, list, hid, opts) {
+      const data = list.map(r => ({ ...r, household_id: hid }));
+      await rows(opts && opts.skipExisting
+        ? sb.from(table).upsert(data, { onConflict: 'id', ignoreDuplicates: true })
+        : sb.from(table).insert(data));
+    },
     async update(table, id, patch) { await rows(sb.from(table).update(patch).eq('id', id)); },
     async remove(table, id) { await rows(sb.from(table).delete().eq('id', id)); },
     async topUpGoal(id, amount) { await rows(sb.rpc('top_up_goal', { p_id: id, p_amount: amount })); },
+    // Разовое действие периода: true — сделать его должен этот телефон, false — партнёр уже сделал
+    async claim(hid, key, value) {
+      const [hh] = await rows(sb.from('households').select('settings').eq('id', hid).limit(1));
+      const cur = (hh && hh.settings) || {};
+      const claims = cur.claims || {};
+      if (claims[key] === value) return false;
+      await rows(sb.from('households').update({ settings: { ...cur, claims: { ...claims, [key]: value } } }).eq('id', hid));
+      return true;
+    },
     async clearData(hid) { for (const t of TABLES) await rows(sb.from(t).delete().eq('household_id', hid)); },
 
     subscribe(hid, cb) {

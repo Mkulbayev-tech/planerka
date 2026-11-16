@@ -46,6 +46,14 @@ export default function Settings() {
         <div className="menu-row menu-row--link" onClick={() => a.openSheet('autoplan')}>
           <span className="menu-row__title">Автораспределение</span><span className="menu-row__value">{d.autoOn ? 'включено ›' : 'выключено ›'}</span>
         </div>
+        <div className="menu-row menu-row--link" onClick={() => a.go('bills')}>
+          <span className="menu-row__title">Регулярные платежи</span><span className="menu-row__value">{d.billRows.length || 'нет'} ›</span>
+        </div>
+        <div className="menu-row menu-row--link" onClick={() => a.openSheet('sweep')}>
+          <span className="menu-row__title">Остаток месяца в цель</span><span className="menu-row__value">{d.sweep.on ? 'включено ›' : 'выключено ›'}</span>
+        </div>
+        {d.settle && <MenuLink title="Расчёт между нами" onClick={() => a.openSheet('settle')} />}
+        <MenuLink title="Импорт выписки Kaspi" onClick={() => a.openSheet('import')} />
       </div>
 
       <div className="card card--menu">

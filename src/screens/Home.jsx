@@ -1,5 +1,6 @@
 import { useBudget } from '../store.jsx';
 import { Ring, PairBars, Letter, Donut } from '../components/ui.jsx';
+import { LimitAlerts } from './Spend.jsx';
 
 // Аналитика: сколько можно тратить до зарплаты и куда уходят деньги за выбранный период.
 export default function Home() {
@@ -38,6 +39,8 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {d.limitAlerts.length > 0 && <LimitAlerts onOpen={() => a.go('spend')} max={3} />}
 
       <div className="seg">
         <div className="seg__item" style={seg('week')} onClick={() => a.setPeriod('week')}>Неделя</div>
@@ -105,6 +108,7 @@ export default function Home() {
               <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: 'nowrap' }}>{m.spentFmt}</div>
             </div>
           ))}
+          {d.settle && <SettleRow />}
         </div>
       )}
 
@@ -137,6 +141,24 @@ function Stat({ label, value }) {
     <div className="col" style={{ flex: 1, gap: 3 }}>
       <div className="tile__label">{label}</div>
       <div style={{ fontSize: 17, fontWeight: 800, whiteSpace: 'nowrap' }}>{value}</div>
+    </div>
+  );
+}
+
+// Кто кому переводит, чтобы общие траты делились как договорились
+function SettleRow() {
+  const { d, a } = useBudget();
+  const t = d.settle;
+  return (
+    <div className="row-between list-row--tap" style={{ borderTop: '1px solid var(--ln)', paddingTop: 12, gap: 10 }} onClick={() => a.openSheet('settle')}>
+      <div className="col" style={{ gap: 2, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 700 }}>{t.settled ? 'Расчёт: всё ровно' : `${t.fromName} → ${t.toName}`}</div>
+        <div className="t-meta">Траты делим {t.splitLabel}</div>
+      </div>
+      <div className="row" style={{ gap: 6 }}>
+        {!t.settled && <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--accent)', whiteSpace: 'nowrap' }}>{t.amountFmt}</div>}
+        <div className="t-link">›</div>
+      </div>
     </div>
   );
 }

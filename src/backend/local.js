@@ -44,7 +44,13 @@ export function createLocalBackend() {
     },
     async loadData() { const db = ensure(); return { txs: db.txs, tasks: db.tasks, goals: db.goals, incomes: db.incomes }; },
     async insert(table, row) { change(db => { db[TABLES[table]].push({ ...row, created_at: new Date().toISOString() }); }); },
-    async insertMany(table, list) { change(db => { list.forEach(row => db[TABLES[table]].push({ ...row, created_at: new Date().toISOString() })); }); },
+    // skipExisting — строки с уже существующим id пропускаются (регулярные платежи, повторный импорт)
+    async insertMany(table, list, _hid, opts) {
+      change(db => {
+        const have = new Set(db[TABLES[table]].map(r => r.id));
+        list.forEach(row => { if (!(opts && opts.skipExisting && have.has(row.id))) db[TABLES[table]].push({ ...row, created_at: new Date().toISOString() }); });
+      });
+    },
     async update(table, id, patch) { change(db => { db[TABLES[table]] = db[TABLES[table]].map(r => (r.id === id ? { ...r, ...patch } : r)); }); },
     async remove(table, id) { change(db => { db[TABLES[table]] = db[TABLES[table]].filter(r => r.id !== id); }); },
     async topUpGoal(id, amount) {
@@ -55,6 +61,18 @@ export function createLocalBackend() {
           return { ...g, saved: g.saved + add, topups: [...(g.topups || []), { date: iso(new Date()), amount: add, by: 'local' }] };
         });
       });
+    },
+    // Разовое действие периода (остаток в цель): true — оно наше, false — уже сделано
+    async claim(_hid, key, value) {
+      let mine = false;
+      change(db => {
+        const s = db.household.settings || {};
+        const claims = s.claims || {};
+        if (claims[key] === value) return;
+        mine = true;
+        db.household.settings = { ...s, claims: { ...claims, [key]: value } };
+      });
+      return mine;
     },
     async clearData() { change(db => { db.txs = []; db.tasks = []; db.goals = []; db.incomes = []; }); },
     async resetDemo() { write(fresh()); },

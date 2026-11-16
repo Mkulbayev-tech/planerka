@@ -13,13 +13,14 @@ import Budget from './screens/Budget.jsx';
 import Income from './screens/Income.jsx';
 import Plans from './screens/Plans.jsx';
 import Settings from './screens/Settings.jsx';
+import Bills from './screens/Bills.jsx';
 import WidgetsBoard from './widgets/WidgetsBoard.jsx';
 
 // Вкладки: home — «Аналитика», plans — «Планы» (задачи и цели), spend — «Расходы», settings — «Ещё».
 // Старые адреса (stats, cats, goals) ведут в новые вкладки.
 const SCREENS = {
   home: Home, plans: Plans, spend: Spend, settings: Settings,
-  add: Add, budget: Budget, income: Income,
+  add: Add, budget: Budget, income: Income, bills: Bills,
   stats: Home, cats: Spend, goals: Plans,
 };
 

@@ -1,12 +1,14 @@
 // Формы: задача, цель, доход, детали траты, зарплата, лимит и своя категория, начало периода, пароль, автораспределение.
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useBudget } from '../store.jsx';
 import { CAT_PALETTE, CAT_SUGGEST, TAGS, TAG_COLORS, fmt } from '../data.js';
 import { pinProblem } from '../auth-profiles.js';
 import { iso, shortDate } from '../lib/dates.js';
 import { Sheet, Field, Chips, PrimaryButton, DangerButton } from './Sheet.jsx';
 import { Letter, PlanBar, Switch } from './ui.jsx';
-import { planBudget, basisText, SAVE_LEVELS } from '../lib/autoplan.js';
+import { planBudget, basisText, SAVE_LEVELS, guessCat } from '../lib/autoplan.js';
+import { BILL_SUGGEST } from '../lib/bills.js';
+import { parseKaspiLines, parseCsv, buildImport } from '../lib/statement.js';
 
 const num = v => Math.max(0, Math.round(Number(String(v).replace(/\s/g, '')) || 0));
 
@@ -26,6 +28,10 @@ export default function SheetHost() {
     case 'cat': return <CategorySheet cat={sh.cat} pick={sh.pick} onClose={close} />;
     case 'pin': return <PinSheet onClose={close} />;
     case 'autoplan': return <AutoPlanSheet onClose={close} />;
+    case 'bill': return <BillSheet bill={sh.bill} onClose={close} />;
+    case 'import': return <ImportSheet onClose={close} />;
+    case 'sweep': return <SweepSheet onClose={close} />;
+    case 'settle': return <SettleSheet onClose={close} />;
     case 'monthStart': return <AmountSheet title="Начало периода" label="Число месяца (1–28)" value={sh.value || d.monthStartDay} hint="Обычно день зарплаты" max={28} onSave={v => { a.setMonthStart(v); close(); }} onClose={close} />;
     default: return null;
   }
@@ -319,6 +325,269 @@ function AutoPlanSheet({ onClose }) {
       </div>
 
       <PrimaryButton onClick={apply}>Применить лимиты</PrimaryButton>
+    </Sheet>
+  );
+}
+
+const OTHER_OPTION = { id: 'other', label: 'Другое' };
+const catOptions = cats => [...cats.map(c => ({ id: c.id, label: c.name, color: c.color, bg: c.bg, letter: c.letter })), OTHER_OPTION];
+
+// Регулярный платёж: в свой день месяца сам становится тратой, в 10:00 приходит напоминание
+function BillSheet({ bill, onClose }) {
+  const { s, a, d } = useBudget();
+  const [title, setTitle] = useState(bill ? bill.title : '');
+  const [amount, setAmount] = useState(bill ? String(bill.amount) : '');
+  const [day, setDay] = useState(bill ? String(bill.day) : String(new Date().getDate()));
+  const [cat, setCat] = useState(bill ? bill.cat || 'other' : null);
+  const [payer, setPayer] = useState(bill ? bill.payer || null : d.me);
+  const [method, setMethod] = useState(bill ? bill.method || 'card' : 'card');
+  // Категорию подбираем по названию, пока её не выбрали руками
+  const guessed = useMemo(() => (title.trim() ? guessCat(title, (s.data && s.data.txs) || [], d.cats) : null), [title, s.data, d.cats]);
+  const catV = cat || guessed || 'other';
+  const dayN = num(day);
+  const ok = title.trim().length > 0 && num(amount) > 0 && dayN >= 1 && dayN <= 31;
+  const save = () => { if (!ok) return; a.saveBill({ title: title.trim(), amount: num(amount), day: dayN, cat: catV, payer, method }, bill && bill.id); onClose(); };
+  const payers = d.members.length > 1 ? d.members.map(m => ({ id: m.id, label: m.id === d.me ? 'Я' : m.name })) : null;
+  return (
+    <Sheet title={bill ? 'Регулярный платёж' : 'Новый платёж'} onClose={onClose}>
+      <Field label="Название"><input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="Например, кредит Kaspi" autoFocus={!bill} maxLength={40} /></Field>
+      {!bill && <Chips options={BILL_SUGGEST.map(x => ({ id: x, label: x }))} value={title.trim()} onChange={setTitle} />}
+      <div className="row" style={{ gap: 10, alignItems: 'stretch' }}>
+        <Field label="Сумма, ₸" style={{ flex: 1.3 }}><input className="input" type="number" inputMode="numeric" min="0" step="1000" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" /></Field>
+        <Field label="Число месяца" style={{ flex: 1 }}><input className="input" type="number" inputMode="numeric" min="1" max="31" value={day} onChange={e => setDay(e.target.value)} /></Field>
+      </div>
+      <Field label={!cat && guessed ? 'Категория · подобрана по названию' : 'Категория'}>
+        <Chips options={catOptions(d.cats)} value={catV} onChange={setCat} />
+      </Field>
+      {payers && <Field label="Кто платит"><Chips options={payers} value={payer} onChange={setPayer} /></Field>}
+      <Field label="Чем">
+        <Chips options={[{ id: 'card', label: 'Карта' }, { id: 'cash', label: 'Наличные' }]} value={method} onChange={setMethod} />
+      </Field>
+      <div className="t-meta">
+        {dayN >= 1 && dayN <= 31 ? `Каждый месяц ${dayN}-го числа трата внесётся сама` : 'Укажите число от 1 до 31'}
+        {dayN > 28 && dayN <= 31 ? ' (в коротком месяце — в последний день)' : ''}. В этот день в 10:00 придёт напоминание.
+        {!bill && ' Прошлые даты не вносятся — начнём с ближайшей.'}
+      </div>
+      <PrimaryButton disabled={!ok} onClick={save}>{bill ? 'Сохранить' : 'Добавить платёж'}</PrimaryButton>
+      {bill && <DangerButton onClick={() => { a.deleteBill(bill.id); onClose(); }}>Удалить платёж</DangerButton>}
+    </Sheet>
+  );
+}
+
+// Импорт выписки Kaspi (PDF) или CSV: разбор, подбор категорий, отметка уже внесённых, выбор строк
+function ImportSheet({ onClose }) {
+  const { s, a, d } = useBudget();
+  const input = useRef(null);
+  const [stage, setStage] = useState('pick'); // pick | loading | review
+  const [error, setError] = useState('');
+  const [fileName, setFileName] = useState('');
+  const [rows, setRows] = useState([]);
+  const [skipped, setSkipped] = useState(0);
+  const [openId, setOpenId] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const onFile = async e => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    setFileName(file.name);
+    setError('');
+    setStage('loading');
+    try {
+      const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+      let items;
+      if (isPdf) {
+        const { pdfLines } = await import('../lib/pdf.js');
+        items = parseKaspiLines(await pdfLines(file));
+      } else {
+        const text = await file.text();
+        items = parseCsv(text);
+        if (!items.length) items = parseKaspiLines(text.split(/\r?\n/));
+      }
+      if (!items.length) throw new Error('empty');
+      const all = s.data || { txs: [], incomes: [] };
+      const res = buildImport(items, { txs: all.txs, incomes: all.incomes, cats: d.cats, allCats: d.cats });
+      setRows(res.rows);
+      setSkipped(res.skipped);
+      setStage('review');
+    } catch (err) {
+      console.error(err);
+      setError(err && err.message === 'empty'
+        ? 'Не нашёл операций в файле. Нужна выписка Kaspi Gold в PDF или таблица CSV с колонками «Дата» и «Сумма».'
+        : 'Не удалось прочитать файл. Попробуйте ещё раз или выгрузите выписку заново.');
+      setStage('pick');
+    }
+  };
+  const toggle = id => setRows(list => list.map(r => (r.id === id ? { ...r, checked: !r.checked } : r)));
+  const setCat = (id, cat) => { setRows(list => list.map(r => (r.id === id ? { ...r, cat, checked: true } : r))); setOpenId(null); };
+  const txRows = rows.filter(r => r.kind === 'tx');
+  const incRows = rows.filter(r => r.kind === 'income');
+  const pickedTx = txRows.filter(r => r.checked);
+  const pickedInc = incRows.filter(r => r.checked);
+  const sumOf = list => list.reduce((x, r) => x + r.amount, 0);
+  const catById = Object.fromEntries(d.cats.map(c => [c.id, c]));
+  const catView = id => catById[id] || { name: 'Другое', letter: 'Д', color: '#8E8A9C', bg: '#EFEEF3' };
+  const go = async () => {
+    setSaving(true);
+    const ok = await a.importRows([...pickedTx, ...pickedInc]);
+    setSaving(false);
+    if (ok) onClose();
+  };
+
+  const picker = (
+    <input ref={input} type="file" accept=".pdf,.csv,.txt,application/pdf,text/csv,text/plain" style={{ display: 'none' }} onChange={onFile} />
+  );
+
+  if (stage !== 'review') {
+    return (
+      <Sheet title="Импорт выписки" onClose={onClose}>
+        {picker}
+        <div className="t-meta">Траты из банка попадут в бюджет сами — с категориями, подобранными по названию магазина. Уже внесённые повторно не добавятся.</div>
+        <div className="plan-sum">
+          <div style={{ fontSize: 14, fontWeight: 800 }}>Как выгрузить из Kaspi</div>
+          <div className="t-meta">1. Kaspi.kz → Kaspi Gold → «Выписка»</div>
+          <div className="t-meta">2. Выберите период → «Отправить» → «Сохранить в Файлы»</div>
+          <div className="t-meta">3. Здесь нажмите «Выбрать файл» и найдите PDF</div>
+        </div>
+        <div className="t-meta">Подходит и CSV: экспорт из этого приложения или таблица другого банка с колонками «Дата» и «Сумма» (траты со знаком минус).</div>
+        {error && <div className="t-meta" style={{ color: 'var(--red)' }}>{error}</div>}
+        <PrimaryButton disabled={stage === 'loading'} onClick={() => input.current && input.current.click()}>
+          {stage === 'loading' ? 'Читаю ' + fileName + '…' : 'Выбрать файл'}
+        </PrimaryButton>
+      </Sheet>
+    );
+  }
+
+  const row = r => {
+    const c = r.kind === 'tx' ? catView(r.cat) : null;
+    return (
+      <div key={r.id} className="col" style={{ borderBottom: '1px solid var(--ln)' }}>
+        <div className="imp-row">
+          <div className="imp-check" data-on={r.checked ? 'true' : 'false'} onClick={() => toggle(r.id)}>✓</div>
+          <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }} onClick={() => toggle(r.id)}>
+            <div className="ellipsis" style={{ fontSize: 14, fontWeight: 700, opacity: r.checked ? 1 : 0.55 }}>{r.title}</div>
+            <div className="t-meta ellipsis">{shortDate(r.date)}{r.op ? ' · ' + r.op : ''}{r.likely ? ' · похоже, уже есть' : ''}</div>
+          </div>
+          <div className="col" style={{ gap: 4, alignItems: 'flex-end' }}>
+            <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap', color: r.kind === 'income' ? 'var(--green)' : 'var(--tx)' }}>{r.kind === 'income' ? '+' : '−'}{fmt(r.amount)}</div>
+            {c && <div className="imp-cat" style={{ background: c.bg, color: c.color }} onClick={() => setOpenId(openId === r.id ? null : r.id)}>{c.name} ▾</div>}
+          </div>
+        </div>
+        {openId === r.id && <div style={{ paddingBottom: 10 }}><Chips options={catOptions(d.cats)} value={r.cat} onChange={v => setCat(r.id, v)} /></div>}
+      </div>
+    );
+  };
+
+  return (
+    <Sheet title="Импорт выписки" onClose={onClose}>
+      {picker}
+      <div className="t-meta">
+        {fileName} · найдено {rows.length + skipped}{skipped ? `, уже в бюджете ${skipped}` : ''}.
+        {' '}Переводы, снятия и поступления не отмечены — отметьте, если это траты или доход семьи.
+      </div>
+      {rows.length === 0 && <div className="empty">Все операции из файла уже есть в бюджете</div>}
+      {txRows.length > 0 && (
+        <div className="col">
+          <div className="row-between" style={{ paddingBottom: 4 }}>
+            <div className="field__label">Траты · {txRows.length}</div>
+            <div className="t-link" onClick={() => setRows(list => list.map(r => (r.kind === 'tx' && !r.likely ? { ...r, checked: true } : r)))}>Отметить все</div>
+          </div>
+          {txRows.map(row)}
+        </div>
+      )}
+      {incRows.length > 0 && (
+        <div className="col">
+          <div className="field__label" style={{ paddingTop: 6 }}>Поступления · {incRows.length}</div>
+          {incRows.map(row)}
+        </div>
+      )}
+      <PrimaryButton disabled={saving || (!pickedTx.length && !pickedInc.length)} onClick={go}>
+        {saving ? 'Добавляю…' : pickedTx.length || pickedInc.length
+          ? `Добавить ${pickedTx.length ? `${pickedTx.length} трат на ${fmt(sumOf(pickedTx))}` : ''}${pickedTx.length && pickedInc.length ? ' и ' : ''}${pickedInc.length ? `${pickedInc.length} поступл.` : ''}`
+          : 'Отметьте операции'}
+      </PrimaryButton>
+      <div className="t-link" style={{ textAlign: 'center' }} onClick={() => input.current && input.current.click()}>Выбрать другой файл</div>
+    </Sheet>
+  );
+}
+
+// Остаток месяца в цель: в начале периода прошлый остаток (доход − траты − уже отложенное) уходит в цель
+function SweepSheet({ onClose }) {
+  const { a, d } = useBudget();
+  const sw = d.sweep;
+  const open = d.goals.filter(g => g.pct < 100);
+  const [goalId, setGoalId] = useState(sw.goalId || (open[0] && open[0].id) || null);
+  const [on, setOn] = useState(sw.on);
+  const offBg = d.dark ? '#3A3746' : '#D9D6E3';
+  const save = () => {
+    // Включили посреди периода — прошлый остаток только по кнопке «сейчас», автоматически со следующего периода
+    a.setSweep({ on, goalId, ...(on && !sw.on ? { skip: d.periodStartIso } : {}) });
+    onClose();
+  };
+  if (!open.length) {
+    return (
+      <Sheet title="Остаток в цель" onClose={onClose}>
+        <div className="t-meta">Сначала добавьте цель накоплений — туда будет уходить то, что осталось от месяца.</div>
+        <PrimaryButton onClick={() => a.openSheet('goal')}>Добавить цель</PrimaryButton>
+      </Sheet>
+    );
+  }
+  return (
+    <Sheet title="Остаток в цель" onClose={onClose}>
+      <div className="t-meta">В начале каждого периода ({d.monthStartDay}-го числа) то, что осталось от прошлого — доход минус траты и уже отложенное, — само уйдёт в выбранную цель.</div>
+      <Field label="Куда откладывать">
+        <Chips options={open.map(g => ({ id: g.id, label: g.name, color: g.color, bg: g.bg, letter: g.letter }))} value={goalId} onChange={setGoalId} />
+      </Field>
+      <div className="plan-switch" onClick={() => setOn(v => !v)}>
+        <div className="col" style={{ gap: 2 }}>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Откладывать автоматически</div>
+          <div className="t-meta">{sw.last ? `Последний раз: ${shortDate(sw.last.date)} · ${sw.lastFmt}` : 'Каждый период'}</div>
+        </div>
+        <Switch on={on} offBg={offBg} />
+      </div>
+      <PrimaryButton disabled={!goalId} onClick={save}>Сохранить</PrimaryButton>
+      {sw.canNow && goalId && (
+        <div className="soft-btn" onClick={() => { a.sweepNow(goalId, sw.prevLeft, d.periodStartIso); a.setSweep({ goalId }); onClose(); }}>
+          Отложить остаток за {sw.prevMonth} сейчас · {sw.prevLeftFmt}
+        </div>
+      )}
+      {!sw.canNow && sw.swept && <div className="t-meta">Остаток за {sw.prevMonth} уже отложен.</div>}
+      {!sw.canNow && !sw.swept && <div className="t-meta">За {sw.prevMonth} свободного остатка нет.</div>}
+    </Sheet>
+  );
+}
+
+// Кто кому переводит: общие траты двоих поровну или в выбранной доле; «Перевод сделан» записывает расчёт
+function SettleSheet({ onClose }) {
+  const { a, d } = useBudget();
+  const t = d.settle;
+  if (!t) return null;
+  return (
+    <Sheet title="Расчёт между вами" onClose={onClose}>
+      <div className="plan-sum">
+        <div className="plan-sum__row"><span className="muted">Общие траты</span><b>{t.totalFmt}</b></div>
+        <div className="plan-sum__row"><span className="muted">{t.aName}: оплачено</span><b>{t.paidAFmt}</b></div>
+        <div className="plan-sum__row"><span className="muted">{t.bName}: оплачено</span><b>{t.paidBFmt}</b></div>
+        <div className="plan-sum__row plan-sum__row--total">
+          {t.settled ? <span>Всё ровно</span> : <span>{t.fromName} → {t.toName}</span>}
+          {!t.settled && <b style={{ color: 'var(--accent)' }}>{t.amountFmt}</b>}
+        </div>
+      </div>
+      <Field label="Как делим траты">
+        <Chips options={t.options} value={t.splitId} onChange={id => a.setSplit(t.options.find(o => o.id === id).share)} />
+      </Field>
+      <div className="t-meta">Считаются все траты с автором; «Перевод сделан» записывает перевод и выравнивает счёт. Прошлые переводы учитываются.</div>
+      {!t.settled && <PrimaryButton onClick={() => { a.recordSettle(t.fromId, t.toId, t.amount); onClose(); }}>Перевод сделан · {t.amountFmt}</PrimaryButton>}
+      {t.log.length > 0 && (
+        <div className="col" style={{ gap: 8 }}>
+          <div className="field__label">Переводы</div>
+          {t.log.map((x, i) => (
+            <div key={i} className="row-between" style={{ fontSize: 13, fontWeight: 600 }}>
+              <span className="muted">{x.text}</span><span style={{ fontWeight: 800 }}>{x.amountFmt}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </Sheet>
   );
 }

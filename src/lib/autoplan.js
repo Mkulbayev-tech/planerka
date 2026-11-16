@@ -43,8 +43,9 @@ export function planBudget(input, save = 0) {
   // 5% дохода держим на непредвиденное, пока это не требует урезать траты ниже потраченного
   const buffer = near(income * 0.05);
 
+  const fixedIds = new Set(input.fixedIds || []); // категории регулярных платежей тоже обязательные
   const rows = cats.filter(c => !c.hidden).map(c => {
-    const fixed = isFixedCat(c);
+    const fixed = isFixedCat(c) || fixedIds.has(c.id);
     const cur = spent[c.id] || 0;
     const plan = planned[c.id] || 0;
     const floor = cur + plan;
@@ -123,12 +124,13 @@ export function basisText(p) {
 // потом ключевые слова для встроенных и типовых своих категорий.
 
 const KEYWORDS = {
-  food: ['magnum', 'магнум', 'small', 'смолл', 'galmart', 'галмарт', 'анвар', 'arbuz', 'арбуз', 'рынок', 'базар', 'продукт', 'супермаркет', 'хлеб', 'молок', 'мясо', 'овощ', 'фрукт', 'toimart', 'airba'],
-  cafe: ['кафе', 'кофе', 'кофейн', 'coffee', 'ресторан', 'обед', 'ужин', 'завтрак', 'пицц', 'суши', 'бургер', 'kfc', 'макдон', 'доставк', 'wolt', 'glovo', 'шаурм', 'чайхан', 'столов'],
-  transport: ['такси', 'taxi', 'uber', 'indrive', 'проезд', 'автобус', 'onay', 'онай', 'метро', 'бензин', 'азс', 'заправк', 'топлив', 'парковк', 'автомойк', 'шиномонтаж', 'helios', 'sinooil'],
-  home: ['аренд', 'квартир', 'коммунал', 'отоплен', 'электроэнерг', 'ремонт', 'мебел', 'хозтовар'],
+  food: ['yandex lavka', 'яндекс лавка', 'magnum', 'магнум', 'small', 'смолл', 'galmart', 'галмарт', 'анвар', 'arbuz', 'арбуз', 'рынок', 'базар', 'продукт', 'супермаркет', 'хлеб', 'молок', 'мясо', 'овощ', 'фрукт', 'toimart', 'airba'],
+  cafe: ['yandex eats', 'яндекс еда', 'кафе', 'кофе', 'кофейн', 'coffee', 'ресторан', 'обед', 'ужин', 'завтрак', 'пицц', 'суши', 'бургер', 'kfc', 'макдон', 'доставк', 'wolt', 'glovo', 'шаурм', 'чайхан', 'столов'],
+  transport: ['yandex go', 'яндекс go', 'яндекс такси', 'такси', 'taxi', 'uber', 'indrive', 'проезд', 'автобус', 'onay', 'онай', 'метро', 'бензин', 'азс', 'заправк', 'топлив', 'парковк', 'автомойк', 'шиномонтаж', 'helios', 'sinooil'],
+  // интернет и связь — сюда, только если у семьи нет своей категории «Связь» (свои проверяются раньше)
+  home: ['аренд', 'квартир', 'коммунал', 'отоплен', 'электроэнерг', 'ремонт', 'мебел', 'хозтовар', 'интернет', 'казахтелеком', 'kazakhtelecom', 'beeline', 'билайн', 'kcell', 'tele2', 'теле2', 'altel', 'алтел', 'мобильн', 'сотов'],
   health: ['аптек', 'врач', 'клиник', 'анализ', 'стоматолог', 'зуб', 'лекарств', 'витамин', 'массаж', 'invitro', 'больниц'],
-  fun: ['кино', 'cinema', 'боулинг', 'театр', 'концерт', 'netflix', 'spotify', 'музей', 'бильярд', 'караоке', 'аквапарк', 'каток'],
+  fun: ['кино', 'kinopark', 'кинопарк', 'chaplin', 'чаплин', 'cinemax', 'cinema', 'боулинг', 'театр', 'концерт', 'netflix', 'spotify', 'музей', 'бильярд', 'караоке', 'аквапарк', 'каток'],
 };
 // Для своих категорий — по их названию
 const CUSTOM_KEYWORDS = [
@@ -143,9 +145,9 @@ const CUSTOM_KEYWORDS = [
 const norm = s => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"']/g, '').replace(/\s+/g, ' ').trim();
 const words = s => norm(s).split(/[^a-zа-я0-9&]+/i).filter(Boolean);
 const hasWord = (text, key) => {
-  const k = norm(key);
-  if (k.includes(' ')) return norm(text).includes(k);
-  return words(text).some(w => w.startsWith(k));
+  const k = words(key);
+  if (k.length > 1) return (' ' + words(text).join(' ') + ' ').includes(' ' + k.join(' ')); // фраза: «yandex go» = «Yandex.Go»
+  return words(text).some(w => w.startsWith(k[0] || '\u0000'));
 };
 
 // cats — доступные для выбора категории (без скрытых), txs — все траты семьи

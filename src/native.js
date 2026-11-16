@@ -41,6 +41,7 @@ export function exitApp() { if (isNative) CapApp.exitApp(); }
 // Лёгкая вибрация на действиях.
 export function tap() { if (isNative) Haptics.impact({ style: ImpactStyle.Light }).catch(() => {}); }
 export function success() { if (isNative) Haptics.notification({ type: NotificationType.Success }).catch(() => {}); }
+export function warn() { if (isNative) Haptics.notification({ type: NotificationType.Warning }).catch(() => {}); }
 
 // Надёжное хранилище сессии Supabase на телефоне (localStorage в WebView могут очистить).
 export const nativeStorage = isNative
@@ -104,6 +105,26 @@ export async function syncReminder(want) {
 export async function disableReminder() {
   if (!isNative) return;
   try { await LocalNotifications.cancel({ notifications: [{ id: REMINDER_ID }] }); } catch { /* ignore */ }
+}
+
+// Напоминания о регулярных платежах: в день платежа в 10:00. list — [{ date: 'YYYY-MM-DD', title, body }].
+// Пустой список снимает все. Разрешение не запрашиваем — его спрашивает переключатель напоминаний.
+const BILL_IDS = Array.from({ length: 60 }, (_, i) => 100 + i);
+export async function scheduleBillReminders(list) {
+  if (!isNative) return;
+  try {
+    await LocalNotifications.cancel({ notifications: BILL_IDS.map(id => ({ id })) });
+    if (!list.length) return;
+    const perm = await LocalNotifications.checkPermissions();
+    if (perm.display !== 'granted') return;
+    const now = Date.now();
+    const notifications = list
+      .map(x => { const [y, m, d] = x.date.split('-').map(Number); return { ...x, at: new Date(y, m - 1, d, 10, 0) }; })
+      .filter(x => x.at.getTime() > now)
+      .slice(0, BILL_IDS.length)
+      .map((x, i) => ({ id: BILL_IDS[i], title: x.title, body: x.body, schedule: { at: x.at, allowWhileIdle: true } }));
+    if (notifications.length) await LocalNotifications.schedule({ notifications });
+  } catch (e) { console.warn('bills:', e && e.message); }
 }
 
 // Виджеты iOS: приложение передаёт сводку, расширение WidgetKit её рисует

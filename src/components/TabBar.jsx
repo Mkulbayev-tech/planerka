@@ -4,7 +4,7 @@ import { useBudget } from '../store.jsx';
 const TABS = {
   home: ['home', 'income', 'stats'],
   plans: ['plans', 'goals'],
-  spend: ['spend', 'budget', 'cats'],
+  spend: ['spend', 'budget', 'cats', 'bills'],
   settings: ['settings'],
 };
 

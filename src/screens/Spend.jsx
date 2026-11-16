@@ -15,6 +15,8 @@ export default function Spend() {
         <div className="round-add" onClick={() => a.go('add')}>+</div>
       </div>
 
+      {d.limitAlerts.length > 0 && <LimitAlerts onOpen={() => a.go('budget')} />}
+
       <div className="card" style={{ gap: 10 }}>
         <div className="row-between" style={{ alignItems: 'flex-end' }}>
           <div className="col" style={{ gap: 2 }}>
@@ -37,6 +39,25 @@ export default function Spend() {
         </div>
       </div>
 
+      <div className="card" style={{ gap: 10 }}>
+        <div className="row-between">
+          <div className="t-card">Регулярные платежи</div>
+          <div className="t-link" onClick={() => a.go('bills')}>{d.billRows.length ? 'Все →' : 'Добавить →'}</div>
+        </div>
+        {d.billRows.length === 0 && <div className="t-meta">Кредит, рассрочка, связь, подписки — внесутся сами в свой день, с напоминанием.</div>}
+        {d.billRows.slice(0, 3).map(b => (
+          <div key={b.id} className="row list-row--tap" style={{ gap: 12 }} onClick={() => a.openSheet('bill', { bill: b })}>
+            <Letter size={34} radius={11} bg={b.bg} color={b.color} fontSize={14}>{b.letter}</Letter>
+            <div className="col" style={{ flex: 1, gap: 1, minWidth: 0 }}>
+              <div className="ellipsis" style={{ fontSize: 14, fontWeight: 700 }}>{b.title}</div>
+              <div className="t-meta" style={{ color: b.statusColor }}>{b.status}</div>
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 800, whiteSpace: 'nowrap' }}>{b.amountFmt}</div>
+          </div>
+        ))}
+        {d.billRows.length > 3 && <div className="t-meta">и ещё {d.billRows.length - 3}</div>}
+      </div>
+
       <div className="card" style={{ gap: 4 }}>
         <div className="row-between" style={{ paddingBottom: 6 }}>
           <div className="t-card">Категории</div>
@@ -56,6 +77,8 @@ export default function Spend() {
           </div>
         ))}
       </div>
+
+      <div className="soft-btn" onClick={() => a.openSheet('import')}>Загрузить выписку Kaspi</div>
 
       <div className="section-head">
         <div className="t-card ellipsis">{d.spendCatName ? 'Траты · ' + d.spendCatName : 'Все траты'}</div>
@@ -80,6 +103,26 @@ export default function Spend() {
               <div style={{ fontSize: 15, fontWeight: 800, whiteSpace: 'nowrap' }}>−{t.amountFmt}</div>
             </div>
           ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Категории, где потрачено 80% лимита и больше; превышенные — красным
+export function LimitAlerts({ onOpen, max = 4 }) {
+  const { d } = useBudget();
+  return (
+    <div className="card" style={{ gap: 10 }} onClick={onOpen}>
+      <div className="row-between">
+        <div className="t-card">{d.limitAlerts.some(x => x.over) ? 'Лимиты превышены' : 'Лимиты почти исчерпаны'}</div>
+        <div className="t-link">Лимиты →</div>
+      </div>
+      {d.limitAlerts.slice(0, max).map(x => (
+        <div key={x.id} className="alert-row">
+          <Letter size={30} radius={10} bg={x.bg} color={x.color} fontSize={13}>{x.letter}</Letter>
+          <div className="ellipsis" style={{ flex: 1, fontSize: 14, fontWeight: 700 }}>{x.name}</div>
+          <div style={{ fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', color: x.over ? 'var(--red)' : 'var(--amber)' }}>{x.short}</div>
         </div>
       ))}
     </div>

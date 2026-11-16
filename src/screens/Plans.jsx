@@ -60,6 +60,17 @@ export default function Plans() {
         </div>
         <div className="round-add round-add--soft" onClick={() => a.openSheet('goal')}>+</div>
       </div>
+      {d.goals.length > 0 && (
+        <div className="card list-row--tap" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: '14px 16px' }} onClick={() => a.openSheet('sweep')}>
+          <div className="col" style={{ flex: 1, gap: 2, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800 }}>Остаток месяца {d.sweep.on ? '→ ' + d.sweep.goalName : 'в цель'}</div>
+            <div className="t-meta ellipsis">{d.sweep.on
+              ? (d.sweep.last ? `Последний раз ${d.sweep.lastFmt}` : `Каждое ${d.monthStartDay}-е число — то, что не потратили`)
+              : 'Что не потратили за месяц — само уйдёт в цель'}</div>
+          </div>
+          <div className="t-link">{d.sweep.on ? 'Вкл' : 'Включить'} ›</div>
+        </div>
+      )}
       {d.goals.length === 0 && (
         <div className="card"><div className="empty">Пока нет целей. Нажмите +, чтобы добавить первую.</div></div>
       )}
